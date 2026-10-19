@@ -5,12 +5,12 @@ import {loadM0Save,saveM0Save,resetM0Save} from "./storage.mjs";
 
 const el=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString("zh-CN");
-let catalog,save,auto=false,busy=false,timer=null,serial=0,lastEvents=[],lastResult=null,storageOkay=true;
+let catalog,save,auto=false,busy=false,timer=null,lastEvents=[],lastResult=null,storageOkay=true;
 const progressEl=el("progress");
 function status(message,problem=false){
   el("saveStatus").textContent=message;el("saveStatus").style.color=problem?"#ffb6a2":"var(--muted)";
 }
-function txid(){serial++;return "m0-"+Date.now().toString(36)+"-"+serial+"-"+Math.floor(performance.now()*1000).toString(36);}
+function txid(){return "tx:"+(save.txSequence+1);}
 
 function act(command){
   const executed=executeM0(save,{...command,txnId:txid()},catalog);
