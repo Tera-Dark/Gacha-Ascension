@@ -33,8 +33,8 @@ export function simulate(seed,strategy="balanced",limit=2200){
   if(e.highestCleared>=10&&(levelCap(s,c)<14||g.packDraws.cultivation<2)&&affordable("cultivation")){draw("cultivation");continue;}
   if(e.highestCleared>=16&&g.packDraws.elixir<1&&affordable("elixir")){draw("elixir");continue;}
   if(e.farmReason==="defeat"&&affordable("battle")){
-   draw("battle");retryCountdown++;
-   if(e.mode==="farm"&&retryCountdown>=2){execute("SET_MODE",{mode:"push"});retryCountdown=0;}
+   draw("battle");
+   // The reducer predicts the next encounter and resumes only when the drawn card makes it winnable.
    continue;
   }
   if(e.mode==="paused"){
