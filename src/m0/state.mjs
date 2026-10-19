@@ -15,7 +15,7 @@ export function createM0Save(seed=123456789) {
       exploration:{highestCleared:0,targetIndex:1,mode:"push",farmingIndex:0,
         currentRunFirstClear:{},battleCount:0,winCount:0,lossCount:0},
     },
-    receipts:{},receiptOrder:[],
+    txSequence:0,receipts:{},receiptOrder:[],
     settings:{autoBattle:false,reducedMotion:false}
   };
 }
@@ -46,6 +46,7 @@ export function validateM0Save(save) {
   if(!isDict(save)||save.schemaVersion!==M0_SCHEMA||save.dataVersion!=="0.5-M0")throw Error("Unsupported save version");
   if(!checkInt(save.seed)||save.seed===0||save.seed>0xffffffff)throw Error("Invalid saved seed");
   if(!isDict(save.meta)||!isDict(save.run)||!isDict(save.receipts)||!Array.isArray(save.receiptOrder))throw Error("Malformed save objects");
+  if(!checkInt(save.txSequence)||save.txSequence>Number.MAX_SAFE_INTEGER-1)throw Error("Invalid transaction sequence");
   if(!isDict(save.meta.featureUnlocks)||!save.meta.featureUnlocks.exploration)throw Error("Exploration must be available");
   if(!checkInt(save.run.stones)||!checkInt(save.run.cultivationXp)||!checkInt(save.run.earnedXp))throw Error("Negative resources");
   const h=save.run.hero, e=save.run.exploration;
@@ -57,7 +58,9 @@ export function validateM0Save(save) {
   if(e.winCount+e.lossCount!==e.battleCount)throw Error("Battle counts mismatched");
   if(e.targetIndex!==Math.min(30,e.highestCleared+1))throw Error("Stage target inconsistent");
   if(!checkInt(save.meta.bestDepth)||save.meta.bestDepth<e.highestCleared)throw Error("Invalid permanent record");
-  if(save.receiptOrder.length>100000)throw Error("Excess receipts");
+  if(save.receiptOrder.length>96)throw Error("Excess receipts");
+  if(save.receiptOrder.length!==Object.keys(save.receipts).length ||
+    save.receiptOrder.some(id=>!Object.hasOwn(save.receipts,id)))throw Error("Receipts/receipt order mismatch");
   return save;
 }
 export function cloneM0Save(save) {
