@@ -2,6 +2,7 @@ import {loadM0Catalog,STAGE_LIMIT,PACK_ORDER,RARITIES,packUnlocked} from "./cata
 import {createM0Save,getHeroStats,effects,levelCap,M0_SAVE_KEY} from "./state.mjs";
 import {executeM0,battlePreview} from "./engine.mjs";
 import {loadM0Save,saveM0Save,resetM0Save} from "./storage.mjs";
+import {createCombatPresenter} from "./presentation.mjs";
 
 const el=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString("zh-CN");
@@ -10,6 +11,35 @@ const rates="黄54% · 玄31% · 地12% · 天3%";
 let catalog,save,auto=false,busy=false,timer=null,storageOkay=true,lastBattle=null;
 let loglines=[],modalVisible=false;
 const icons={battle:"⚔",wealth:"◈",cultivation:"☯",elixir:"✦"};
+const presenter=createCombatPresenter(el);
+let lastPresentedValues=null;
+const views={explore:["CURRENT ACTIVITY / EXPLORATION","仙途探索"],gacha:["DRAW / DESTINY PACKS","机缘抽卡"],
+ collection:["BUILD / BATTLE TRAIT","功法构筑"],realm:["REALM / CULTIVATION","境界突破"],
+ records:["BATTLE / EVENT LOG","活动战报"],settings:["SAVE / PREFERENCES","设置与存档"]};
+function showView(name){
+ if(!views[name])return;
+ for(const panel of document.querySelectorAll("[data-view-panel]")){
+  const selected=panel.dataset.viewPanel===name;
+  panel.classList.toggle("is-active",selected);panel.setAttribute("aria-hidden",String(!selected));
+ }
+ for(const button of document.querySelectorAll("button[data-view]")){
+  const selected=button.dataset.view===name;
+  button.classList.toggle("is-active",selected);
+  if(selected)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current");
+ }
+ el("viewEyebrow").textContent=views[name][0];el("viewTitle").textContent=views[name][1];
+ const panel=document.querySelector('.view[data-view-panel="'+name+'"]');if(panel)panel.scrollTop=0;
+}
+function bump(id,changed){
+ const node=el(id);if(!node||!changed)return;
+ node.classList.remove("value-flash");void node.offsetWidth;node.classList.add("value-flash");
+}
+function showRewards(events){
+ const reward=events.find(x=>x.type==="Reward"),target=el("rewardPulse");
+ if(!reward||!target)return;
+ target.textContent="◆ +"+reward.stones+" 灵石 · +"+reward.xp+" 修为";
+ target.classList.remove("reward-flash");void target.offsetWidth;target.classList.add("reward-flash");
+}
 function setStatus(msg,bad=false){el("saveStatus").textContent=msg;el("saveStatus").style.color=bad?"var(--red)":"var(--muted)";}
 function transaction(command){
  if(!save||!catalog)return null;
@@ -53,21 +83,36 @@ function paint(){
  el("stones").textContent=fmt(save.run.stones);
  el("experience").textContent=fmt(save.run.cultivationXp)+" / "+(h.level>=levelLimit?"已封顶":fmt(p.xpRequired));
  el("xpbar").style.width=(h.level>=levelLimit?100:Math.min(100,save.run.cultivationXp/p.xpRequired*100))+"%";
- el("depth").textContent=e.highestCleared+" / 30";
+ el("depth").innerHTML=e.highestCleared+' <i>/ 30 层</i>';
+ el("headerStones").textContent=fmt(save.run.stones);
+ el("headerRealm").textContent=(e.ascended?"筑基":"练气")+" · Lv."+h.level;
+ const currentValues={stones:save.run.stones,level:h.level,depth:e.highestCleared,attack:stats.attack,hp:stats.hp,defense:stats.defense};
+ if(lastPresentedValues)for(const [id,key] of [["stones","stones"],["depth","depth"],["level","level"],["sideAttack","attack"],["sideHp","hp"],["sideDefense","defense"]])bump(id,lastPresentedValues[key]!==currentValues[key]);
+ lastPresentedValues=currentValues;
+ el("sideAttack").textContent=fmt(stats.attack);
+ el("sideHp").textContent=fmt(stats.hp);
+ el("sideDefense").textContent=fmt(stats.defense);
+ el("sideTrait").textContent=save.run.gacha.equippedTrait?catalog.cards[save.run.gacha.equippedTrait].name:"未装备";
  el("speed").textContent="灵石 +"+p.stoneBonusPct+"% / 修为 +"+p.xpBonusPct+"% / 速度 +"+p.speedPct+"%";
  el("stage").textContent="普通 · 第 "+p.stage.floor+" 层"+(p.stage.floor%10===0?" · 守关":"");
  el("enemyName").textContent=p.special?.name||p.stage.enemyName;
+ el("battleTier").textContent=p.special?"精英 / 首领":"普通遭遇";
+ presenter.display(p);
  el("enemyStats").textContent=(p.special?.hint||"普通敌人 · 资源稳定产出")+" · 参考掉落"+Math.floor(p.stage.stones*catalog.economy.stoneScale*(p.special?.rewardScale||1))+"灵石";
  el("heroStats").textContent="攻"+fmt(stats.attack)+" · 血"+fmt(stats.hp)+" · 防"+fmt(stats.defense);
  el("enemyCompact").textContent="攻"+fmt(p.enemy.attack)+" · 血"+fmt(p.enemy.hp)+" · 防"+fmt(p.enemy.defense);
  el("preview").textContent=(p.predicted.won?"预计能够获胜":"预计难以获胜")+" · 回合数"+p.predicted.turns+(p.mechanic?" · "+catalog.traitDefinitions[p.mechanic.id].name:"")+(p.predicted.absorbed?" · 护盾吸收"+p.predicted.absorbed:"")+(p.predicted.regenTotal?" · 敌人回复"+p.predicted.regenTotal:"");
  el("preview").className="combatline "+(p.predicted.won?"flag":"danger");
+ el("sideGoldPct").textContent="+"+p.stoneBonusPct+"%";
+ el("sideXpPct").textContent="+"+p.xpBonusPct+"%";
  const rec=p.diagnosis,rp=rec.packId?catalog.packs[rec.packId]:null;
+ el("sideTip").textContent=rec.heading+"。"+rec.detail;
  el("diagnosis").innerHTML="<strong>"+safe(rec.heading)+"</strong>"+safe(rec.detail)+(rp?"<div class='focus-pack'>建议抽："+safe(rp.name)+" · "+rp.cost+"灵石/抽</div>":"");
  const modes={push:"继续冲关",farm:e.farmReason==="gate"?"境界锁 · 扫荡修炼":e.farmReason==="defeat"?"战败 · 自动退层发育":"旧层扫荡",paused:"已暂停"};
- el("mode").textContent=(auto?"自动 · ":"")+modes[e.mode];
+ el("mode").textContent=(auto?"● 自动 · ":"○ ")+modes[e.mode];
+ if(!presenter.isPlaying())el("battleStatus").textContent=auto?"自动战斗中 · "+modes[e.mode]:"探索待命 · "+modes[e.mode];
  el("battles").textContent=e.battleCount+"战 · "+e.winCount+"胜";
- el("auto").textContent=auto?"停止自动":"开启自动推图";
+ el("auto").textContent=auto?"Ⅱ 停止自动":"▶ 开始自动探索";
  el("auto").disabled=false;
  el("push").disabled=e.highestCleared>=STAGE_LIMIT || p.gateLocked;
  el("farm").disabled=e.highestCleared<1;
@@ -104,8 +149,8 @@ function paint(){
    const info=pack.pityTarget?"筑基丹："+(save.run.gacha.pills[pack.pityTarget]||0)+"枚 · 距保底最多"+Math.max(1,pack.pityAt-save.run.gacha.sinceKeyPill)+"抽":rates;
    return '<article class="pack'+(unlocked?"":" locked")+'"><div class="packhead"><span class="packname">'+icons[id]+" "+safe(pack.name)+'</span><span class="packtag">'+(unlocked?"已开放":"第"+pack.unlockedAt+"层解锁")+'</span></div><div class="packinfo">'+safe(pack.description)+'</div>'+
      '<div class="packstats">累计 '+draws+" 抽 · "+safe(info)+'</div>'+
-     '<div class="packactions"><button class="btn '+(id==="battle"?"primary":"secondary")+'" data-pack="'+id+'" data-count="1" '+(!unlocked||save.run.stones<pack.cost?"disabled":"")+'>单抽 · '+pack.cost+'</button>'+
-     '<button class="btn secondary" data-pack="'+id+'" data-count="10" '+(!unlocked||save.run.stones<pack.cost*10?"disabled":"")+'>十连 · '+(pack.cost*10)+'</button></div>'+
+     '<div class="packactions"><button class="action-btn '+(id==="battle"?"primary-action":"")+'" data-pack="'+id+'" data-count="1" '+(!unlocked||save.run.stones<pack.cost?"disabled":"")+'>单抽 · '+pack.cost+'</button>'+
+     '<button class="action-btn" data-pack="'+id+'" data-count="10" '+(!unlocked||save.run.stones<pack.cost*10?"disabled":"")+'>十连 · '+(pack.cost*10)+'</button></div>'+
      (!unlocked?'<div class="lockedhint">推进主线，自动解锁本卡包。</div>':"")+'</article>';
  }).join("");
  const owned=Object.entries(save.run.gacha.cards).filter(([id,n])=>n>0);
@@ -180,7 +225,7 @@ async function init(){
   save=loaded.state;
   if(loaded.status==="invalid"){storageOkay=false;setStatus("检测到损坏的新存档：已在内存开启临时新档，原存档未覆盖。",true);}
   else setStatus(loaded.status==="restored"?"已恢复 M0.2 抽卡存档":"全新抽卡存档已就绪。首次战力抽卡可立即进行。");
-  recordEvents([]);paint();
+  recordEvents([]);paint();showView("explore");
  }catch(e){setStatus("加载失败："+e.message,true);for(const id of ["single","auto","push","farm","stop","breakthrough"])el(id).disabled=true;}
 }
 el("collection").addEventListener("click",e=>{
@@ -188,8 +233,10 @@ el("collection").addEventListener("click",e=>{
  try{transaction({type:"EQUIP_TRAIT",cardId:btn.dataset.equip});}
  catch(error){setStatus("装配失败："+error.message,true);}
 });
-el("goExplore").addEventListener("click",()=>el("battlePanel").scrollIntoView({behavior:"smooth",block:"start"}));
-el("goGacha").addEventListener("click",()=>el("packPanel").scrollIntoView({behavior:"smooth",block:"start"}));
+document.addEventListener("click",event=>{
+ const button=event.target.closest("button[data-view]");
+ if(button&&!button.disabled)showView(button.dataset.view);
+});
 el("packs").addEventListener("click",e=>{
  const btn=e.target.closest("[data-pack]");if(!btn||btn.disabled||!save)return;
  try{const beforeSave=structuredClone(save);const result=transaction({type:"DRAW",packId:btn.dataset.pack,count:Number(btn.dataset.count)});beforeSave.seed=save.seed;const before=battlePreview(beforeSave,catalog),after=battlePreview(save,catalog);openResults(result.result,before,after);}
@@ -213,7 +260,7 @@ el("drawModal").addEventListener("click",e=>{if(e.target===el("drawModal"))close
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 el("reset").addEventListener("click",()=>{
  if(!confirm("备份当前抽卡版存档并重新开始？历史 v0.1 与 M0初版存档不会修改。"))return;
- stopAuto();
+ stopAuto();presenter.cancel();lastPresentedValues=null;
  try{save=resetM0Save();storageOkay=true;loglines=[];lastBattle=null;recordEvents([]);setStatus("已备份新旧进度，重新开始抽卡版。");paint();}
  catch(e){setStatus("重开失败："+e.message,true);}
 });
