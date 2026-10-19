@@ -1,8 +1,8 @@
 {
   "version": "0.7",
-  "balanceStatus": "candidate",
+  "balanceStatus": "M0.2 iteration-2: economy income controlled for meaningful farming; still candidate and must be user-tested",
   "global": {
-    "stoneScale": 0.34,
+    "stoneScale": 0.2,
     "xpScale": 0.79,
     "firstClearBonus": 0.35,
     "enemyHealthScale": 1,
