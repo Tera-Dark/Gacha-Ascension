@@ -176,15 +176,27 @@ function oneBattle(){
    const e=save.run.exploration;
    mode(e.highestCleared===STAGE_LIMIT||e.highestCleared>=catalog.ascension.requiredCleared&&!e.ascended?"farm":"push");
   }
-  lastBattle=transaction({type:"BATTLE"})?.result;
+  const preview=battlePreview(save,catalog);
+  const response=transaction({type:"BATTLE"});
+  if(response){
+   lastBattle=response.result;
+   const delay=Math.max(1200,1600*(1-preview.speedPct/100));
+   presenter.play({result:lastBattle,hero:preview.hero,enemy:preview.enemy,
+    enemyName:preview.special?.name||lastBattle.enemyName,duration:Math.min(930,delay*.7)});
+   showRewards(response.events);
+  }
  }catch(e){stopAuto();setStatus("战斗异常："+e.message,true);}
  finally{busy=false;}
 }
-function stopAuto(){auto=false;if(timer!==null)clearTimeout(timer);timer=null;if(save&&catalog)paint();}
+function stopAuto(){
+ auto=false;if(timer!==null)clearTimeout(timer);timer=null;
+ presenter.interval(false,0);if(save&&catalog)paint();
+}
 function schedule(){
  if(!auto)return;
  if(timer!==null)clearTimeout(timer);
- const delay=Math.max(420,1150*(1-battlePreview(save,catalog).speedPct/100));
+ const delay=Math.max(1200,1600*(1-battlePreview(save,catalog).speedPct/100));
+ presenter.interval(true,delay);
  timer=setTimeout(()=>{timer=null;if(!auto)return;if(document.hidden||modalVisible){schedule();return;}oneBattle();if(auto)schedule();},delay);
 }
 function startAuto(){
