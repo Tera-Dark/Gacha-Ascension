@@ -11,7 +11,8 @@ on:
       - "scripts/simulate-m0.mjs"
       - ".github/workflows/m0-tests.yml"
       - "data/codex/codex.v0.5.json"
-      - "data/m0-packs.v0.6.json"
+      - "data/m0-packs.v0.7.json"
+      - "data/m0-encounters.v0.7.json"
   pull_request:
     paths:
       - "src/m0/**"
