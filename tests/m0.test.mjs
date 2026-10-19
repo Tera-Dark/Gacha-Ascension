@@ -9,9 +9,8 @@ import {loadM0Save,saveM0Save,resetM0Save,BACKUP_KEY} from "../src/m0/storage.mj
 
 const raw=JSON.parse(readFileSync(new URL("../data/codex/codex.v0.5.json",import.meta.url),"utf8"));
 const c=loadM0Catalog(raw);
-let counter=0;
 function doCmd(save,type,fields={}){
-  const outcome=executeM0(save,{type,txnId:"test-"+(++counter),...fields},c);
+  const outcome=executeM0(save,{type,txnId:"tx:"+(save.txSequence+1),...fields},c);
   return outcome;
 }
 function advanceTo(save,until){
@@ -88,14 +87,14 @@ test("single battle awards resources and only first clear adds a bonus",()=>{
 
 test("same transaction id never pays twice, cannot be repurposed",()=>{
   const s=createM0Save(7777);
-  const action={type:"BATTLE",txnId:"battle-same"};
+  const action={type:"BATTLE",txnId:"tx:1"};
   const first=executeM0(s,action,c),again=executeM0(first.state,action,c);
   assert.equal(again.duplicate,true);
   assert.equal(again.state,first.state);
   assert.deepEqual(again.result,first.result);
   assert.deepEqual(again.events,[]);
   assert.equal(again.state.run.exploration.battleCount,1);
-  assert.throws(()=>executeM0(first.state,{type:"SET_MODE",mode:"paused",txnId:"battle-same"},c),/reused/);
+  assert.throws(()=>executeM0(first.state,{type:"SET_MODE",mode:"paused",txnId:"tx:1"},c),/reused/);
 });
 
 test("train costs are defined, finite and cannot be charged when locked/insufficient",()=>{
@@ -192,10 +191,27 @@ test("corrupt negative resources / illegal mode / mutable schema are rejected",(
 test("deterministic end-to-end seeds produce identical battle and economy",()=>{
   let a=createM0Save(1234),b=createM0Save(1234);
   for(let i=0;i<3;i++){
-    const command={type:"BATTLE",txnId:"seed-test-"+i};
+    const command={type:"BATTLE",txnId:"tx:"+(a.txSequence+1)};
     const x=executeM0(a,command,c),y=executeM0(b,command,c);
     assert.deepEqual(x.result,y.result);
     a=x.state;b=y.state;
   }
   assert.deepEqual(a,b);
+});
+
+test("transaction receipts are bounded and an evicted old ID cannot re-award",()=>{
+  let state=createM0Save();
+  for(let i=0;i<140;i++){
+    const r=executeM0(state,{type:"SET_MODE",mode:i%2?"push":"paused",txnId:"tx:"+(state.txSequence+1)},c);
+    state=r.state;
+  }
+  assert.equal(state.txSequence,140);
+  assert.equal(state.receiptOrder.length,96);
+  assert.equal(Object.keys(state.receipts).length,96);
+  assert.throws(()=>executeM0(state,{type:"SET_MODE",mode:"paused",txnId:"tx:1"},c),/Stale/);
+  const repeat={type:"SET_MODE",mode:"push",txnId:"tx:140"};
+  const duplicate=executeM0(state,repeat,c);
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(duplicate.state,state);
+  assert.throws(()=>executeM0(state,{type:"BATTLE",txnId:"tx:142"},c),/Stale/);
 });
