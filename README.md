@@ -2,6 +2,11 @@
 
 一个移动端优先的修仙抽卡增量肉鸽 MVP。开局凡人，万物靠抽；在每一世积累灵石、探索地图、提升卡包、构筑功法，并通过轮回抽取永久传承。
 
+## 下一版玩法设计
+
+- [GDD v0.2：探索修炼、境界突破、抽卡点缀的玩法重构提案](docs/GDD-v0.2.md)
+- 当前 `index.html` 仍是 v0.1 可玩原型。**v0.2 仅为待讨论方案，暂未施工。**
+
 ## 在线试玩
 
 项目配置了 GitHub Pages 部署工作流。开启仓库的 **Settings → Pages → Build and deployment → Source: GitHub Actions** 后，即可通过以下地址访问：
