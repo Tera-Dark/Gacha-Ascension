@@ -99,7 +99,7 @@ function weightedCard(state,pack,catalog){
   progress+=w;if(r<progress){tier=k;break;}
  }
  const pool=byTier[tier]||pack.cards;
- return pool[Math.floor(random(state)*pool.length)];
+ return catalog.cards[pool[Math.floor(random(state)*pool.length)].id];
 }
 function tryAutoResume(state,catalog,events){
  const e=state.run.exploration;
