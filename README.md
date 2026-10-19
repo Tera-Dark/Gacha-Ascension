@@ -10,6 +10,7 @@
 - **[全量总图鉴 v0.5](docs/CODEX-v0.5.md)** — 128项候选条目，遗物、功能卡、敌人、关卡、境界与解锁规则。
 - **[在线可筛选图鉴](codex.html)** — GitHub Pages 站内 `codex.html`；筛选稀有度（含鸿蒙）、系统与解锁关卡，并模拟永久遗物层数。
 - **[v0.5 系统与数据架构](docs/architecture-v0.5.md)** — 统一配置、稀有开箱事务、进度解锁、轮回状态。
+- **[游玩节奏与经济闭环](docs/balance-loop-v0.5.md)** — 击杀、修炼、抽卡、轮回的反馈频率和不同层数的因果收益目标。
 - **[v0.5 机器可读 JSON](data/codex/codex.v0.5.json)** / [总条目 CSV](data/codex/catalog.v0.5.csv) / [遗物 CSV](data/codex/relics.v0.5.csv) / [解锁节点 CSV](data/codex/unlocks.v0.5.csv)。
 - 校验：`node scripts/validate-codex.mjs && node scripts/validate-codex-v0.5.mjs`。
 
