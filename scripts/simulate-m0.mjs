@@ -1,63 +1,58 @@
 #!/usr/bin/env node
-/**
- * Deterministic M0 smoke simulation: a budget-aware player who farms,
- * trains the most useful stat, retries and clears the 30-floor demo.
- * Not a replacement for full game balance or human mobile playtests.
- */
+/** Real reducer smoke simulation for gacha-driven progression: no direct-training command. */
 import {readFileSync} from "node:fs";
-import {loadM0Catalog,TRAINING,trainingCost} from "../src/m0/catalog.mjs";
-import {createM0Save,getHeroStats} from "../src/m0/state.mjs";
+import {loadM0Catalog,STAGE_LIMIT,packUnlocked} from "../src/m0/catalog.mjs";
+import {createM0Save,levelCap} from "../src/m0/state.mjs";
 import {executeM0,battlePreview} from "../src/m0/engine.mjs";
-import {damage} from "../src/m0/combat.mjs";
-const source=JSON.parse(readFileSync(new URL("../data/codex/codex.v0.5.json",import.meta.url),"utf8"));
-const catalog=loadM0Catalog(source);
-const metrics=[];
-function run(seed) {
-  let state=createM0Save(seed), training=0, defeats=0;
-  const call=(type,args={})=>{
-    const response=executeM0(state,{type,txnId:"tx:"+(state.txSequence+1),...args},catalog);
-    state=response.state;return response.result;
-  };
-  const assess=(hero,enemy)=> {
-    const h=hero.hp/damage(enemy.attack,hero.defense);
-    const k=enemy.hp/damage(hero.attack,enemy.defense);
-    return h/k;
-  };
-  for(let step=0;step<500 && state.run.exploration.highestCleared<30;step++){
-    const p=battlePreview(state,catalog),h=getHeroStats(state);
-    if(state.meta.featureUnlocks.hero_training){
-      const current=assess(h,p.enemy), options=[];
-      for(const stat of ["attack","hp","defense"]){
-        const cost=trainingCost(stat,state.run.hero.training[stat]);
-        if(state.run.stones<cost)continue;
-        const future={...h,[stat]:h[stat]+TRAINING[stat].amount};
-        options.push({stat,cost,score:Math.log(assess(future,p.enemy)/current)/cost});
-      }
-      // Upgrade when estimated too weak; otherwise let combat decide.
-      if(p.hitsToKill>=p.hitsToFall-1 && options.length){
-        options.sort((a,b)=>b.score-a.score);
-        call("TRAIN_HERO",{stat:options[0].stat});
-        training++;
-        continue;
-      }
-    }
-    if(state.run.exploration.mode!=="push")call("SET_MODE",{mode:"push"});
-    const r=call("BATTLE");
-    if(!r.won){
-      defeats++;
-      if(state.run.exploration.highestCleared>0){
-        // Spend on stable upgrades when possible; otherwise farm until affordable.
-        call("BATTLE");
-      }
-    }
+const raw=JSON.parse(readFileSync(new URL("../data/codex/codex.v0.5.json",import.meta.url),"utf8"));
+const packs=JSON.parse(readFileSync(new URL("../data/m0-packs.v0.6.json",import.meta.url),"utf8"));
+const c=loadM0Catalog(raw,packs);
+const results=[];
+function simulate(seed){
+ let s=createM0Save(seed),draws=0,failures=0,farms=0,gotPill=false,ascended=false;
+ const doIt=(type,args={})=>{
+  const r=executeM0(s,{type,...args,txnId:"tx:"+(s.txSequence+1)},c);
+  s=r.state;return r.result;
+ };
+ doIt("DRAW",{packId:"battle",count:1});draws++;
+ for(let i=0;i<2000 && s.run.exploration.highestCleared<STAGE_LIMIT;i++){
+  const e=s.run.exploration,g=s.run.gacha,p=battlePreview(s,c);
+  const affordable=id=>s.run.stones>=c.packs[id].cost&&packUnlocked(s,c.packs[id]);
+  const draw=id=>{doIt("DRAW",{packId:id,count:1});draws++;};
+  if(e.highestCleared>=20&&!e.ascended){
+    if(!gotPill && (g.pills["P-04"]||0)>0)gotPill=true;
+    if(s.run.hero.level>=12 && (g.pills["P-04"]||0)>0){doIt("BREAKTHROUGH");ascended=true;continue;}
+    if(levelCap(s,c)<12&&affordable("cultivation")){draw("cultivation");continue;}
+    if(!(g.pills["P-04"]>0)&&affordable("elixir")){draw("elixir");continue;}
+    if(s.run.hero.level<12&&levelCap(s,c)<=s.run.hero.level&&affordable("cultivation")){draw("cultivation");continue;}
   }
-  return {seed,depth:state.run.exploration.highestCleared,battles:state.run.exploration.battleCount,
-    training,defeats,level:state.run.hero.level,stones:state.run.stones,stats:getHeroStats(state)};
+  if(e.highestCleared>=5&&g.packDraws.wealth<2&&affordable("wealth")){draw("wealth");continue;}
+  if(e.highestCleared>=10 && (levelCap(s,c)<17||g.packDraws.cultivation<2)&&affordable("cultivation")){draw("cultivation");continue;}
+  if(e.highestCleared>=16&&g.packDraws.elixir<2&&affordable("elixir")){draw("elixir");continue;}
+  if(e.farmReason==="defeat"&&affordable("battle")){
+    draw("battle");
+    if(s.run.exploration.mode==="farm"&&draws%3===0)doIt("SET_MODE",{mode:"push"});
+    continue;
+  }
+  if(e.mode==="paused")doIt("SET_MODE",{mode:"push"});
+  const before=s.run.exploration.mode;
+  const r=doIt("BATTLE");
+  if(!r.won)failures++;
+  if(before==="farm")farms++;
+  if(s.run.exploration.mode==="farm"&&s.run.exploration.farmReason==="defeat"&&s.run.stones<c.packs.battle.cost){
+    // Next iteration farms the last cleared floor.
+  }
+ }
+ return {seed,depth:s.run.exploration.highestCleared,realm:s.run.hero.realm,
+  level:s.run.hero.level,draws,failures,farms,stones:s.run.stones,
+  battles:s.run.exploration.battleCount,keyPillsRemaining:s.run.gacha.pills["P-04"]||0,
+  cultivatedCards:gained(s,"cultivation"),wealthCards:gained(s,"wealth"),
+  starter:s.run.gacha.cards["B-01"]||0,ascended};
 }
+function gained(s,packId){return Object.entries(s.run.gacha.cards).reduce((n,[id,copies])=>n+(c.cards[id]?.packId===packId?copies:0),0)}
 for(const seed of [1,42,456,1337,20261019]){
- const m=run(seed);metrics.push(m);console.log(JSON.stringify(m));
+ const metrics=simulate(seed);results.push(metrics);console.log(JSON.stringify(metrics));
 }
-if(metrics.some(m=>m.depth!==30||m.battles>300||m.stones<0)){
- console.error("M0 balance smoke simulation did not reach a playable conclusion");
- process.exitCode=1;
-}else console.log("M0 basic progression smoke test PASSED for "+metrics.length+" seeds.");
+if(results.some(x=>x.depth!==30||x.realm!=="zhuji"||x.draws<5||x.battles>800)){
+ console.error("M0.1 gacha-only progression smoke FAILED");process.exitCode=1;
+}else console.log("M0.1 gacha-only progression PASSED: "+results.length+" seeds, pill-gated ascension and farming.");
