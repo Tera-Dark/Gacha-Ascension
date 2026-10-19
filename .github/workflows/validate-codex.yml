@@ -6,6 +6,7 @@ on:
       - "docs/**"
       - "scripts/validate-codex.mjs"
       - "scripts/validate-codex-v0.5.mjs"
+      - "scripts/sync-codex-v0.5.mjs"
       - ".github/workflows/validate-codex.yml"
   pull_request:
     paths:
@@ -27,4 +28,4 @@ jobs:
         with:
           node-version: '20'
       - name: Verify codex data
-        run: node scripts/validate-codex.mjs && node scripts/validate-codex-v0.5.mjs
+        run: node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs
