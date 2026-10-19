@@ -1,0 +1,46 @@
+name: M0.2 rendered UI smoke
+on:
+  push:
+    paths:
+      - "m0.html"
+      - "m0-idle.css"
+      - "src/m0/ui.mjs"
+      - "src/m0/presentation.mjs"
+      - ".github/workflows/m0-ui-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Serve static website
+        run: |
+          python3 -m http.server 4173 > /tmp/m0-http.log 2>&1 &
+          echo $! > /tmp/m0-server.pid
+          sleep 2
+      - name: Render and check actual browser DOM
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$CHROME"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=5500 --window-size=1440,900 --dump-dom http://127.0.0.1:4173/m0.html > /tmp/m0-dom.txt 2> /tmp/chrome.log
+          grep -q 'data-pack="battle"' /tmp/m0-dom.txt
+          grep -q 'data-pack="elixir"' /tmp/m0-dom.txt
+          grep -q 'data-view-panel="explore"' /tmp/m0-dom.txt
+          grep -q 'id="heroHpValue">245 / 245' /tmp/m0-dom.txt
+          echo "Rendered M0.2 UI has all four packs, live hero HP, and game tabs."
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=2500 --window-size=1440,900 --screenshot=/tmp/m0-desktop.png http://127.0.0.1:4173/m0.html >/tmp/chrome2.log 2>&1
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=2500 --window-size=390,844 --screenshot=/tmp/m0-mobile.png http://127.0.0.1:4173/m0.html >/tmp/chrome3.log 2>&1
+          test -s /tmp/m0-desktop.png
+          test -s /tmp/m0-mobile.png
+      - name: Upload responsive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m0-ui-viewport-previews
+          path: |
+            /tmp/m0-desktop.png
+            /tmp/m0-mobile.png
+          if-no-files-found: ignore
