@@ -1,4 +1,4 @@
-import {STAGE_TUNING} from "./catalog.mjs";
+import {TUNING} from "./catalog.mjs";
 
 /** Small deterministic XorShift32 RNG: 0 is forbidden. */
 export function nextRandom(seed) {
@@ -25,7 +25,7 @@ export function fight(snapshot, seed) {
   }
   let hpHero=hero.hp,hpEnemy=enemy.hp,rng=seed,heroDamage=0,damageTaken=0,turns=0;
   const log=[];
-  for(let i=0;i<STAGE_TUNING.encounterTurnLimit;i++){
+  for(let i=0;i<TUNING.turnLimit;i++){
     turns=i+1;
     let r=nextRandom(rng);rng=r.seed;
     const hit=damage(hero.attack,enemy.defense,0,0.94+r.value*0.12);
