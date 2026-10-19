@@ -6,13 +6,15 @@
 
 - **[总体游戏设计 v0.5](docs/GDD-v0.5.md)** — 探索→修炼→挑战→轮回的主驱动力、逐层解锁、长期可玩循环。
 - **[鸿蒙异宝与天命箱 v0.5](docs/tianming-relics-v0.5.md)** — 34件遗物，其中4件超稀有、无保底的独立追加掉落，防数值膨胀与毕业后的共鸣机制。
-- **[关卡及系统解锁 v0.5](docs/progression-v0.5.md)** — 从第1层到第150层的解锁规划、游戏前15分钟节奏和重复游玩目标。
-- **[全量总图鉴 v0.5](docs/CODEX-v0.5.md)** — 128项候选条目，遗物、功能卡、敌人、关卡、境界与解锁规则。
+- **[关卡及系统解锁 v0.5](docs/progression-v0.5.md)** — 从账号创建到第150层的解锁规划、游戏前15分钟节奏和重复游玩目标。
+- **[全量总图鉴 v0.5](docs/CODEX-v0.5.md)** — 137项候选条目，遗物、功能卡、敌人、关卡、境界与解锁规则。
 - **[在线可筛选图鉴](codex.html)** — GitHub Pages 站内 `codex.html`；筛选稀有度（含鸿蒙）、系统与解锁关卡，并模拟永久遗物层数。
 - **[v0.5 系统与数据架构](docs/architecture-v0.5.md)** — 统一配置、稀有开箱事务、进度解锁、轮回状态。
+- **[开发前最终审计 v0.5](docs/PREDEV-AUDIT-v0.5.md)** — 已修复的问题、扩展架构评估与可以施工的范围。
+- **[施工实施契约 v0.5](docs/IMPLEMENTATION-CONTRACT-v0.5.md)** — 系统分层、唯一数据源、幂等结算、关卡与轮回解锁协议。
 - **[游玩节奏与经济闭环](docs/balance-loop-v0.5.md)** — 击杀、修炼、抽卡、轮回的反馈频率和不同层数的因果收益目标。
 - **[v0.5 机器可读 JSON](data/codex/codex.v0.5.json)** / [总条目 CSV](data/codex/catalog.v0.5.csv) / [遗物 CSV](data/codex/relics.v0.5.csv) / [解锁节点 CSV](data/codex/unlocks.v0.5.csv)。
-- 校验：`node scripts/validate-codex.mjs && node scripts/validate-codex-v0.5.mjs`。
+- 校验：`node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs`。
 
 **重要：以上 v0.5 是策划与只读图鉴，并不是已开发版本。真正的游戏 `index.html` 仍然是 v0.1 原型，尚未根据 v0.5 改写战斗与成长体系。**
 
