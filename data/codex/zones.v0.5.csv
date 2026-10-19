@@ -1,0 +1,6 @@
+id,name,zoneKey,chapter,mainlineStart,mainlineEnd,phase,state,normalAvailableInSlice,dangerPhase,description
+"ZN-001","青云山麓","qingyun","1","1","30","P0","example_only","true","P1","基础三围、首次修炼、筑基"
+"ZN-002","赤砂荒岭","red_sand","2","31","60","P1","proposal","false","P2","高攻击敌人、筑基期挑战"
+"ZN-003","沧溟古泽","old_marsh","3","61","90","P1","proposal","false","P2","高防与经济成长"
+"ZN-004","九霄雷泽","thunder_realm","4","91","120","P2","proposal","false","P2","爆发敌人、速通挑战"
+"ZN-005","太虚天门","void_gate","5","121","150","P2","proposal","false","P2","道统终局挑战"
