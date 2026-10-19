@@ -1,69 +1,70 @@
-import {M0_SCHEMA, M0_SAVE_KEY, heroBase, TRAINING, trainingCost, experienceNeeded} from "./catalog.mjs";
-
-export function createM0Save(seed=123456789) {
-  if (!Number.isSafeInteger(seed)||seed<=0||seed>0xffffffff) throw Error("Seed must be uint32 > 0");
-  return {
-    schemaVersion:M0_SCHEMA,
-    dataVersion:"0.5-M0",
-    seed,
-    meta:{bestDepth:0,featureUnlocks:{exploration:true},accountFirstClear:{},reincarnations:0,
-      fatePoints:0,relicCopies:{},freeDraws:{},legacyPity:{heaven:0,immortal:0}},
-    run:{
-      runId:"m0-run-"+seed,
-      stones:0,cultivationXp:0,earnedXp:0,
-      hero:{level:1,training:{attack:0,hp:0,defense:0},realmId:"RM-001"},
-      exploration:{highestCleared:0,targetIndex:1,mode:"push",farmingIndex:0,
-        currentRunFirstClear:{},battleCount:0,winCount:0,lossCount:0},
-    },
-    txSequence:0,receipts:{},receiptOrder:[],
-    settings:{autoBattle:false,reducedMotion:false}
-  };
+import {M0_SCHEMA,M0_SAVE_KEY,HERO_BASE,experienceNeeded} from "./catalog.mjs";
+const dict=x=>!!x&&typeof x==="object"&&!Array.isArray(x);
+const nat=x=>Number.isSafeInteger(x)&&x>=0;
+export function createM0Save(seed=123456789){
+ if(!Number.isSafeInteger(seed)||seed<1||seed>0xffffffff)throw Error("Invalid seed");
+ return {schemaVersion:M0_SCHEMA,dataVersion:"0.6-M0",seed,txSequence:0,
+  meta:{bestDepth:0,accountFirstClear:{},featureUnlocks:{exploration:true,battle:true}},
+  run:{stones:65,cultivationXp:0,earnedXp:0,
+    hero:{level:1,realm:"qi",pillStats:{attack:0,hp:0,defense:0},pillAllPct:0},
+    gacha:{cards:{},packDraws:{battle:0,wealth:0,cultivation:0,elixir:0},pills:{},sinceKeyPill:0},
+    exploration:{highestCleared:0,mode:"push",farmFloor:0,farmReason:null,
+      currentRunFirstClear:{},battleCount:0,winCount:0,lossCount:0,ascended:false}},
+  receipts:{},receiptOrder:[],settings:{autoBattle:false}};
 }
-export function getHeroStats(save) {
-  const {level,training}=save.run.hero;
-  return Object.freeze({
-    attack:heroBase.attack+(level-1)*7+training.attack*TRAINING.attack.amount,
-    hp:heroBase.hp+(level-1)*32+training.hp*TRAINING.hp.amount,
-    defense:heroBase.defense+(level-1)*3+training.defense*TRAINING.defense.amount
-  });
+export function effects(save,catalog){
+ const totals={attackFlat:0,hpFlat:0,defenseFlat:0,attackPct:0,hpPct:0,defensePct:0,allBaseStatsPct:0,
+  stoneGainPct:0,xpGainPct:0,speedPct:0,cultivatePowerPct:0,capBoost:0};
+ for(const [id,n] of Object.entries(save.run.gacha.cards)){
+   const c=catalog.cards[id];if(!c||!nat(n))throw Error("Corrupt card collection: "+id);
+   if(c.effect in totals)totals[c.effect]+=c.value*n;
+   if(c.capPerCopy)totals.capBoost+=c.capPerCopy*n;
+ }
+ return totals;
 }
-export function getTrainingPreview(save,stat) {
-  const level=save.run.hero.training[stat];
-  return {level,cost:trainingCost(stat,level),...TRAINING[stat]};
+export function levelCap(save,catalog){return Math.min(250,catalog.levelCapInitial+effects(save,catalog).capBoost);}
+export function getHeroStats(save,catalog){
+ const e=effects(save,catalog),h=save.run.hero,p=h.pillStats;
+ const cultivated=(1+Math.min(3,e.cultivatePowerPct/100));
+ const all=1+Math.min(6,(e.allBaseStatsPct+h.pillAllPct)/100);
+ const realm=h.realm==="zhuji"?catalog.ascension:null;
+ const assemble=(base,flat,pct,percent)=>Math.max(1,Math.floor((base+flat)*all*(1+Math.min(8,pct/100))*cultivated*(realm?1+percent/100:1)));
+ return {attack:assemble(HERO_BASE.attack+(h.level-1)*5+p.attack,e.attackFlat,e.attackPct,realm?.attackPct||0),
+  hp:assemble(HERO_BASE.hp+(h.level-1)*24+p.hp,e.hpFlat,e.hpPct,realm?.hpPct||0),
+  defense:assemble(HERO_BASE.defense+(h.level-1)*2+p.defense,e.defenseFlat,e.defensePct,realm?.defensePct||0)};
 }
-export function levelFromXp(save) {
-  let ups=0;
-  while(save.run.cultivationXp>=experienceNeeded(save.run.hero.level) && save.run.hero.level<500){
-    save.run.cultivationXp-=experienceNeeded(save.run.hero.level);
-    save.run.hero.level++;
-    ups++;
-  }
-  return ups;
+export function levelFromXp(save,catalog){
+ let ups=0;
+ while(save.run.hero.level<levelCap(save,catalog)&&save.run.cultivationXp>=experienceNeeded(save.run.hero.level)){
+  save.run.cultivationXp-=experienceNeeded(save.run.hero.level);
+  save.run.hero.level++;ups++;
+ }
+ // At a cap, retain enough accumulated XP for later breakthroughs without unbounded growth.
+ if(save.run.hero.level===levelCap(save,catalog))save.run.cultivationXp=Math.min(500000,save.run.cultivationXp);
+ return ups;
 }
-function isDict(x) {return x && typeof x==="object"&&!Array.isArray(x)}
-function checkInt(n) {return Number.isSafeInteger(n)&&n>=0}
-export function validateM0Save(save) {
-  if(!isDict(save)||save.schemaVersion!==M0_SCHEMA||save.dataVersion!=="0.5-M0")throw Error("Unsupported save version");
-  if(!checkInt(save.seed)||save.seed===0||save.seed>0xffffffff)throw Error("Invalid saved seed");
-  if(!isDict(save.meta)||!isDict(save.run)||!isDict(save.receipts)||!Array.isArray(save.receiptOrder))throw Error("Malformed save objects");
-  if(!checkInt(save.txSequence)||save.txSequence>Number.MAX_SAFE_INTEGER-1)throw Error("Invalid transaction sequence");
-  if(!isDict(save.meta.featureUnlocks)||!save.meta.featureUnlocks.exploration)throw Error("Exploration must be available");
-  if(!checkInt(save.run.stones)||!checkInt(save.run.cultivationXp)||!checkInt(save.run.earnedXp))throw Error("Negative resources");
-  const h=save.run.hero, e=save.run.exploration;
-  if(!h||!e||!checkInt(h.level)||h.level<1||h.level>500||!isDict(h.training))throw Error("Invalid hero");
-  if(["attack","hp","defense"].some(k=>!checkInt(h.training[k])||h.training[k]>300))throw Error("Invalid training");
-  if(!checkInt(e.highestCleared)||e.highestCleared>30||!checkInt(e.targetIndex)||e.targetIndex<1||e.targetIndex>30)throw Error("Invalid stage");
-  if(!["push","farm","paused"].includes(e.mode)||!checkInt(e.farmingIndex)||e.farmingIndex>e.highestCleared)throw Error("Invalid exploration mode");
-  if(!checkInt(e.battleCount)||!checkInt(e.winCount)||!checkInt(e.lossCount))throw Error("Invalid battle counts");
-  if(e.winCount+e.lossCount!==e.battleCount)throw Error("Battle counts mismatched");
-  if(e.targetIndex!==Math.min(30,e.highestCleared+1))throw Error("Stage target inconsistent");
-  if(!checkInt(save.meta.bestDepth)||save.meta.bestDepth<e.highestCleared)throw Error("Invalid permanent record");
-  if(save.receiptOrder.length>96)throw Error("Excess receipts");
-  if(save.receiptOrder.length!==Object.keys(save.receipts).length ||
-    save.receiptOrder.some(id=>!Object.hasOwn(save.receipts,id)))throw Error("Receipts/receipt order mismatch");
-  return save;
+export function validateM0Save(s){
+ if(!dict(s)||s.schemaVersion!==M0_SCHEMA||s.dataVersion!=="0.6-M0")throw Error("Incompatible v0.6-M0 save");
+ if(!nat(s.seed)||!s.seed||s.seed>0xffffffff||!nat(s.txSequence))throw Error("Invalid seed/transaction");
+ if(!dict(s.meta)||!dict(s.run)||!dict(s.receipts)||!Array.isArray(s.receiptOrder)||!dict(s.settings))throw Error("Invalid save root");
+ const r=s.run,e=r.exploration,h=r.hero,g=r.gacha;
+ if(!r||!e||!h||!g||!dict(s.meta.accountFirstClear)||!dict(s.meta.featureUnlocks))throw Error("Missing state domain");
+ if(!nat(r.stones)||!nat(r.cultivationXp)||!nat(r.earnedXp)||!nat(h.level)||h.level<1||h.level>250||
+   !["qi","zhuji"].includes(h.realm)||!dict(h.pillStats)||!nat(h.pillAllPct)||!dict(g.cards)||!dict(g.pills)||!dict(g.packDraws)||!nat(g.sinceKeyPill))throw Error("Invalid resources/hero");
+ for(const key of ["attack","hp","defense"])if(!nat(h.pillStats[key]))throw Error("Invalid pill buffs");
+ for(const v of Object.values(g.cards))if(!nat(v)||v>1000)throw Error("Invalid card level");
+ for(const v of Object.values(g.pills))if(!nat(v))throw Error("Invalid pill inventory");
+ for(const k of ["battle","wealth","cultivation","elixir"])if(!nat(g.packDraws[k]))throw Error("Invalid pack counter");
+ if(!nat(e.highestCleared)||e.highestCleared>30||!["push","farm","paused"].includes(e.mode)||
+    !nat(e.farmFloor)||e.farmFloor>e.highestCleared||!["defeat","gate",null].includes(e.farmReason)||
+    !nat(e.battleCount)||!nat(e.winCount)||!nat(e.lossCount)||e.winCount+e.lossCount!==e.battleCount||
+    typeof e.ascended!=="boolean"||!dict(e.currentRunFirstClear))throw Error("Invalid stage/exploration");
+ if(e.ascended!==(h.realm==="zhuji"))throw Error("Realm desynchronized");
+ if(e.highestCleared>20&&!e.ascended)throw Error("Invalid unlocked realm gate");
+ if(!nat(s.meta.bestDepth)||s.meta.bestDepth<e.highestCleared)throw Error("Invalid best depth");
+ if(s.receiptOrder.length>96||s.receiptOrder.length!==Object.keys(s.receipts).length||
+    s.receiptOrder.some(id=>!Object.hasOwn(s.receipts,id)))throw Error("Invalid receipts");
+ return s;
 }
-export function cloneM0Save(save) {
-  return structuredClone(validateM0Save(save));
-}
+export function cloneM0Save(s){return structuredClone(validateM0Save(s));}
 export {M0_SAVE_KEY};
