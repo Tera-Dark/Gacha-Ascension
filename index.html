@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101916">
+<meta name="description" content="抽卡修仙传：探索仙途、抽取功法、经营洞府、逆天轮回。">
+<title>抽卡修仙传 · Gacha Ascension</title>
+<style>
+:root{--bg:#0d1715;--surface:#14221e;--surface2:#1a2c26;--surface3:#243930;--line:#355045;--ink:#edeee6;--muted:#98aca1;--gold:#e8c68a;--gold2:#ac8550;--green:#89baa5;--red:#dc937f;--radius:18px}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Noto Serif SC","Songti SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:3px}body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 90% 30% at 51% -10%,#36664d62,transparent),radial-gradient(ellipse 50% 50% at 90% 65%,#3e483527,transparent);z-index:0}body:after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' opacity='.13' filter='url(%23n)'/%3E%3C/svg%3E");z-index:0}
+.app{position:relative;z-index:1;max-width:1220px;margin:auto;padding:25px 26px 50px}.mast{display:flex;gap:20px;align-items:center;justify-content:space-between;margin-bottom:25px}.logo{display:flex;gap:12px;align-items:center}.seal{height:48px;width:48px;border:1px solid #b9a379aa;border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:25px;box-shadow:inset 0 0 0 5px #e8c68a0e}.eyebrow{font-family:system-ui;letter-spacing:.24em;color:var(--gold);font-size:10px;font-weight:700}.brand{font-size:25px;font-weight:800;letter-spacing:.12em;margin-top:3px}.mast-right{display:flex;gap:8px;align-items:center}.chip{border:1px solid var(--line);background:#1a2b2488;padding:9px 13px;border-radius:999px;font-size:12px;color:var(--muted)}.chip b{color:var(--gold);font-size:14px;margin-left:5px}.workspace{display:grid;grid-template-columns:225px minmax(0,1fr);gap:24px;align-items:start}.sidebar{position:sticky;top:20px;display:flex;flex-direction:column;gap:16px}.sidebox,.panel{background:linear-gradient(150deg,#1b2d26f2,#111d1afa);border:1px solid #3f554967;border-radius:var(--radius);box-shadow:0 15px 35px #00000014}.sidebox{padding:17px}.side-title{font-size:10px;color:var(--muted);letter-spacing:.2em;margin-bottom:14px}.character-medallion{height:128px;border-radius:15px;background:radial-gradient(circle at 50% 55%,#285a4f 0,#1c3a32 35%,#152620 68%);display:grid;place-items:center;position:relative;overflow:hidden}.character-medallion:before,.character-medallion:after{content:"";width:105px;height:105px;border:1px solid #bbac7a65;transform:rotate(45deg);position:absolute}.character-medallion:after{width:76px;height:76px;transform:rotate(0deg);border-radius:50%}.character-medallion span{font-size:52px;z-index:1;text-shadow:0 7px 25px #000}.realm{text-align:center;margin:11px 0 3px;font-size:17px;color:var(--gold)}.subtext{font-size:11px;color:var(--muted)}.center{text-align:center}.xp-track,.track{height:6px;border-radius:100px;background:#091310;overflow:hidden}.xp-track i,.track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6f9e7a,var(--gold));transition:width .3s}.statline{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:7px 0;border-bottom:1px solid #344b402c}.statline:last-child{border-bottom:0}.statline span{color:var(--muted)}.statline strong{font-family:system-ui;font-variant-numeric:tabular-nums}.nav{display:flex;flex-direction:column;gap:7px}.nav button{border:1px solid transparent;border-radius:12px;background:transparent;color:#a9b8b0;padding:13px;text-align:left;display:flex;gap:13px;align-items:center;transition:.15s}.nav button:hover{background:#23392d8a}.nav button.active{color:var(--gold);background:#514c3145;border-color:#a18b533d}.nav .navicon{font-size:19px;line-height:1}.main{min-width:0}.view{display:none;animation:fadein .25s}.view.active{display:block}@keyframes fadein{from{opacity:.3;transform:translateY(4px)}to{opacity:1;transform:none}}.heading{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin-bottom:19px}.section-kicker{font-size:11px;letter-spacing:.23em;color:var(--gold);font-family:system-ui;margin-bottom:7px}.heading h1{font-size:27px;font-weight:700;letter-spacing:.04em;margin:0}.heading p{color:var(--muted);font-size:12px;margin:8px 0 0;line-height:1.6}.panel{padding:19px}.small-heading{font-size:15px;color:var(--ink);font-weight:700;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.muted{color:var(--muted)}.gold{color:var(--gold)}.mini{font-size:11px}.num{font-variant-numeric:tabular-nums;font-family:system-ui}.hero{position:relative;overflow:hidden;min-height:220px;padding:26px 29px;border-radius:22px;border:1px solid #5f735b77;background:radial-gradient(ellipse at 82% 70%,#356e5780,transparent 47%),linear-gradient(120deg,#203c32,#172720 70%);display:flex;align-items:center;justify-content:space-between;gap:16px}.hero:before{content:"";position:absolute;inset:10px;background:repeating-radial-gradient(circle at 80% 50%,transparent 0 23px,#b8c9a30d 24px 25px);pointer-events:none}.hero-text{position:relative;z-index:1;max-width:65%}.hero h2{font-size:29px;letter-spacing:.14em;line-height:1.45;margin:10px 0 8px;text-shadow:0 3px 15px #0b120f}.hero p{font-size:12px;color:#c4d4c6;line-height:1.8}.hero-ornament{font-size:100px;opacity:.82;filter:drop-shadow(0 4px 14px #0008);z-index:1;transform:rotate(-8deg)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.btn{border:1px solid #57735c;padding:11px 16px;min-height:43px;border-radius:11px;background:#2b4d3e;color:#f2f0df;font-size:13px;font-weight:700;transition:transform .12s,background .14s}.btn:active{transform:scale(.975)}.btn:hover:not(:disabled){background:#38604d}.btn.gold-btn{background:linear-gradient(130deg,#e1c38b,#cba669);color:#15221b;border-color:#e1c18a}.btn.gold-btn:hover:not(:disabled){background:#f1d49d}.btn.ghost{background:transparent;color:var(--muted);border-color:#4e6255}.btn.danger{background:#68483d;border-color:#946450}.btn.small{padding:8px 12px;min-height:34px;font-size:11px}.dashboard-grid{display:grid;grid-template-columns:1.17fr .83fr;gap:16px;margin-top:16px}.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.statbox{background:#0e201a99;border:1px solid #3c554675;border-radius:11px;padding:13px}.statbox .value{font:700 21px system-ui;margin-top:8px;color:var(--ink)}.statbox .label{font-size:11px;color:var(--muted)}.stage-track{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:19px 0}.stage-node{border:1px solid #415747;border-radius:10px;text-align:center;padding:10px 2px;background:#14231d;color:var(--muted);font:700 14px system-ui}.stage-node.passed{color:var(--green);background:#244233}.stage-node.current{color:var(--gold);border-color:var(--gold2);box-shadow:0 0 16px #b49b5b12}.stage-node.boss{color:#e6a68b}.battle-line{display:flex;gap:10px;align-items:center;justify-content:space-between}.battle-line .number{font:700 21px system-ui}.vs{color:#a38b61;font-size:12px}.battle-result{border-radius:11px;background:#294c3c70;border:1px solid #55705a55;padding:12px;font-size:12px;color:#c9e3c9;margin-top:15px;line-height:1.7}.log{max-height:156px;overflow:auto;display:flex;flex-direction:column;gap:8px}.log-item{font-size:11px;color:var(--muted);border-bottom:1px solid #344a3d55;padding-bottom:7px;line-height:1.5}.log-item b{color:var(--green)}.pack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.pack-card{position:relative;text-align:left;border:1px solid #405e4e;background:linear-gradient(145deg,#263c30,#17271f);border-radius:17px;color:var(--ink);padding:18px;min-height:173px;overflow:hidden;transition:border .15s,transform .15s}.pack-card:hover{border-color:#d1b77d}.pack-card.active{border-color:var(--gold);box-shadow:inset 0 0 0 1px #c8b07744,0 0 25px #b9aa6b10}.pack-card:active{transform:scale(.99)}.pack-card:before{content:"";position:absolute;width:155px;height:155px;border:1px solid #e4d5aa23;border-radius:50%;right:-37px;top:-51px;box-shadow:0 0 0 18px #e9d89c08,0 0 0 39px #e9d89c05}.pack-art{font-size:42px;line-height:1.2;filter:drop-shadow(0 5px 8px #050c09aa);position:relative}.pack-name{font-weight:700;font-size:18px;margin-top:13px}.pack-hint{font-size:11px;color:var(--muted);margin-top:5px}.pack-lv{position:absolute;top:14px;right:14px;color:var(--gold);font:700 11px system-ui}.card-section{margin-top:16px}.pack-purchase{border:1px solid #876e4566;border-radius:17px;background:linear-gradient(130deg,#433c2c55,#1b2922);padding:18px;display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:16px}.pack-purchase h3{margin:0 0 6px;font-size:18px}.pack-purchase p{font-size:11px;color:var(--muted);margin:0;line-height:1.6}.buy-buttons{display:flex;gap:8px}.rarity-strip{display:flex;height:14px;overflow:hidden;border-radius:50px;margin:15px 0 10px}.rarity-strip span{transition:width .2s}.rarity-labels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}.rarity-labels div{text-align:center;font:12px system-ui}.rarity-labels small{font:10px system-ui;color:var(--muted);display:block;margin-top:3px}.rarity-labels b{font-size:12px}.slot-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:17px}.slot{border:1px solid #465a48;border-radius:10px;padding:12px 6px;text-align:center;background:#1b2c2466}.slot strong{font:700 17px system-ui}.slot small{display:block;color:var(--muted);margin-top:6px;font-size:10px}.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin:8px 0 12px}.filter-row button{white-space:nowrap;border:1px solid #415b4d;border-radius:100px;background:#1a2c24;color:var(--muted);padding:9px 13px;font-size:11px}.filter-row button.active{color:#112117;background:var(--gold);border-color:var(--gold)}.inventory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.inventory-card{border:1px solid #46604f;background:#14241d;border-radius:13px;padding:13px;text-align:left;color:var(--ink);min-width:0;position:relative}.inventory-card.equipped{background:#213b2c;border-color:#9b9e69}.inventory-card .rareline{font-size:10px;letter-spacing:.05em}.inventory-card .item-name{font-size:14px;font-weight:700;margin:9px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inventory-card .item-desc{font-size:11px;color:var(--muted);line-height:1.6;min-height:35px}.inventory-card .item-foot{display:flex;justify-content:space-between;align-items:center;font:11px system-ui;margin-top:8px}.inventory-card .item-icon{position:absolute;right:12px;top:12px;font-size:26px;opacity:.85}.equipped-label{color:var(--gold)}.empty{padding:27px;text-align:center;color:var(--muted);font-size:12px;border:1px dashed #4c6654;border-radius:14px;line-height:1.9}.legacy-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}.legacy-card{background:#172920;border:1px solid #3b5a49;padding:13px;border-radius:12px}.legacy-card h3{font-size:13px;margin:7px 0}.legacy-card p{font-size:11px;color:var(--muted);margin:0;line-height:1.6}.score-list{display:grid;gap:12px}.score-list div{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}.score-list strong{color:var(--ink);font:700 14px system-ui}.footer-note{font-size:10px;color:#728c7d;line-height:1.8;margin:17px 0}.modal{position:fixed;z-index:30;inset:0;background:#050d0bc9;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}.modal.show{display:flex}.modal-panel{width:100%;max-width:560px;max-height:90dvh;overflow:auto;background:linear-gradient(160deg,#20382c,#10211b);border:1px solid #82785d;border-radius:20px;box-shadow:0 28px 80px #0009;padding:24px}.modal-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:13px}.modal-top h2{font-size:23px;color:var(--gold);margin:0}.modal-top p{color:var(--muted);font-size:11px;line-height:1.6;margin:7px 0}.close{background:transparent;color:var(--muted);border:1px solid #486151;border-radius:8px;padding:7px 11px}.draw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.draw-card{min-height:132px;padding:13px 10px;background:linear-gradient(150deg,#273e31,#101b17);border:1px solid #546c57;border-top-width:3px;border-radius:12px;text-align:center;animation:rise .32s both}.draw-card .draw-emoji{font-size:32px}.draw-card .draw-name{font-size:13px;font-weight:700;margin-top:9px}.draw-card .draw-tag{font-size:10px;margin:6px 0}.draw-card .draw-info{font-size:10px;color:var(--muted);line-height:1.5}@keyframes rise{from{opacity:.3;transform:translateY(9px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}.toast{position:fixed;z-index:50;top:18px;left:50%;transform:translateX(-50%) translateY(-20px);opacity:0;pointer-events:none;transition:.2s;background:#ede1bf;color:#1d2c21;border-radius:11px;padding:11px 18px;font-size:12px;font-weight:700;box-shadow:0 10px 35px #0007;min-width:140px;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.mobile-nav{display:none}.section-gap{margin-top:16px}.prewrap{white-space:pre-wrap}
+@media(max-width:850px){.app{padding:15px 15px 100px}.workspace{grid-template-columns:1fr}.sidebar{display:none}.mast{margin-bottom:17px}.brand{font-size:20px}.seal{width:39px;height:39px;font-size:22px}.eyebrow{font-size:8px}.mast-right .chip{padding:8px;font-size:11px}.dashboard-grid{grid-template-columns:1fr}.mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;bottom:0;left:0;right:0;z-index:20;background:#14231ff5;border-top:1px solid #51644e;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(15px);box-shadow:0 -10px 30px #0004}.mobile-nav button{border:0;background:transparent;color:#8da99a;display:grid;justify-items:center;gap:4px;font-size:10px;padding:6px 0}.mobile-nav button span{font-size:22px}.mobile-nav button.active{color:var(--gold)}.heading h1{font-size:23px}.heading{margin-bottom:15px}.hero{min-height:185px;padding:19px}.hero h2{font-size:25px}.hero-ornament{font-size:72px}.hero-text{max-width:72%}.panel{padding:15px}}
+@media(max-width:480px){.mast-right{gap:5px}.mast-right .chip{font-size:10px;padding:7px}.chip b{display:block;margin-left:0;font-size:12px}.pack-card{min-height:154px;padding:14px}.pack-art{font-size:36px}.pack-name{font-size:15px}.pack-hint{font-size:10px}.pack-purchase{display:block}.buy-buttons{margin-top:13px}.buy-buttons .btn{flex:1;padding:10px 8px}.stats-grid{gap:7px}.statbox{padding:10px}.statbox .value{font-size:17px}.inventory-card .item-name{font-size:12px}.inventory-card .item-desc{font-size:10px}.slot-summary{gap:6px}.slot strong{font-size:14px}.slot small{font-size:9px}.hero h2{font-size:21px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="mast">
+ <div class="logo"><div class="seal">玄</div><div><div class="eyebrow">GACHA ASCENSION · MVP</div><div class="brand">抽卡修仙传</div></div></div>
+ <div class="mast-right"><div class="chip">◈ 灵石 <b class="num" id="stonesTop">0</b></div><div class="chip">✦ 因果 <b class="num" id="fateTop">0</b></div></div>
+</header>
+<div class="workspace">
+ <aside class="sidebar">
+  <div class="sidebox"><div class="side-title">本世修行 · <span id="lifeIndex">第 1 世</span></div><div class="character-medallion"><span>☯</span></div><div class="realm" id="realmSide">练气一层</div><div class="subtext center" id="levelSide">修为等级 1</div><div class="xp-track" style="margin:12px 0 5px"><i id="xpSide"></i></div><div class="subtext center" id="xpTextSide">0 / 100</div></div>
+  <div class="sidebox"><div class="side-title">仙途境况</div><div class="statline"><span>最高层数</span><strong id="sideStage">1</strong></div><div class="statline"><span>综合战力</span><strong id="sidePower">0</strong></div><div class="statline"><span>本世抽卡</span><strong id="sideDraws">0</strong></div><div class="statline"><span>累计胜场</span><strong id="sideWins">0</strong></div></div>
+  <nav class="nav" aria-label="主要页面"><button class="active" data-tab="explore"><span class="navicon">⌁</span> 仙途探索</button><button data-tab="gacha"><span class="navicon">✧</span> 天命抽卡</button><button data-tab="build"><span class="navicon">▦</span> 功法构筑</button><button data-tab="reincarnate"><span class="navicon">☯</span> 轮回传承</button></nav>
+  <div class="subtext center">本地自动存档 · 无真实广告</div>
+ </aside>
+ <main class="main">
+  <section class="view active" id="view-explore">
+   <div class="heading"><div><div class="section-kicker">IMMORTAL PATH</div><h1>仙途探索</h1><p>自动斩妖、突破关卡，积累本世抽卡资源。</p></div><button class="btn ghost small" id="autoBtn">⏸ 暂停探索</button></div>
+   <div class="hero"><div class="hero-text"><div class="section-kicker">CHAPTER <span id="chapterNum">I</span></div><h2 id="mapTitle">青云山 · 山门初探</h2><p id="mapStory">仙途渺渺，唯有一抽可问天命。</p><button class="btn gold-btn" id="heroDrawBtn">✦ 前往天命抽卡 →</button></div><div class="hero-ornament" aria-hidden="true">⛰</div></div>
+   <div class="dashboard-grid">
+    <div class="panel"><div class="small-heading"><span>探索进度</span><span class="mini muted" id="battleStatus">自动战斗中</span></div><div class="stage-track" id="stageTrack"></div><div class="battle-line"><div><div class="mini muted">道友战力</div><div class="number num gold" id="combatPower">0</div></div><span class="vs">VS</span><div style="text-align:right"><div class="mini muted" id="enemyName">山野妖兽</div><div class="number num" id="enemyPower">0</div></div></div><div class="battle-result" id="fightResult">正在探寻仙途……</div><div class="row section-gap"><button class="btn gold-btn" id="battleOnce">⚔ 手动挑战</button><button class="btn ghost" id="farmToggle">反复扫荡</button></div></div>
+    <div class="panel"><div class="small-heading">修行属性 <span class="mini muted">由等级与卡牌共同决定</span></div><div class="stats-grid"><div class="statbox"><div class="label">攻击</div><div class="value num" id="atk">0</div></div><div class="statbox"><div class="label">气血</div><div class="value num" id="hp">0</div></div><div class="statbox"><div class="label">防御</div><div class="value num" id="def">0</div></div></div><div class="section-gap"><div class="statline"><span>灵石收益加成</span><strong id="stoneBonus">+0%</strong></div><div class="statline"><span>修为收益加成</span><strong id="xpBonus">+0%</strong></div><div class="statline"><span>暴击等效战力</span><strong id="critStat">+0%</strong></div></div><div class="small-heading" style="margin-top:18px">修行札记</div><div class="log" id="battleLog"></div></div>
+   </div>
+  </section>
+  <section class="view" id="view-gacha">
+   <div class="heading"><div><div class="section-kicker">HEAVENLY DRAW</div><h1>天命抽卡</h1><p>凡间万物皆从卡包而来，重复抽取能提升同名卡。</p></div></div>
+   <div class="pack-grid" id="packGrid"></div>
+   <div class="pack-purchase"><div><div class="section-kicker">SELECTED PACK</div><h3 id="selectedPackName">功法包</h3><p id="selectedPackDesc">每抽积累卡包经验，升级提高高品质概率。</p></div><div class="buy-buttons"><button class="btn ghost" id="drawOne">单抽 · 100</button><button class="btn gold-btn" id="drawTen">十连 · 1000</button></div></div>
+   <div class="panel section-gap"><div class="small-heading">天命概率 <span class="mini muted" id="packProgress">卡包 Lv.1</span></div><div class="track"><i id="packXp"></i></div><div class="rarity-strip" id="rarityStrip"></div><div class="rarity-labels" id="rarityLabels"></div><p class="footer-note">概率按所选卡包当前等级计算。每次抽取独立判定；卡包等级仅在本世生效。单抽与十连遵循相同的基础概率；未提供保底。战斗与建筑产出灵石，不能直接掉落卡牌。</p></div>
+  </section>
+  <section class="view" id="view-build">
+   <div class="heading"><div><div class="section-kicker">DAO FOUNDATION</div><h1>功法构筑</h1><p>相同卡牌自动升级；携带槽位有限，选择决定流派方向。</p></div></div>
+   <div class="slot-summary" id="slots"></div>
+   <div class="panel"><div class="small-heading">本世卡藏 <span id="collectionCount" class="mini muted">0 张</span></div><div class="filter-row" id="filters"></div><div class="inventory" id="inventory"></div></div>
+  </section>
+  <section class="view" id="view-reincarnate">
+   <div class="heading"><div><div class="section-kicker">REINCARNATION</div><h1>轮回传承</h1><p>舍弃这一世的修为与财富，抽取可以跨越轮回的天命。</p></div></div>
+   <div class="dashboard-grid" style="margin-top:0">
+    <div class="panel"><div class="small-heading">本世结算预览 <span class="mini gold" id="grade">丙等</span></div><div class="score-list" id="scoreList"></div><div style="background:#253c2e;border-radius:13px;margin-top:16px;padding:15px"><div class="mini muted">轮回可得因果点</div><div class="gold" style="font:700 30px system-ui;margin:4px 0" id="fateReward">0</div><div class="mini muted">越深入仙途，传承奖励越丰厚。</div></div><div class="row section-gap"><button class="btn gold-btn" id="reincarnateBtn">☯ 结束本世 · 开启轮回</button></div><div class="footer-note">轮回后：灵石、修为、地图进度、卡包等级、当世卡牌全部重置。因果点和已抽传承永久保留。本世需要至少 5 场胜利才能轮回领取奖励。</div></div>
+    <div class="panel"><div class="small-heading">永恒天命 <span class="mini muted" id="legacyDrawCount">已抽取 0 次</span></div><div class="center" style="font-size:65px;margin:10px 0 5px;color:var(--gold)">☯</div><p class="center mini muted" style="line-height:1.9">抽取永久传承，下一世自动生效。<br>重复获得同名传承将提升等级。</p><div class="row" style="justify-content:center;margin-top:18px"><button class="btn gold-btn" id="legacyDrawBtn">✧ 抽取传承 · 30 因果</button></div><div class="footer-note center">MVP 采用固定传承池，每种传承最多 8 级。</div></div>
+   </div>
+   <div class="panel section-gap"><div class="small-heading">传承图鉴</div><div class="legacy-list" id="legacyList"></div></div>
+  </section>
+ </main>
+</div>
+</div>
+<nav class="mobile-nav" aria-label="移动端导航"><button class="active" data-tab="explore"><span>⌁</span>探索</button><button data-tab="gacha"><span>✧</span>抽卡</button><button data-tab="build"><span>▦</span>构筑</button><button data-tab="reincarnate"><span>☯</span>轮回</button></nav>
+<div class="toast" id="toast" role="status"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-panel"><div class="modal-top"><div><div class="section-kicker">FATE REVEALED</div><h2 id="modalTitle">天命已定</h2><p id="modalHint"></p></div><button class="close" id="closeModal" aria-label="关闭结果">✕</button></div><div id="modalBody"></div><div class="row" style="justify-content:center;margin-top:18px"><button class="btn gold-btn" id="modalDone">收下天命</button></div></div></div>
+<script>
+(function(){
+'use strict';
+var SAVE_KEY='gacha-ascension-mvp-v1';
+var PACKS=[
+{id:'gongfa',name:'功法包',icon:'📜',caption:'以法入道 · 提升攻防',desc:'功法直接增加战斗属性，剑道与雷法还能形成流派加成。',limit:4},
+{id:'pill',name:'丹药包',icon:'⚗️',caption:'丹道长生 · 仙丹妙药',desc:'丹药提供本世被动增益，修为、生命与资源强化皆在其中。',limit:5},
+{id:'build',name:'建筑包',icon:'🏯',caption:'洞天福地 · 聚财养气',desc:'经营洞府获得灵石与修为加成，为高等级卡包提供燃料。',limit:4},
+{id:'artifact',name:'法宝包',icon:'🗡️',caption:'神兵出世 · 一击破境',desc:'法宝提供攻击倍率、暴击与防护，是突破强敌的关键。',limit:3}
+];
+var TIERS=[{name:'黄阶',color:'#91a497'},{name:'玄阶',color:'#69bb92'},{name:'地阶',color:'#7caee8'},{name:'天阶',color:'#c494e3'},{name:'仙阶',color:'#e9bd6a'}];
+var ODDS=[[64,25,9,1.8,.2],[57,26,12,4.5,.5],[48,28,15,7,2],[40,29,18,10,3]];
+var THRESHOLDS=[0,8,22,48];
+var CARDS=[
+{id:'g1',p:'gongfa',r:0,n:'吐纳心法',e:'📘',type:'hp',v:42,d:'气血增加'},
+{id:'g2',p:'gongfa',r:0,n:'凡人拳谱',e:'👊',type:'atk',v:7,d:'攻击增加'},
+{id:'g3',p:'gongfa',r:1,n:'金刚护体诀',e:'🛡️',type:'def',v:6,d:'防御增加'},
+{id:'g4',p:'gongfa',r:1,n:'小周天诀',e:'🔆',type:'xp',v:12,d:'修为获得增加 %'},
+{id:'g5',p:'gongfa',r:2,n:'御剑真解',e:'⚔️',type:'atkPct',v:15,d:'攻击提升 %',tag:'sword'},
+{id:'g6',p:'gongfa',r:2,n:'雷引心经',e:'⚡',type:'power',v:150,d:'综合战力增加',tag:'thunder'},
+{id:'g7',p:'gongfa',r:3,n:'万剑归宗',e:'🗡️',type:'atkPct',v:32,d:'攻击提升 %',tag:'sword'},
+{id:'g8',p:'gongfa',r:3,n:'九霄雷经',e:'🌩️',type:'powerPct',v:22,d:'综合战力提升 %',tag:'thunder'},
+{id:'g9',p:'gongfa',r:4,n:'太上忘情道',e:'☯️',type:'powerPct',v:42,d:'综合战力提升 %'},
+{id:'g10',p:'gongfa',r:4,n:'一剑开天门',e:'✨',type:'atkPct',v:64,d:'攻击提升 %',tag:'sword'},
+{id:'p1',p:'pill',r:0,n:'养气丹',e:'💊',type:'xp',v:10,d:'修为获得增加 %'},
+{id:'p2',p:'pill',r:0,n:'补血散',e:'🩸',type:'hp',v:40,d:'气血增加'},
+{id:'p3',p:'pill',r:1,n:'聚灵丹',e:'🫙',type:'stone',v:12,d:'灵石获得增加 %'},
+{id:'p4',p:'pill',r:1,n:'淬骨丹',e:'🦴',type:'def',v:8,d:'防御增加'},
+{id:'p5',p:'pill',r:2,n:'筑基丹',e:'🟠',type:'powerPct',v:10,d:'综合战力提升 %'},
+{id:'p6',p:'pill',r:2,n:'洗髓金丹',e:'🌱',type:'hpPct',v:20,d:'气血提升 %'},
+{id:'p7',p:'pill',r:3,n:'九转还魂丹',e:'🌸',type:'hpPct',v:40,d:'气血提升 %'},
+{id:'p8',p:'pill',r:3,n:'悟道玄丹',e:'🌙',type:'xp',v:40,d:'修为获得增加 %'},
+{id:'p9',p:'pill',r:4,n:'混元仙丹',e:'☀️',type:'powerPct',v:32,d:'综合战力提升 %'},
+{id:'p10',p:'pill',r:4,n:'造化神丹',e:'🌟',type:'stone',v:80,d:'灵石获得增加 %'},
+{id:'b1',p:'build',r:0,n:'山间灵田',e:'🌾',type:'stone',v:14,d:'灵石获得增加 %',tag:'land'},
+{id:'b2',p:'build',r:0,n:'小型聚灵阵',e:'🪨',type:'xp',v:12,d:'修为获得增加 %'},
+{id:'b3',p:'build',r:1,n:'炼丹坊',e:'🏺',type:'stone',v:24,d:'灵石获得增加 %',tag:'land'},
+{id:'b4',p:'build',r:1,n:'藏经阁',e:'📚',type:'xp',v:22,d:'修为获得增加 %'},
+{id:'b5',p:'build',r:2,n:'天元商会',e:'🏦',type:'stone',v:42,d:'灵石获得增加 %'},
+{id:'b6',p:'build',r:2,n:'玄天剑冢',e:'⛩️',type:'atkPct',v:16,d:'攻击提升 %',tag:'sword'},
+{id:'b7',p:'build',r:3,n:'九天聚宝盆',e:'💎',type:'stone',v:74,d:'灵石获得增加 %'},
+{id:'b8',p:'build',r:3,n:'雷池道场',e:'🌀',type:'powerPct',v:20,d:'综合战力提升 %',tag:'thunder'},
+{id:'b9',p:'build',r:4,n:'三十三重天',e:'🏛️',type:'powerPct',v:34,d:'综合战力提升 %'},
+{id:'b10',p:'build',r:4,n:'先天灵脉',e:'🌌',type:'stone',v:125,d:'灵石获得增加 %'},
+{id:'a1',p:'artifact',r:0,n:'生铁飞剑',e:'🗡️',type:'atk',v:10,d:'攻击增加',tag:'sword'},
+{id:'a2',p:'artifact',r:0,n:'护身玉佩',e:'🧿',type:'def',v:6,d:'防御增加'},
+{id:'a3',p:'artifact',r:1,n:'青锋剑',e:'⚔️',type:'atkPct',v:9,d:'攻击提升 %',tag:'sword'},
+{id:'a4',p:'artifact',r:1,n:'玄龟甲',e:'🐢',type:'hpPct',v:15,d:'气血提升 %'},
+{id:'a5',p:'artifact',r:2,n:'紫电飞梭',e:'⚡',type:'crit',v:10,d:'暴击等效战力增加 %',tag:'thunder'},
+{id:'a6',p:'artifact',r:2,n:'金蛟剪',e:'✂️',type:'atkPct',v:20,d:'攻击提升 %'},
+{id:'a7',p:'artifact',r:3,n:'诛仙剑胚',e:'🔱',type:'powerPct',v:20,d:'综合战力提升 %',tag:'sword'},
+{id:'a8',p:'artifact',r:3,n:'五雷天印',e:'🌩️',type:'powerPct',v:25,d:'综合战力提升 %',tag:'thunder'},
+{id:'a9',p:'artifact',r:4,n:'东皇钟',e:'🔔',type:'hpPct',v:85,d:'气血提升 %'},
+{id:'a10',p:'artifact',r:4,n:'开天神斧',e:'🪓',type:'powerPct',v:48,d:'综合战力提升 %'}
+];
+var LEGACY=[
+{id:'seed',n:'灵石世家',icon:'💰',desc:'每世初始灵石 +120 / 级'},
+{id:'blade',n:'先天剑骨',icon:'⚔️',desc:'初始攻击 +4 / 级'},
+{id:'body',n:'金身血脉',icon:'🩸',desc:'初始气血 +30 / 级'},
+{id:'guard',n:'玄武护命',icon:'🛡️',desc:'初始防御 +2 / 级'},
+{id:'wealth',n:'聚宝天命',icon:'🏯',desc:'灵石获得 +6% / 级'},
+{id:'wisdom',n:'悟性通明',icon:'🌙',desc:'修为获得 +6% / 级'},
+{id:'luck',n:'天眷之人',icon:'✨',desc:'所有卡包起始抽取经验 +2 / 级'}
+];
+var fmt=function(n){n=Number(n)||0;return Math.floor(n).toLocaleString('zh-CN')};
+var byId=function(id){return document.getElementById(id)};
+var selected='gongfa',filter='all',tab='explore',modalOpen=false,toastTimer=0;
+var allCards={};CARDS.forEach(function(c){allCards[c.id]=c});
+function freshRun(legacy,points,num,legacyDraws){
+ var packDraws={};PACKS.forEach(function(p){packDraws[p.id]=Math.min(7,(legacy.luck||0)*2)});
+ return {version:1,run:num||1,stones:650+120*(legacy.seed||0),xp:0,level:1,cleared:0,wins:0,fights:0,draws:0,collection:{},equipped:[],packDraws:packDraws,auto:true,onlyFarm:false,blocked:false,log:['初入仙门，天道垂青。抽取卡包，开启你的仙途。'],points:points||0,legacy:legacy||{},legacyDraws:legacyDraws||0};
+}
+function load(){
+ try{var s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.version===1&&s.collection&&s.packDraws&&s.legacy){var defaults=freshRun(s.legacy,s.points,s.run,s.legacyDraws);return Object.assign(defaults,s,{packDraws:Object.assign(defaults.packDraws,s.packDraws)})}}catch(e){}
+ return freshRun({},0,1,0);
+}
+var s=load();
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(s))}catch(e){}}
+function toast(message){var el=byId('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){el.classList.remove('show')},2450)}
+function log(message){s.log.unshift(message);s.log=s.log.slice(0,14)}
+function packLevel(id){var v=s.packDraws[id]||0;if(v>=THRESHOLDS[3])return 4;if(v>=THRESHOLDS[2])return 3;if(v>=THRESHOLDS[1])return 2;return 1}
+function xpNeeded(){return 80+Math.floor(30*Math.pow(s.level,1.25))}
+function rarityFromRoll(level){
+ var rates=ODDS[level-1],r=Math.random()*100,sum=0;
+ for(var i=0;i<rates.length;i++){sum+=rates[i];if(r<sum)return i}return 4;
+}
+function pick(array){return array[Math.floor(Math.random()*array.length)]}
+function effect(c,level){return c.v*(1+.42*(level-1))}
+function calc(){
+ var t={atk:25+(s.level-1)*3+4*(s.legacy.blade||0),hp:170+(s.level-1)*21+30*(s.legacy.body||0),def:8+(s.level-1)+2*(s.legacy.guard||0),atkPct:0,hpPct:0,power:0,powerPct:0,crit:0,stone:6*(s.legacy.wealth||0),xp:6*(s.legacy.wisdom||0)};
+ var tags={};s.equipped.forEach(function(id){var c=allCards[id],lv=s.collection[id];if(!c||!lv)return;t[c.type]+=effect(c,lv);if(c.tag)tags[c.tag]=(tags[c.tag]||0)+1});
+ if((tags.sword||0)>=2)t.atkPct+=14;
+ if((tags.thunder||0)>=2)t.powerPct+=18;
+ if((tags.land||0)>=2)t.stone+=12;
+ t.atk=Math.floor(t.atk*(1+t.atkPct/100));t.hp=Math.floor(t.hp*(1+t.hpPct/100));t.def=Math.floor(t.def);
+ var raw=t.atk*6+t.hp*.64+t.def*5+t.power;
+ t.powerValue=Math.floor(raw*(1+t.powerPct/100)*(1+t.crit/200));
+ t.tags=tags;return t;
+}
+function enemyPower(stage){var boss=stage%10===0?1.52:1;return Math.floor(155*Math.pow(1.185,stage-1)*boss)}
+function currentStage(){return Math.min(50,s.cleared+1)}
+function zone(){if(s.cleared<10)return ['青云山 · 山门初探','碧山藏灵，妖兽出没。须以一抽问长生。','I'];if(s.cleared<20)return ['万妖古林 · 云雾深处','古林深幽，灵气渐浓，机缘与危机并存。','II'];if(s.cleared<30)return ['雷泽禁地 · 天威初现','九霄雷鸣，唯有铸就坚实道基才能前行。','III'];if(s.cleared<40)return ['太虚秘境 · 仙人遗迹','太虚裂隙中，隐藏着上古时代的残存道统。','IV'];return ['登仙天阶 · 飞升之门','九重天门已近，今日可否证得无上大道？','V']}
+function fight(manual){
+ var stage=currentStage(),power=calc().powerValue,enemy=enemyPower(stage),canAdvance=stage<=50&&!s.onlyFarm;
+ var isWin=canAdvance&&power>=enemy;
+ var farmStage=s.cleared>0?Math.max(1,s.cleared):1;
+ var farmWin=s.cleared>0||power>=enemyPower(1);
+ var defeated=!isWin&&!farmWin;
+ if(isWin){s.cleared=stage;s.blocked=false;log('突破第 '+stage+' 层！'+(stage%10===0?' 首次击败守关大妖！':''))}
+ else if(!defeated){s.blocked=true;log('未能突破第 '+stage+' 层，转而扫荡第 '+farmStage+' 层。')}
+ else{log('气血不济，请先抽取功法强化战力。')}
+ if(defeated){s.auto=false;return}
+ var rewardStage=isWin?stage:farmStage;
+ var t=calc(),boss=isWin&&stage%10===0;
+ var stones=Math.floor((42+rewardStage*11)*(1+t.stone/100)*(boss?2.5:1)*(isWin?1:0.72));
+ var gainedXp=Math.floor((12+rewardStage*5)*(1+t.xp/100)*(boss?2.3:1));
+ s.stones+=stones;s.xp+=gainedXp;s.wins++;s.fights++;
+ var leveled=0;
+ while(s.xp>=xpNeeded()&&s.level<120){s.xp-=xpNeeded();s.level++;leveled++}
+ if(leveled)log('修为精进，提升至修炼等级 '+s.level+'！');
+ if(isWin||manual||s.fights%4===0)byId('fightResult').innerHTML=(isWin?'<b>⚔ 斩妖成功 · 第 '+stage+' 层突破</b>':(s.onlyFarm?'☷ 扫荡旧关 · ':'☷ 卡关修炼 · ')+'第 '+rewardStage+' 层')+'<br>获得 <strong style="color:var(--gold)">+'+fmt(stones)+' 灵石</strong> · <strong style="color:var(--green)">+'+fmt(gainedXp)+' 修为</strong>';
+ save();render();
+}
+function acquire(card){
+ var old=s.collection[card.id]||0;
+ if(old>=8)return {card:card,text:'已满级 · 转化为灵石'};
+ if(old===0){s.collection[card.id]=1;var count=s.equipped.filter(function(id){return allCards[id].p===card.p}).length;var pack=PACKS.find(function(p){return p.id===card.p});if(count<pack.limit)s.equipped.push(card.id)}
+ else{s.collection[card.id]=old+1}
+ return {card:card,text:old===0?'新卡入藏 '+(s.equipped.indexOf(card.id)>=0?'· 已装配':'· 待装配'):'强化至 Lv.'+s.collection[card.id]}
+}
+function draw(packId,count){
+ var price=100*count;if(s.stones<price){toast('灵石不足，继续探索或建造洞府吧');return}
+ s.stones-=price;var results=[];
+ for(var i=0;i<count;i++){
+   var rarity=rarityFromRoll(packLevel(packId)),pool=CARDS.filter(function(c){return c.p===packId&&c.r===rarity}),c=pick(pool);
+   var res=acquire(c);if((s.collection[c.id]||0)===8&&res.text.indexOf('已满级')===0)s.stones+=Math.floor(40+15*rarity);
+   results.push(res);s.packDraws[packId]++;s.draws++;
+ }
+ log('问天 '+count+' 抽，'+results.filter(function(x){return x.card.r>=3}).length+' 张天阶及以上卡牌现世。');
+ save();render();drawModal(results,count===10?'十连天命 · '+PACKS.find(function(p){return p.id===packId}).name:'天命显现');
+}
+function escapeHtml(t){return String(t).replace(/[&<>"']/g,function(x){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]})}
+function openModal(title,hint,body){modalOpen=true;byId('modalTitle').textContent=title;byId('modalHint').textContent=hint;byId('modalBody').innerHTML=body;byId('modal').classList.add('show')}
+function closeModal(){modalOpen=false;byId('modal').classList.remove('show')}
+function drawModal(results,title){
+ var out='<div class="draw-grid">';
+ results.forEach(function(x,i){var c=x.card,t=TIERS[c.r];out+='<div class="draw-card" style="border-top-color:'+t.color+';animation-delay:'+(Math.min(i,8)*.045)+'s"><div class="draw-emoji">'+c.e+'</div><div class="draw-name">'+c.n+'</div><div class="draw-tag" style="color:'+t.color+'">'+t.name+'</div><div class="draw-info">'+x.text+'</div></div>'});
+ out+='</div>';openModal(title,'重复卡自动升至 Lv.8；空余槽位会自动装配。',out);
+}
+function equipCard(id){
+ var card=allCards[id];if(!card||!s.collection[id])return;
+ var index=s.equipped.indexOf(id);
+ if(index>=0){s.equipped.splice(index,1);toast('已卸下 '+card.n)}
+ else{var num=s.equipped.filter(function(k){return allCards[k].p===card.p}).length;var p=PACKS.find(function(k){return k.id===card.p});if(num>=p.limit){toast(p.name+'槽位已满，请先卸下一张');return}s.equipped.push(id);toast('已装配 '+card.n)}
+ save();render();
+}
+function score(){
+ var boss=Math.floor(s.cleared/10),sum=Object.keys(s.collection).length,raw=s.cleared*13+boss*75+Math.min(120,s.level*3)+Math.min(100,sum*3);
+ return {stage:s.cleared,boss:boss,level:s.level,collection:sum,total:raw,points:Math.max(1,Math.floor(raw/8))};
+}
+function reincarnate(){
+ if(s.wins<5){toast('至少获得 5 场胜利才可轮回');return}
+ var result=score();
+ var msg='本世到达第 '+s.cleared+' 层，获得 '+result.points+' 因果点。';
+ if(!confirm('确认轮回？\n\n'+msg+'\n\n本世灵石、卡牌和地图进度将清空，永久传承保留。'))return;
+ var logMsg='第 '+s.run+' 世已结算。';
+ var next=freshRun(s.legacy,s.points+result.points,s.run+1,s.legacyDraws);s=next;s.log=[logMsg,'新一世轮回开始。继承传承的庇护，重新踏上仙途。'];selected='gongfa';filter='all';tab='reincarnate';
+ save();render();switchTab('reincarnate');toast('轮回完成！获得 '+result.points+' 因果点');
+}
+function drawLegacy(){
+ if(s.points<30){toast('因果点不足，请继续推进仙途并轮回');return}
+ s.points-=30;s.legacyDraws++;
+ var eligible=LEGACY.filter(function(x){return (s.legacy[x.id]||0)<8});
+ if(!eligible.length){s.points+=30;toast('传承均已满级');return}
+ var one=pick(eligible);s.legacy[one.id]=(s.legacy[one.id]||0)+1;
+ if(one.id==='seed')s.stones+=120;
+ if(one.id==='luck')PACKS.forEach(function(p){s.packDraws[p.id]+=2});
+ log('获得永恒传承「'+one.n+'」Lv.'+s.legacy[one.id]);save();render();
+ openModal('永恒传承 · '+one.n,'传承自动生效，轮回后永久保留。','<div class="draw-card" style="max-width:250px;margin:auto;border-top-color:var(--gold)"><div class="draw-emoji">'+one.icon+'</div><div class="draw-name">'+one.n+'</div><div class="draw-tag gold">永久传承 Lv.'+s.legacy[one.id]+'</div><div class="draw-info">'+one.desc+'</div></div>');
+}
+function renderHeader(){
+ byId('stonesTop').textContent=fmt(s.stones);byId('fateTop').textContent=fmt(s.points);
+ byId('lifeIndex').textContent='第 '+s.run+' 世';byId('realmSide').textContent=realmName();byId('levelSide').textContent='修为等级 '+s.level;
+ byId('xpSide').style.width=Math.min(100,100*s.xp/xpNeeded())+'%';byId('xpTextSide').textContent=fmt(s.xp)+' / '+fmt(xpNeeded());
+ var t=calc();byId('sideStage').textContent=s.cleared;byId('sidePower').textContent=fmt(t.powerValue);byId('sideDraws').textContent=s.draws;byId('sideWins').textContent=s.wins;
+}
+function realmName(){
+ var names=['练气','筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫','真仙'];
+ var idx=Math.min(names.length-1,Math.floor((s.level-1)/10)),rank=((s.level-1)%10)+1;
+ return names[idx]+(idx<9?' '+rank+' 层':'');
+}
+function renderExplore(){
+ var z=zone(),t=calc(),stage=currentStage();byId('mapTitle').textContent=z[0];byId('mapStory').textContent=z[1];byId('chapterNum').textContent=z[2];
+ byId('autoBtn').textContent=s.auto?'⏸ 暂停探索':'▶ 开始探索';
+ byId('farmToggle').textContent=s.onlyFarm?'⚔ 开启挑战':'☷ 反复扫荡';
+ byId('battleStatus').textContent=!s.auto?'探索已暂停':s.onlyFarm?'正在反复扫荡':t.powerValue>=enemyPower(stage)?'自动挑战中':'卡关 · 自动积累资源';
+ var nodes='';for(var i=Math.max(1,stage-2);i<=Math.min(50,Math.max(5,stage+2));i++){nodes+='<div class="stage-node '+(i<=s.cleared?'passed':i===stage?'current':'')+(i%10===0?' boss':'')+'">'+(i%10===0?'☠ ':i<=s.cleared?'✓ ':'')+i+'</div>'}byId('stageTrack').innerHTML=nodes;
+ byId('combatPower').textContent=fmt(t.powerValue);byId('enemyPower').textContent=fmt(enemyPower(stage));byId('enemyName').textContent=stage%10===0?'守关大妖 · 第 '+stage+' 层':'山海异兽 · 第 '+stage+' 层';
+ byId('atk').textContent=fmt(t.atk);byId('hp').textContent=fmt(t.hp);byId('def').textContent=fmt(t.def);
+ byId('stoneBonus').textContent='+'+fmt(t.stone)+'%';byId('xpBonus').textContent='+'+fmt(t.xp)+'%';byId('critStat').textContent='+'+fmt(t.crit)+'%';
+ byId('battleLog').innerHTML=s.log.map(function(x){return '<div class="log-item">'+escapeHtml(x)+'</div>'}).join('');
+}
+function renderGacha(){
+ byId('packGrid').innerHTML=PACKS.map(function(p){return '<button class="pack-card '+(p.id===selected?'active':'')+'" data-pack="'+p.id+'"><div class="pack-lv">Lv.'+packLevel(p.id)+'</div><div class="pack-art">'+p.icon+'</div><div class="pack-name">'+p.name+'</div><div class="pack-hint">'+p.caption+'</div></button>'}).join('');
+ var p=PACKS.find(function(k){return k.id===selected}),lv=packLevel(selected),current=s.packDraws[selected]||0,next=THRESHOLDS[lv]||THRESHOLDS[3];
+ byId('selectedPackName').textContent=p.name+' · Lv.'+lv;byId('selectedPackDesc').textContent=p.desc;
+ byId('packProgress').textContent=lv===4?'卡包已满级':('卡包经验 '+current+'/'+next);
+ byId('packXp').style.width=lv===4?'100%':(Math.min(100,100*(current-(THRESHOLDS[lv-1]||0))/(next-(THRESHOLDS[lv-1]||0))))+'%';
+ var rates=ODDS[lv-1];byId('rarityStrip').innerHTML=rates.map(function(v,i){return '<span style="width:'+v+'%;background:'+TIERS[i].color+'"></span>'}).join('');
+ byId('rarityLabels').innerHTML=rates.map(function(v,i){return '<div><b style="color:'+TIERS[i].color+'">'+TIERS[i].name+'</b><small>'+v+'%</small></div>'}).join('');
+ byId('drawOne').disabled=s.stones<100;byId('drawTen').disabled=s.stones<1000;
+}
+function renderBuild(){
+ byId('slots').innerHTML=PACKS.map(function(p){var count=s.equipped.filter(function(id){return allCards[id].p===p.id}).length;return '<div class="slot"><strong>'+count+' / '+p.limit+'</strong><small>'+p.name.replace('包','')+'槽位</small></div>'}).join('');
+ byId('filters').innerHTML=([{id:'all',name:'全部'}].concat(PACKS)).map(function(p){return '<button data-filter="'+p.id+'" class="'+(filter===p.id?'active':'')+'">'+p.name+'</button>'}).join('');
+ var cards=CARDS.filter(function(c){return s.collection[c.id]&&(filter==='all'||filter===c.p)}).sort(function(a,b){return b.r-a.r||a.p.localeCompare(b.p)});
+ byId('collectionCount').textContent=Object.keys(s.collection).length+' 种卡牌 · 已装配 '+s.equipped.length+' 张';
+ var text=cards.map(function(c){var lv=s.collection[c.id],isEquipped=s.equipped.indexOf(c.id)>=0,t=TIERS[c.r],num=Math.round(effect(c,lv)*10)/10;return '<button class="inventory-card '+(isEquipped?'equipped':'')+'" data-equip="'+c.id+'"><div class="rareline" style="color:'+t.color+'">'+t.name+' · '+PACKS.find(function(p){return p.id===c.p}).name.replace('包','')+'</div><div class="item-icon">'+c.e+'</div><div class="item-name">'+c.n+'</div><div class="item-desc">'+c.d+' '+num+(c.type==='stone'||c.type==='xp'||c.type==='atkPct'||c.type==='hpPct'||c.type==='powerPct'||c.type==='crit'?'%':'')+'</div><div class="item-foot"><span>Lv.'+lv+' / 8</span><span class="'+(isEquipped?'equipped-label':'muted')+'">'+(isEquipped?'◆ 已装配 · 点击卸下':'◇ 点击装配')+'</span></div></button>'}).join('');
+ byId('inventory').innerHTML=text||'<div class="empty" style="grid-column:1/-1">尚未获得此类卡牌。<br>前往天命抽卡，将万般机缘收入囊中。</div>';
+}
+function renderReincarnate(){
+ var r=score();byId('scoreList').innerHTML='<div><span>探索最高层数</span><strong>'+r.stage+' 层</strong></div><div><span>击败守关大妖</span><strong>'+r.boss+' 位</strong></div><div><span>修为等级</span><strong>Lv.'+r.level+'</strong></div><div><span>本世收集卡种</span><strong>'+r.collection+' 种</strong></div><div><span>轮回总评分</span><strong>'+fmt(r.total)+'</strong></div>';
+ byId('grade').textContent=r.total>=1000?'仙品':r.total>=500?'甲等':r.total>=250?'乙等':'丙等';
+ byId('fateReward').textContent=s.wins>=5?'+'+fmt(r.points):'未解锁（需 5 场胜利）';byId('reincarnateBtn').disabled=s.wins<5;
+ byId('legacyDrawCount').textContent='已抽取 '+s.legacyDraws+' 次';byId('legacyDrawBtn').disabled=s.points<30||LEGACY.every(function(x){return (s.legacy[x.id]||0)>=8});
+ byId('legacyList').innerHTML=LEGACY.map(function(x){return '<div class="legacy-card"><div>'+x.icon+' <span class="mini gold">Lv.'+(s.legacy[x.id]||0)+'/8</span></div><h3>'+x.n+'</h3><p>'+x.desc+'</p></div>'}).join('');
+}
+function render(){renderHeader();renderExplore();renderGacha();renderBuild();renderReincarnate()}
+function switchTab(next){tab=next;document.querySelectorAll('[data-tab]').forEach(function(el){el.classList.toggle('active',el.dataset.tab===tab)});document.querySelectorAll('.view').forEach(function(el){el.classList.toggle('active',el.id==='view-'+tab)});window.scrollTo({top:0,behavior:'auto'})}
+document.addEventListener('click',function(e){
+ var item=e.target.closest('[data-tab]');if(item){switchTab(item.dataset.tab);return}
+ item=e.target.closest('[data-pack]');if(item){selected=item.dataset.pack;renderGacha();return}
+ item=e.target.closest('[data-filter]');if(item){filter=item.dataset.filter;renderBuild();return}
+ item=e.target.closest('[data-equip]');if(item){equipCard(item.dataset.equip);return}
+});
+byId('heroDrawBtn').addEventListener('click',function(){switchTab('gacha')});
+byId('autoBtn').addEventListener('click',function(){s.auto=!s.auto;save();render();toast(s.auto?'自动探索已开启':'已暂停探索')});
+byId('farmToggle').addEventListener('click',function(){s.onlyFarm=!s.onlyFarm;save();render();toast(s.onlyFarm?'开始持续扫荡已通关地图':'重新挑战新地图')});
+byId('battleOnce').addEventListener('click',function(){fight(true)});
+byId('drawOne').addEventListener('click',function(){draw(selected,1)});
+byId('drawTen').addEventListener('click',function(){draw(selected,10)});
+byId('reincarnateBtn').addEventListener('click',reincarnate);
+byId('legacyDrawBtn').addEventListener('click',drawLegacy);
+byId('closeModal').addEventListener('click',closeModal);
+byId('modalDone').addEventListener('click',closeModal);
+byId('modal').addEventListener('click',function(e){if(e.target===byId('modal'))closeModal()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modalOpen)closeModal()});
+render();
+setInterval(function(){if(!s.auto||modalOpen||document.hidden)return;fight(false)},1850);
+window.addEventListener('pagehide',save);
+})();
+</script>
+</body>
+</html>
