@@ -20,6 +20,10 @@ export function executeM0(original, command, catalog) {
     if(found.signature!==signature)throw Error("Transaction id reused for a different operation");
     return {state:original,result:structuredClone(found.result),events:[],duplicate:true};
   }
+  const txmatch=/^tx:([1-9][0-9]*)$/.exec(command.txnId);
+  const sequence=txmatch?Number(txmatch[1]):NaN;
+  if(!Number.isSafeInteger(sequence) || sequence!==original.txSequence+1)
+    throw Error("Stale, skipped, or invalid transaction sequence");
   if(!catalog || !catalog.byId)throw Error("M0 catalog missing");
   const state=cloneM0Save(original);
   const events=[];
@@ -34,8 +38,15 @@ export function executeM0(original, command, catalog) {
     default:throw Error("Unsupported command");
   }
   // Commit receipt after every validation, mutation and reward succeeded.
+  state.txSequence=sequence;
   state.receipts[command.txnId]={signature,result:structuredClone(result)};
   state.receiptOrder.push(command.txnId);
+  // Keep detail logs small. Old sequence numbers remain permanently rejected
+  // even after their receipt bodies are pruned.
+  if(state.receiptOrder.length>96){
+    const expired=state.receiptOrder.shift();
+    delete state.receipts[expired];
+  }
   return {state,result,events,duplicate:false};
 }
 
