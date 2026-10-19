@@ -1,0 +1,294 @@
+{
+  "version": "0.7-prototype",
+  "designNote": "M0.2 candidate. Four progression packs, 4 tactical stance cards with one exclusive slot; encounter-specific economy under simulation.",
+  "packs": [
+    {
+      "id": "battle",
+      "name": "战力秘藏",
+      "unlockedAt": 0,
+      "cost": 65,
+      "description": "起始开放。攻击、气血、防御与四种互斥主战特性；首次抽卡固定破军剑诀。",
+      "cards": [
+        {
+          "id": "B-01",
+          "name": "破军剑诀",
+          "rarity": "huang",
+          "effect": "attackFlat",
+          "value": 16,
+          "description": "每层攻击+16"
+        },
+        {
+          "id": "B-02",
+          "name": "玄甲护体",
+          "rarity": "huang",
+          "effect": "defenseFlat",
+          "value": 8,
+          "description": "每层防御+8"
+        },
+        {
+          "id": "B-03",
+          "name": "血炼金身",
+          "rarity": "xuan",
+          "effect": "hpFlat",
+          "value": 95,
+          "description": "每层气血+95"
+        },
+        {
+          "id": "B-04",
+          "name": "流云剑心",
+          "rarity": "xuan",
+          "effect": "attackPct",
+          "value": 8,
+          "description": "每层攻击+8%"
+        },
+        {
+          "id": "B-05",
+          "name": "不灭金骨",
+          "rarity": "di",
+          "effect": "defensePct",
+          "value": 13,
+          "description": "每层防御+13%"
+        },
+        {
+          "id": "B-06",
+          "name": "天罡破阵",
+          "rarity": "tian",
+          "effect": "allBaseStatsPct",
+          "value": 12,
+          "description": "每层攻防血基础属性+12%"
+        },
+        {
+          "id": "B-07",
+          "name": "连斩剑意",
+          "rarity": "xuan",
+          "effect": "battleTrait",
+          "mechanicId": "combo",
+          "value": 1,
+          "description": "主战特性：每3次攻击触发额外斩击，重复抽中强化"
+        },
+        {
+          "id": "B-08",
+          "name": "裂甲真诀",
+          "rarity": "xuan",
+          "effect": "battleTrait",
+          "mechanicId": "pierce",
+          "value": 1,
+          "description": "主战特性：削减敌方有效防御，对坚甲敌人更强"
+        },
+        {
+          "id": "B-09",
+          "name": "护体灵光",
+          "rarity": "huang",
+          "effect": "battleTrait",
+          "mechanicId": "ward",
+          "value": 1,
+          "description": "主战特性：开战生成额外护盾，对抗高爆发"
+        },
+        {
+          "id": "B-10",
+          "name": "金身反震",
+          "rarity": "di",
+          "effect": "battleTrait",
+          "mechanicId": "counter",
+          "value": 1,
+          "description": "主战特性：受击后按防御反击，对久战有效"
+        }
+      ]
+    },
+    {
+      "id": "wealth",
+      "name": "聚财机缘",
+      "unlockedAt": 5,
+      "cost": 105,
+      "description": "第5层开放。提高每场灵石产量或探索结算速度。",
+      "cards": [
+        {
+          "id": "W-01",
+          "name": "聚宝铜钱",
+          "rarity": "huang",
+          "effect": "stoneGainPct",
+          "value": 10,
+          "description": "每层灵石收益+18%"
+        },
+        {
+          "id": "W-02",
+          "name": "金砂灵脉",
+          "rarity": "huang",
+          "effect": "stoneGainPct",
+          "value": 14,
+          "description": "每层灵石收益+24%"
+        },
+        {
+          "id": "W-03",
+          "name": "寻宝灵猫",
+          "rarity": "xuan",
+          "effect": "stoneGainPct",
+          "value": 20,
+          "description": "每层灵石收益+34%"
+        },
+        {
+          "id": "W-04",
+          "name": "疾行符箓",
+          "rarity": "xuan",
+          "effect": "speedPct",
+          "value": 9,
+          "description": "每层探索结算间隔缩短9%"
+        },
+        {
+          "id": "W-05",
+          "name": "万宝聚灵盆",
+          "rarity": "di",
+          "effect": "stoneGainPct",
+          "value": 35,
+          "description": "每层灵石收益+60%"
+        },
+        {
+          "id": "W-06",
+          "name": "天府金库",
+          "rarity": "tian",
+          "effect": "stoneGainPct",
+          "value": 61,
+          "description": "每层灵石收益+105%"
+        }
+      ]
+    },
+    {
+      "id": "cultivation",
+      "name": "修为造化",
+      "unlockedAt": 10,
+      "cost": 125,
+      "description": "第10层开放。每抽必提高修炼上限，同时影响修为速度或基础属性。",
+      "cards": [
+        {
+          "id": "C-01",
+          "name": "吐纳周天",
+          "rarity": "huang",
+          "effect": "xpGainPct",
+          "value": 22,
+          "capPerCopy": 4,
+          "description": "每层修为收益+22%，等级上限+4"
+        },
+        {
+          "id": "C-02",
+          "name": "聚灵法阵",
+          "rarity": "huang",
+          "effect": "xpGainPct",
+          "value": 30,
+          "capPerCopy": 4,
+          "description": "每层修为收益+30%，等级上限+4"
+        },
+        {
+          "id": "C-03",
+          "name": "灵根洗练",
+          "rarity": "xuan",
+          "effect": "cultivatePowerPct",
+          "value": 9,
+          "capPerCopy": 5,
+          "description": "每层境界属性+9%，等级上限+5"
+        },
+        {
+          "id": "C-04",
+          "name": "玄元真息",
+          "rarity": "xuan",
+          "effect": "xpGainPct",
+          "value": 48,
+          "capPerCopy": 5,
+          "description": "每层修为收益+48%，等级上限+5"
+        },
+        {
+          "id": "C-05",
+          "name": "大道筑灵",
+          "rarity": "di",
+          "effect": "cultivatePowerPct",
+          "value": 16,
+          "capPerCopy": 6,
+          "description": "每层境界属性+16%，等级上限+6"
+        },
+        {
+          "id": "C-06",
+          "name": "太初道种",
+          "rarity": "tian",
+          "effect": "xpGainPct",
+          "value": 80,
+          "capPerCopy": 8,
+          "description": "每层修为收益+80%，等级上限+8"
+        }
+      ]
+    },
+    {
+      "id": "elixir",
+      "name": "丹道宝匣",
+      "unlockedAt": 16,
+      "cost": 145,
+      "description": "第16层开放。第20层守关后须获得并消耗一枚筑基丹突破。",
+      "pityTarget": "P-04",
+      "pityAt": 8,
+      "cards": [
+        {
+          "id": "P-01",
+          "name": "养气丹",
+          "rarity": "huang",
+          "effect": "instantXp",
+          "value": 160,
+          "description": "抽到后立即获得160修为"
+        },
+        {
+          "id": "P-02",
+          "name": "淬体丹",
+          "rarity": "huang",
+          "effect": "instantHp",
+          "value": 75,
+          "description": "抽到后本世最大气血永久+75"
+        },
+        {
+          "id": "P-03",
+          "name": "凝神丹",
+          "rarity": "xuan",
+          "effect": "instantAttack",
+          "value": 22,
+          "description": "抽到后本世攻击永久+22"
+        },
+        {
+          "id": "P-04",
+          "name": "筑基丹",
+          "rarity": "xuan",
+          "effect": "realmPill",
+          "value": 1,
+          "description": "存入丹药背包；第20层后消耗1枚完成筑基"
+        },
+        {
+          "id": "P-05",
+          "name": "洗髓神丹",
+          "rarity": "di",
+          "effect": "instantAll",
+          "value": 28,
+          "description": "抽到后本世攻防血基础属性+28%"
+        },
+        {
+          "id": "P-06",
+          "name": "九转灵丹",
+          "rarity": "tian",
+          "effect": "instantAll",
+          "value": 60,
+          "description": "抽到后本世攻防血基础属性+60%"
+        }
+      ]
+    }
+  ],
+  "rarityWeights": {
+    "huang": 54,
+    "xuan": 31,
+    "di": 12,
+    "tian": 3
+  },
+  "levelCapInitial": 10,
+  "ascension": {
+    "requiredCleared": 20,
+    "requiredLevel": 12,
+    "requiredPill": "P-04",
+    "attackPct": 65,
+    "hpPct": 90,
+    "defensePct": 55
+  },
+  "weightsDisclosure": "所有卡包黄54%玄31%地12%天3%；只在卡包已配置的品质内分配，缺席品质回退该包全部内容（待后期细化）；初始战力首抽固定B-01；丹道保底每8抽内P-04。"
+}
