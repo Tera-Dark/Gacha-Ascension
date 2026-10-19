@@ -87,7 +87,16 @@ function paint(){
  el("headerStones").textContent=fmt(save.run.stones);
  el("headerRealm").textContent=(e.ascended?"筑基":"练气")+" · Lv."+h.level;
  const currentValues={stones:save.run.stones,level:h.level,depth:e.highestCleared,attack:stats.attack,hp:stats.hp,defense:stats.defense};
- if(lastPresentedValues)for(const [id,key] of [["stones","stones"],["depth","depth"],["level","level"],["sideAttack","attack"],["sideHp","hp"],["sideDefense","defense"]])bump(id,lastPresentedValues[key]!==currentValues[key]);
+ if(lastPresentedValues){
+  for(const [id,key] of [["stones","stones"],["depth","depth"],["level","level"],["sideAttack","attack"],["sideHp","hp"],["sideDefense","defense"]])
+   bump(id,lastPresentedValues[key]!==currentValues[key]);
+  const stronger=["attack","hp","defense"].some(key=>currentValues[key]>lastPresentedValues[key]);
+  if(stronger){
+   bump("heroStats",true);
+   const aura=el("heroSprite");
+   aura.classList.remove("power-up");void aura.offsetWidth;aura.classList.add("power-up");
+  }
+ }
  lastPresentedValues=currentValues;
  el("sideAttack").textContent=fmt(stats.attack);
  el("sideHp").textContent=fmt(stats.hp);
