@@ -155,7 +155,8 @@ function weightedCard(s,pack,catalog){
 }
 function autoRetry(s,catalog,events){
  const e=s.run.exploration;
- if(e.mode!=="farm"||e.farmReason!=="defeat"||e.highestCleared>=STAGE_LIMIT)return;
+ if(e.mode!=="farm"||e.farmReason!=="defeat"||e.highestCleared>=STAGE_LIMIT||
+   (e.highestCleared>=catalog.ascension.requiredCleared&&!e.ascended))return;
  if(forecast(s,catalog,e.highestCleared+1).predicted.won){
   e.mode="push";e.farmReason=null;
   events.push({type:"AutoRetry",floor:e.highestCleared+1});
