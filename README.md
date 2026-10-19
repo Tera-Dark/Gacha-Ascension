@@ -2,20 +2,23 @@
 
 一个移动端优先的修仙抽卡增量肉鸽 MVP。开局凡人，万物靠抽；在每一世积累灵石、探索地图、提升卡包、构筑功法，并通过轮回抽取永久传承。
 
-## 游戏设计文档（最新 v0.4）
+## 当前规划总入口：GDD v0.5
 
-- **[总体 GDD v0.4](docs/GDD-v0.4.md)** — 探索、战斗、境界、多系统养成、分类卡包与轮回的一体化设计。
-- **[天命遗物系统 v0.4](docs/tianming-relics-v0.4.md)** — 30 件自动生效的永久遗物、重复叠层、保底、满级退池。
-- **[总图鉴 CODEX](docs/CODEX.md)** — 110 条候选内容及数值索引，包括遗物、功法、建筑、灵宠、敌人和关卡。
-- **[独立可筛选图鉴查看页](codex.html)** — GitHub Pages 可通过 `/Gacha-Ascension/codex.html` 访问，支持品质、系统、ID 筛选及遗物层数模拟。
-- **[数据与技术架构 v0.4](docs/architecture-v0.4.md)** — 状态归属、全局效果计算和统一抽卡结算。
-- 数据文件：[`data/codex/`](data/codex/)（JSON 和 CSV，设计候选数值）。
+- **[总体游戏设计 v0.5](docs/GDD-v0.5.md)** — 探索→修炼→挑战→轮回的主驱动力、逐层解锁、长期可玩循环。
+- **[鸿蒙异宝与天命箱 v0.5](docs/tianming-relics-v0.5.md)** — 34件遗物，其中4件超稀有、无保底的独立追加掉落，防数值膨胀与毕业后的共鸣机制。
+- **[关卡及系统解锁 v0.5](docs/progression-v0.5.md)** — 从第1层到第150层的解锁规划、游戏前15分钟节奏和重复游玩目标。
+- **[全量总图鉴 v0.5](docs/CODEX-v0.5.md)** — 128项候选条目，遗物、功能卡、敌人、关卡、境界与解锁规则。
+- **[在线可筛选图鉴](codex.html)** — GitHub Pages 站内 `codex.html`；筛选稀有度（含鸿蒙）、系统与解锁关卡，并模拟永久遗物层数。
+- **[v0.5 系统与数据架构](docs/architecture-v0.5.md)** — 统一配置、稀有开箱事务、进度解锁、轮回状态。
+- **[v0.5 机器可读 JSON](data/codex/codex.v0.5.json)** / [总条目 CSV](data/codex/catalog.v0.5.csv) / [遗物 CSV](data/codex/relics.v0.5.csv) / [解锁节点 CSV](data/codex/unlocks.v0.5.csv)。
+- 校验：`node scripts/validate-codex.mjs && node scripts/validate-codex-v0.5.mjs`。
 
-**注意：目前 v0.4 仅为设计与图鉴查看工具，在线游戏 `index.html` 仍是旧 v0.1 原型。没有实施 v0.4 玩法重构。**
+**重要：以上 v0.5 是策划与只读图鉴，并不是已开发版本。真正的游戏 `index.html` 仍然是 v0.1 原型，尚未根据 v0.5 改写战斗与成长体系。**
 
-### 历史设计（非当前基准）
+### 历史版本
 
-- [GDD v0.3](docs/GDD-v0.3.md) · [架构 v0.3](docs/architecture-v0.3.md) · [GDD v0.2](docs/GDD-v0.2.md)。设计有冲突时以 v0.4 为准。
+- [v0.4 总体设计](docs/GDD-v0.4.md) / [v0.4 图鉴](docs/CODEX.md) / [v0.4 遗物规则](docs/tianming-relics-v0.4.md) / [v0.4 架构](docs/architecture-v0.4.md)。
+- [v0.3 总体设计](docs/GDD-v0.3.md) / [v0.2 总体设计](docs/GDD-v0.2.md)。发生冲突以最新 v0.5 为准。
 
 ## 在线试玩
 
