@@ -9,7 +9,7 @@
     "test:m0": "node --test tests/m0.test.mjs",
     "check:content": "node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs",
     "check": "npm run check:content && npm run test && npm run simulate:m0 && npm run build",
-    "build": "node scripts/verify-m0-pages.mjs",
+    "build": "node --check src/m0/ui.mjs && node scripts/verify-m0-pages.mjs",
     "simulate:m0": "node scripts/simulate-m0.mjs"
   },
   "engines": {
