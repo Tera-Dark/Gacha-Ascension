@@ -1,4 +1,5 @@
 name: M0.2 long-run balance sweep
+# Includes post-draw realm-lock regression fix.
 on:
   push:
     paths:
