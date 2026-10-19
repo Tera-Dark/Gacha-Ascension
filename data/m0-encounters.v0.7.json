@@ -1,0 +1,124 @@
+{
+  "version": "0.7",
+  "balanceStatus": "candidate",
+  "global": {
+    "stoneScale": 0.34,
+    "xpScale": 0.79,
+    "firstClearBonus": 0.35,
+    "enemyHealthScale": 1,
+    "enemyAttackScale": 1,
+    "enemyDefenseScale": 1
+  },
+  "enemyTraitDescriptions": {
+    "thick_hide": "厚皮：额外生命",
+    "iron_shell": "玄甲：更高有效防御",
+    "first_burst": "暴烈：首回合伤害显著提高",
+    "regeneration": "汲血：每回合恢复部分生命"
+  },
+  "majorFloors": [
+    {
+      "floor": 5,
+      "name": "狼王试锋",
+      "traitIds": [
+        "thick_hide"
+      ],
+      "attackScale": 1,
+      "hpScale": 1.65,
+      "defenseScale": 1.1,
+      "rewardScale": 0.9,
+      "hint": "首次精英：生命厚实，连斩和攻击成长能节省大量回合"
+    },
+    {
+      "floor": 10,
+      "name": "玄甲守关",
+      "traitIds": [
+        "iron_shell"
+      ],
+      "attackScale": 1.05,
+      "hpScale": 1.35,
+      "defenseScale": 3,
+      "rewardScale": 1.12,
+      "hint": "玄甲敌人防御很高，建议裂甲或持续攻击；突破后解锁修为造化"
+    },
+    {
+      "floor": 15,
+      "name": "暴烈妖将",
+      "traitIds": [
+        "first_burst"
+      ],
+      "attackScale": 2.25,
+      "hpScale": 1.6,
+      "defenseScale": 0.95,
+      "rewardScale": 1.18,
+      "hint": "敌人第一回合猛烈爆发，可用护盾或更高生存对抗"
+    },
+    {
+      "floor": 20,
+      "name": "炼气镇关使",
+      "traitIds": [
+        "thick_hide",
+        "first_burst"
+      ],
+      "attackScale": 1.5,
+      "hpScale": 1.5,
+      "defenseScale": 1.1,
+      "rewardScale": 1.3,
+      "hint": "击败后还需Lv.12与筑基丹才能突破到筑基境"
+    },
+    {
+      "floor": 25,
+      "name": "噬血妖藤",
+      "traitIds": [
+        "regeneration"
+      ],
+      "attackScale": 1.2,
+      "hpScale": 2.2,
+      "defenseScale": 1.2,
+      "rewardScale": 1.15,
+      "hint": "妖藤每回合回复一定气血，爆发连击或金身反击可以缩短战斗"
+    },
+    {
+      "floor": 30,
+      "name": "青云古魔",
+      "traitIds": [
+        "iron_shell",
+        "first_burst"
+      ],
+      "attackScale": 2.15,
+      "hpScale": 2.2,
+      "defenseScale": 2.3,
+      "rewardScale": 1.7,
+      "hint": "终章首领兼具玄甲与开场爆发，选择主战特性再战"
+    }
+  ],
+  "traitDefinitions": {
+    "combo": {
+      "id": "combo",
+      "name": "连斩剑意",
+      "phase": "HERO_ATTACK",
+      "maxStacks": 6,
+      "description": "每3次英雄攻击，附加一次按叠层增强的连击，单次最多主击的110%"
+    },
+    "pierce": {
+      "id": "pierce",
+      "name": "裂甲真诀",
+      "phase": "HERO_ATTACK",
+      "maxStacks": 6,
+      "description": "无视15%+每层5%的目标防御，最高50%"
+    },
+    "ward": {
+      "id": "ward",
+      "name": "护体灵光",
+      "phase": "BATTLE_START",
+      "maxStacks": 6,
+      "description": "开战生成最高气血10%+每层5%的护盾，最高40%"
+    },
+    "counter": {
+      "id": "counter",
+      "name": "金身反震",
+      "phase": "ON_HIT",
+      "maxStacks": 6,
+      "description": "遭受伤害后按防御18%+每层8%反击，最大不超过主角攻击60%"
+    }
+  }
+}
