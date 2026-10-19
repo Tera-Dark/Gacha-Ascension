@@ -130,6 +130,7 @@ test("an insufficient level or missing pill prevents ascension without consuming
 });
 test("after a defeat, exploration falls back one floor and remains farmable",()=>{
  const s=grant(createM0Save(1337),{depth:29,stones:0});
+ s.run.hero.realm="zhuji";s.run.exploration.ascended=true;
  const r=exec(s,"BATTLE");
  assert.equal(r.result.floor,30);assert.equal(r.result.won,false);assert.equal(r.result.stones,0);
  assert.equal(r.state.run.exploration.mode,"farm");assert.equal(r.state.run.exploration.farmFloor,29);
