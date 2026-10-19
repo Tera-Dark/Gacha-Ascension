@@ -17,7 +17,7 @@
 - **存档独立**：M0.2 使用 Schema v3 与 `gacha-ascension-m0-v3`，不覆盖 M0.1、M0或最早v0.1的记录。
 - **回归**：`npm run check`、`npm run simulate:m0`；大样本独立测试为 `node scripts/simulate-m0.mjs --full`。
 
-**[完整修改方案 v0.7](docs/ROADMAP-v0.7-M0.2.md)** ｜ **[新版已完成范围与验收指南](docs/M0.2-ACCEPTANCE-v0.7.md)** ｜ **[机制与经济配置](data/m0-encounters.v0.7.json)** ｜ **[28张卡与卡包配置](data/m0-packs.v0.7.json)**
+**[完整修改方案 v0.7](docs/ROADMAP-v0.7-M0.2.md)** ｜ **[新版已完成范围与验收指南](docs/M0.2-ACCEPTANCE-v0.7.md)** ｜ **[3000种子经济平衡验收报告](docs/M0.2-BALANCE-REPORT.md)** ｜ **[机制与经济配置](data/m0-encounters.v0.7.json)** ｜ **[28张卡与卡包配置](data/m0-packs.v0.7.json)**
 
 本版为玩法验证切片，**正式轮回、天命遗物、洞府、灵宠和更多境域尚未开发**，不是完整版游戏。关卡与经济数值仍为候选，接下来要用真实玩家反馈调节。
 
