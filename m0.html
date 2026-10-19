@@ -1,37 +1,21 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101914"><title>抽卡修仙传 · M0 引擎验收台</title><link rel="stylesheet" href="./m0.css"></head>
-<body><main class="shell">
-<header class="mast"><div><div class="kicker">Gacha Ascension · Milestone Zero</div><h1>抽卡修仙传 <span style="color:var(--gold)">M0 验收台</span></h1><p>独立战斗引擎 · 确定性数值成长 · 自动探索 · 本地安全存档</p></div><nav class="linkrow" aria-label="项目导航"><a href="./index.html">旧版 v0.1</a><a href="./codex.html">v0.5 总图鉴</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/IMPLEMENTATION-CONTRACT-v0.5.md">实施契约</a></nav></header>
-<div class="warning"><strong>这是 M0 工程验收版本。</strong> 为便于验证，用已有 30 关样例和临时平衡倍率演示战斗与资源底座；未实现功法、洞府、灵宠、抽卡和轮回。此页与旧版使用不同存档键，不会清除你之前的游戏进度。自动探索仅在页面运行期间执行，不计算离线收益。</div>
-<section class="statstrip" aria-label="游戏资源及记录">
-<div class="topstat"><small>当前境界 / 等级</small><b id="level">练气 · Lv.1</b></div>
-<div class="topstat"><small>持有灵石</small><b id="stones">0</b></div>
-<div class="topstat"><small>修为存量</small><b id="experience">0 / 40</b><div class="bar"><span id="xpbar"></span></div></div>
-<div class="topstat"><small>本次最高通关</small><b id="depth">0 / 30</b></div>
-</section>
-<div class="workspace">
-<div class="column">
-<section class="panel"><div class="panelhead"><h2>仙途 · 青云山麓</h2><span class="badge" id="mode">冲层</span></div>
-<div class="fightfloor" aria-live="polite"><div class="kicker" id="stage">普通 · 第 1 层</div><div class="fightopponent" aria-hidden="true" id="monsterIcon">♜</div><div class="enemyname" id="enemyName">草木精</div><div class="enemyline" id="enemyStats">敌人 · 攻击 — / 气血 — / 防御 —</div>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101914"><title>抽卡修仙传 · 抽卡驱动核心验收</title><link rel="stylesheet" href="./m0.css"></head><body><main class="shell">
+<header class="mast"><div><div class="kicker">GACHA ASCENSION / M0.1 CORE LOOP</div><h1>抽卡修仙传 <span style="color:var(--gold)">· 抽卡驱动验收</span></h1><p>杀敌得资源 · 抽卡长实力 · 自动推进 · 丹药突破</p></div><nav class="linkrow"><a href="./index.html">历史 v0.1</a><a href="./codex.html">设计图鉴</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/M0-GACHA-ACCEPTANCE.md">本版验收说明</a></nav></header>
+<div class="warning"><strong>核心规则已重做：</strong> 灵石不能直接强化属性。只有抽卡能获得战力、资源效率、修炼能力与丹药。第 5 / 10 / 16 层依次解锁新卡包；击破第 20 层后必须有 <strong>筑基丹＋Lv.12</strong> 才能突破境界继续推图。这是独立的玩法验收切片，30 层仍使用调试数值；旧 M0 / v0.1 存档均保留。</div>
+<section class="statstrip"><div class="topstat"><small>境界 / 修为等级</small><b id="level">练气 · Lv.1</b><small id="cap">修炼上限：Lv.10</small></div><div class="topstat"><small>灵石 · 抽卡资源</small><b id="stones">65</b><small>击杀与聚财卡提升收益</small></div><div class="topstat"><small>当前修为进度</small><b id="experience">0 / 45</b><div class="bar"><span id="xpbar"></span></div></div><div class="topstat"><small>最高通关层数</small><b id="depth">0 / 30</b><small id="speed">自动战斗 · 标准速度</small></div></section>
+<div class="workspace"><div class="column">
+<section class="panel"><div class="panelhead"><h2>仙途探索 · 青云山麓</h2><span class="badge" id="mode">自动冲关</span></div>
+<div class="fightfloor"><div class="kicker" id="stage">第1层</div><div class="fightopponent" aria-hidden="true">⚔</div><div class="enemyname" id="enemyName">加载中</div><div class="enemyline" id="enemyStats">战斗基础奖励</div>
 <div class="vsbanner"><div class="vsunit">修士<br><strong id="heroStats">—</strong></div><div class="vsunit">对手<br><strong id="enemyCompact">—</strong></div></div>
-<div class="combatline" id="preview">正在载入战斗规则……</div></div>
-<div class="controls">
-<button class="btn primary" id="single">单次挑战</button><button class="btn" id="auto">自动冲层</button>
-<button class="btn secondary" id="farm">扫荡已通关层</button><button class="btn secondary" id="stop">暂停探索</button>
-</div><p class="subtle" id="lastBattle" role="status" aria-live="polite">战斗将即时结算，动画与数值结算相互独立。</p></section>
-<section class="panel"><div class="panelhead"><h2>关卡推进</h2><span class="badge" id="firstClear">前方目标：第10层守关</span></div><div class="progressrow" id="progress" aria-label="关卡进度"></div><p class="progresslabel">绿色为已击破；金边为下一目标；10、20、30 层为守关节点。</p></section>
-<section class="panel"><div class="panelhead"><h2>本次交锋战报</h2><span class="badge" id="battles">0 战</span></div><div class="logs" id="logs" aria-live="polite"><div class="log">等待开始挑战。</div></div></section>
-</div>
-<aside class="column">
-<section class="panel"><div class="panelhead"><h2>修炼 · 灵石淬炼</h2><span class="badge" id="trainingLock">第3层解锁</span></div><p class="subtle">攻防血三条不同的确定成长路径。提升后会改变真实战斗回合数，而不只是“综合战力”数字。</p><div class="training">
-<div class="train"><div class="train-title">淬锋 · 攻击 <span class="tiny" id="attackLv">Lv.0</span></div><div class="train-desc" id="attackDesc">每次 +10 攻击</div><button class="btn" id="trainattack">淬锋</button></div>
-<div class="train"><div class="train-title">锻体 · 气血 <span class="tiny" id="hpLv">Lv.0</span></div><div class="train-desc" id="hpDesc">每次 +46 气血</div><button class="btn" id="trainhp">锻体</button></div>
-<div class="train"><div class="train-title">护脉 · 防御 <span class="tiny" id="defenseLv">Lv.0</span></div><div class="train-desc" id="defenseDesc">每次 +6 防御</div><button class="btn" id="traindefense">护脉</button></div>
-</div></section>
-<section class="panel"><div class="panelhead"><h2>引擎与存档</h2><span class="badge">M0 · schema 1</span></div>
-<div class="subtle">战斗：同随机种子可复现<br>收益：同一交易号只能结算一次<br>内容：直接读取 v0.5 图鉴里的关卡/怪物<br>存档：浏览器 LocalStorage，与 v0.1 独立</div>
-<div class="controls"><button class="btn secondary" id="export">导出 M0 存档</button><button class="btn critical" id="reset">备份并重开</button></div>
-<p class="tiny" id="saveStatus">正在读取存档……</p></section>
-<section class="panel"><div class="panelhead"><h2>后续阶段（未施工）</h2><span class="badge">M1–M3</span></div><p class="subtle">M1：境界突破和完整探索平衡<br>M2：功法、洞府、灵宠和分类卡包<br>M3：轮回、因果点、天命遗物、鸿蒙奖池</p><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/PREDEV-AUDIT-v0.5.md" class="tiny">查看开发前审计与验收标准 ↗</a></section>
-</aside></div>
-<p class="footer">工程验收版本使用静态资源，不收集玩家数据、不提供真实广告或付费功能。若刷新后数据未保留，请检查浏览器本地存储权限。遇到异常可通过 GitHub Issue 提交关卡层数与重现步骤。</p>
-</main><script type="module" src="./src/m0/ui.mjs"></script></body></html>
+<div class="combatline" id="preview">正在读取战斗数值</div></div>
+<div class="controls"><button class="btn primary" id="single">挑战一场</button><button class="btn" id="auto">开启自动推图</button><button class="btn secondary" id="push">主动再闯关</button><button class="btn secondary" id="farm">扫荡上一层</button><button class="btn secondary full" id="stop">暂停探索</button></div>
+<p class="subtle" id="lastBattle" aria-live="polite">第一抽战力卡已备好。前期先抽战力，等卡关时再刷怪抽卡升级。</p></section>
+<section class="panel" id="realmPanel"><div class="panelhead"><h2>境界之门</h2><span class="badge" id="gateStatus">未抵达</span></div><p class="subtle" id="gateDescription">第20层守关以后会遇到境界锁。需要抽丹药包获得「筑基丹」，还要通过修为卡包提高等级上限并达到Lv.12。</p><div class="rowcompact"><span id="pillCounter">筑基丹 ×0</span><span id="gateLevel">修为等级 Lv.1 / 12</span></div><button id="breakthrough" class="btn primary full" disabled>未达到突破条件</button></section>
+<section class="panel"><div class="panelhead"><h2>关卡路线</h2><span class="badge" id="nextUnlock">下个解锁：第5层</span></div><div class="progressrow" id="progress"></div><p class="progresslabel">5层聚财 · 10层修为 · 16层丹药 · 20层境界门槛 · 30层验收终点</p></section>
+<section class="panel"><div class="panelhead"><h2>最新结算 / 机缘</h2><span class="badge" id="battles">0战</span></div><div class="logs" id="logs"><div class="log">等待第一场战斗或首次抽卡。</div></div></section>
+</div><aside class="column">
+<section class="panel"><div class="panelhead"><h2>机缘卡包 · 万物皆抽</h2><span class="badge">4大成长路线</span></div><p class="subtle">所有卡牌抽中即生效，同名再次抽到自动叠层。无需额外点“强化”，战斗获取的灵石主要用来开箱。</p><div id="packs" class="packs"></div></section>
+<section class="panel"><div class="panelhead"><h2>本世功法与藏品</h2><span class="badge" id="collectionCount">0种</span></div><div id="collection" class="collection"></div><p class="tiny">战力、聚财、修为卡效果自动叠加；丹药中的筑基丹会保存在这里等待突破。</p></section>
+<section class="panel"><div class="panelhead"><h2>存档与验证</h2><span class="badge">M0.1 · schema 2</span></div><p class="subtle">战斗和抽卡共用可复现的随机种子，扣费与领奖是同一事务。本地存档与此前旧版隔离。旧版进度不会自动转换成新机制。</p><div class="controls"><button class="btn secondary" id="export">导出新存档</button><button class="btn critical" id="reset">备份并重开</button></div><p class="tiny" id="saveStatus">载入中……</p></section>
+</aside></div><p class="footer">这是核心玩法验收切片，不代表所有系统已开发完毕。后续洞府、灵宠、法宝及天命遗物会继续按“抽卡获取，再由所属系统发挥效果”的规则接入。</p>
+</main><div class="modal" id="drawModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true"><div class="dialog"><div class="panelhead"><h2 id="modalTitle">本次机缘</h2><button class="btn secondary" id="closeModal">关闭</button></div><div id="modalResults"></div><button class="btn primary full" id="modalDone">收入囊中</button></div></div>
+<script type="module" src="./src/m0/ui.mjs"></script></body></html>
