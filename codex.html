@@ -22,12 +22,12 @@ label{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:6
 @media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){h1{font-size:22px}.cards{grid-template-columns:1fr}.filters label:first-child{grid-column:1/-1}main{padding:20px 12px 40px}}
 </style></head><body><main>
-<div class="eyebrow">GACHA ASCENSION · DESIGN CODEX V0.5</div><h1>抽卡修仙传 · 总图鉴</h1><p>128 项设计内容的统一索引：新增四件无保底鸿蒙异宝及逐层开放的14项系统功能，可按类别、品质、系统与编号筛选。</p>
+<div class="eyebrow">GACHA ASCENSION · DESIGN CODEX V0.5</div><h1>抽卡修仙传 · 总图鉴</h1><p>137 项设计内容的统一索引：新增四件无保底鸿蒙异宝及逐层开放的14项系统功能，可按类别、品质、系统与编号筛选。</p>
 <nav><a href="index.html">旧版游戏</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/GDD-v0.5.md">总体设计</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/CODEX.md">Markdown 图鉴</a><a href="data/codex/catalog.v0.5.csv">全目录 CSV</a></nav>
 <div class="notice">注意：当前仅为设计提案与数值预览，并非在线 MVP 已实装功能。鸿蒙额外判定 0.01%/箱，且无保底；所有数值尚待模拟校准。</div>
 <div class="summary" id="stats"><div><b>—</b><small>条目总数</small></div><div><b>—</b><small>永久遗物</small></div><div><b>—</b><small>功能卡片</small></div><div><b>—</b><small>关卡样例</small></div></div>
 <div class="filters"><label>搜索名称 / ID / 属性<input id="search" placeholder="TM-025、玄龟、功法、灵石"></label>
-<label>类型<select id="type"><option value="">全部类型</option><option value="relic">永久遗物（含鸿蒙）</option><option value="unlock">关卡解锁里程碑</option><option value="prototype">功能卡牌</option><option value="enemy">敌人</option><option value="stage">关卡</option><option value="realm">境界</option><option value="pack">卡包</option></select></label>
+<label>类型<select id="type"><option value="">全部类型</option><option value="relic">永久遗物（含鸿蒙）</option><option value="unlock">关卡解锁里程碑</option><option value="prototype">功能卡牌</option><option value="enemy">敌人</option><option value="stage">关卡</option><option value="zone">地图境域</option><option value="realm">境界</option><option value="pack">卡包</option></select></label>
 <label>稀有度<select id="rarity"><option value="">全部稀有度</option><option value="huang">黄阶</option><option value="xuan">玄阶</option><option value="di">地阶</option><option value="tian">天阶</option><option value="xian">仙阶</option><option value="hongmeng">鸿蒙异宝</option></select></label>
 <label>所属系统<select id="system"><option value="">全部系统</option></select></label></div>
 <div id="count" role="status">正在加载数据……</div><section class="cards" id="items"></section>
@@ -49,7 +49,8 @@ function normalize(data){
  data.stages.forEach(function(x){arr.push(Object.assign({kind:'stage',kindName:'关卡',system:'探索',rarity:'',name:x.zone+'·'+x.floor+'层',summary:x.enemyName+' · 攻'+x.baseAttack+' / 血'+x.baseHp+' / 防'+x.baseDefense+' · 灵石+'+x.stones},x))});
  data.realms.forEach(function(x){arr.push(Object.assign({kind:'realm',kindName:'境界',system:'修士',rarity:'',summary:'等级 '+x.levelStart+'-'+x.levelEnd+' / 下一境界 '+x.breakthroughTo},x))});
  data.packs.forEach(function(x){arr.push(Object.assign({kind:'pack',kindName:'卡包',rarity:'',summary:x.asset+' / 消耗'+x.currency},x))});
- data.unlocks.forEach(function(x){arr.push(Object.assign({kind:'unlock',kindName:'关卡解锁',system:'关卡解锁',rarity:'',summary:'账号主线首次通过第'+x.mainlineDepth+'层解锁 · '+x.phase+' · '+(x.rewardPolicy==='one_free_run_pack_draw'?'附赠该系统卡包免费抽取资格':'系统内容开放')},x))});
+ data.unlocks.forEach(function(x){arr.push(Object.assign({kind:'unlock',kindName:'关卡解锁',system:'关卡解锁',rarity:'',summary:'主线深度'+x.mainlineDepth+' · '+x.progressSource+' · '+x.phase+' · '+(x.rewardPolicy==='one_free_run_pack_draw'?'免费抽卡资格':'功能开放')},x))});
+ data.zones.forEach(function(x){arr.push(Object.assign({kind:'zone',kindName:'地图境域',system:'关卡',rarity:'',summary:'主线'+x.mainlineStart+'–'+x.mainlineEnd+' · '+x.description+' · '+x.phase+(x.normalAvailableInSlice?' · 有30层数值样例':' · 未实装占位')},x))});
  return arr.sort(function(a,b){return Number(!!b.isUltra)-Number(!!a.isUltra)});
 }
 function render(){
@@ -62,6 +63,8 @@ function row(k,v){return '<div class="detailrow"><span>'+esc(k)+'</span><strong>
 function detail(x){
  var html=row('编号',x.id)+row('类型',x.kindName)+row('系统',x.system)+row('品质',tiers[x.rarity]||'不适用')+row('状态',x.state||'设计提案')+row('说明',x.description||x.summary);
  if(x.kind==='relic')html+=row('属性 Key',x.effectKey)+row('每层增益',x.isUltra?'×'+x.valuePerStack:'+'+x.valuePerStack+x.unit)+row('最高层数',x.maxStacks)+row('最高原始总增益',x.isUltra?'×'+x.maxRawValue:'+'+x.maxRawValue+x.unit)+row('获取来源',x.isUltra?'0.01%独立追加奖池，永久无保底':'轮回因果 · 天命遗物箱')+'<div class="sim"><strong>模拟收藏层数：<span id="simCount">0/'+x.maxStacks+'</span></strong><input id="simSlider" aria-label="查看不同遗物层数数值" type="range" min="0" max="'+x.maxStacks+'" value="0"><div id="simOutput">'+(x.isUltra?'尚未拥有':'当前原始增益：+0'+esc(x.unit))+'</div></div>';
+ if(x.kind==='zone')html+=row('主线范围',x.mainlineStart+'–'+x.mainlineEnd)+row('开发阶段',x.phase)+row('可玩状态',x.normalAvailableInSlice?'有示例数值':'仅规划');
+ if(x.kind==='unlock')html+=row('触发事件',x.progressSource)+row('主线深度',x.mainlineDepth)+row('前置系统',(x.prerequisiteFeatureIds||[]).join('、')||'无')+row('免费抽卡包',x.freeDrawPackId||'无');
  if(x.kind==='stage')html+=row('敌人ID',x.enemyId)+row('基础攻击',x.baseAttack)+row('基础气血',x.baseHp)+row('基础防御',x.baseDefense)+row('基础灵石收益',x.stones)+row('基础修为收益',x.cultivationXp);
  el('detailType').textContent=x.kindName+' · '+x.id;el('detailTitle').textContent=x.name;el('details').innerHTML=html;el('modal').classList.add('open');
  if(x.kind==='relic')el('simSlider').addEventListener('input',function(e){var n=+e.target.value;el('simCount').textContent=n+'/'+x.maxStacks;el('simOutput').textContent=x.isUltra?(n?'已拥有：×'+x.valuePerStack:'尚未拥有'):('当前原始增益：+'+Number((n*x.valuePerStack).toFixed(2))+x.unit)});
