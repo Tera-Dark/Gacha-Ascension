@@ -3,13 +3,14 @@ const dict=x=>!!x&&typeof x==="object"&&!Array.isArray(x);
 const nat=x=>Number.isSafeInteger(x)&&x>=0;
 export function createM0Save(seed=123456789){
  if(!Number.isSafeInteger(seed)||seed<1||seed>0xffffffff)throw Error("Invalid seed");
- return {schemaVersion:M0_SCHEMA,dataVersion:"0.6-M0",seed,txSequence:0,
+ return {schemaVersion:M0_SCHEMA,dataVersion:"0.7-M0",seed,txSequence:0,
   meta:{bestDepth:0,accountFirstClear:{},featureUnlocks:{exploration:true,battle:true}},
   run:{stones:65,cultivationXp:0,earnedXp:0,
     hero:{level:1,realm:"qi",pillStats:{attack:0,hp:0,defense:0},pillAllPct:0},
-    gacha:{cards:{},packDraws:{battle:0,wealth:0,cultivation:0,elixir:0},pills:{},sinceKeyPill:0},
+    gacha:{cards:{},equippedTrait:null,packDraws:{battle:0,wealth:0,cultivation:0,elixir:0},pills:{},sinceKeyPill:0},
     exploration:{highestCleared:0,mode:"push",farmFloor:0,farmReason:null,
-      currentRunFirstClear:{},battleCount:0,winCount:0,lossCount:0,ascended:false}},
+      currentRunFirstClear:{},battleCount:0,winCount:0,lossCount:0,ascended:false,
+      history:{peakStones:65,totalStonesEarned:0,totalStonesSpent:0,draws:0,firstDefeatAt:null,traitChanges:0},}},
   receipts:{},receiptOrder:[],settings:{autoBattle:false}};
 }
 export function effects(save,catalog){
@@ -44,7 +45,7 @@ export function levelFromXp(save,catalog){
  return ups;
 }
 export function validateM0Save(s){
- if(!dict(s)||s.schemaVersion!==M0_SCHEMA||s.dataVersion!=="0.6-M0")throw Error("Incompatible v0.6-M0 save");
+ if(!dict(s)||s.schemaVersion!==M0_SCHEMA||s.dataVersion!=="0.7-M0")throw Error("Incompatible v0.6-M0 save");
  if(!nat(s.seed)||!s.seed||s.seed>0xffffffff||!nat(s.txSequence))throw Error("Invalid seed/transaction");
  if(!dict(s.meta)||!dict(s.run)||!dict(s.receipts)||!Array.isArray(s.receiptOrder)||!dict(s.settings))throw Error("Invalid save root");
  const r=s.run,e=r.exploration,h=r.hero,g=r.gacha;
@@ -52,6 +53,7 @@ export function validateM0Save(s){
  if(!nat(r.stones)||!nat(r.cultivationXp)||!nat(r.earnedXp)||!nat(h.level)||h.level<1||h.level>250||
    !["qi","zhuji"].includes(h.realm)||!dict(h.pillStats)||!nat(h.pillAllPct)||!dict(g.cards)||!dict(g.pills)||!dict(g.packDraws)||!nat(g.sinceKeyPill))throw Error("Invalid resources/hero");
  for(const key of ["attack","hp","defense"])if(!nat(h.pillStats[key]))throw Error("Invalid pill buffs");
+ if(g.equippedTrait!==null&&(typeof g.equippedTrait!=="string"||!nat(g.cards[g.equippedTrait])||g.cards[g.equippedTrait]===0))throw Error("Equipped trait missing");
  for(const v of Object.values(g.cards))if(!nat(v)||v>1000)throw Error("Invalid card level");
  for(const v of Object.values(g.pills))if(!nat(v))throw Error("Invalid pill inventory");
  for(const k of ["battle","wealth","cultivation","elixir"])if(!nat(g.packDraws[k]))throw Error("Invalid pack counter");
@@ -59,8 +61,10 @@ export function validateM0Save(s){
     !nat(e.farmFloor)||e.farmFloor>e.highestCleared||!["defeat","gate",null].includes(e.farmReason)||
     !nat(e.battleCount)||!nat(e.winCount)||!nat(e.lossCount)||e.winCount+e.lossCount!==e.battleCount||
     typeof e.ascended!=="boolean"||!dict(e.currentRunFirstClear))throw Error("Invalid stage/exploration");
+ if(!dict(e.history)||["peakStones","totalStonesEarned","totalStonesSpent","draws","traitChanges"].some(k=>!nat(e.history[k])))throw Error("Invalid lifetime metrics");
  if(e.ascended!==(h.realm==="zhuji"))throw Error("Realm desynchronized");
  if(e.highestCleared>20&&!e.ascended)throw Error("Invalid unlocked realm gate");
+ if(e.history.totalStonesEarned+65!==s.run.stones+e.history.totalStonesSpent)throw Error("Inconsistent stone economy ledger");
  if(!nat(s.meta.bestDepth)||s.meta.bestDepth<e.highestCleared)throw Error("Invalid best depth");
  if(s.receiptOrder.length>96||s.receiptOrder.length!==Object.keys(s.receipts).length||
     s.receiptOrder.some(id=>!Object.hasOwn(s.receipts,id)))throw Error("Invalid receipts");
