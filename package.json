@@ -1,0 +1,15 @@
+{
+  "name": "gacha-ascension",
+  "private": true,
+  "version": "0.0.1-m0",
+  "type": "module",
+  "description": "Static M0 simulation and versioned balance registry for Gacha Ascension",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:m0": "node --test tests/m0.test.mjs",
+    "check:content": "node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs",
+    "check": "npm run check:content && npm run test",
+    "build": "node scripts/verify-m0-pages.mjs"
+  },
+  "engines": {"node": ">=20"}
+}
