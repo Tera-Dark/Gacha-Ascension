@@ -28,11 +28,11 @@ type UnlockDefinition = {
 };
 ~~~
 
-鸿蒙异宝不是 Inventory、背包物品或局外可装备传承；它由 Meta 唯一管理。第六稀有度 \`hongmeng\` 只允许局外天命遗物系统使用，不可混入功法、建筑、灵宠五档品质分布。
+鸿蒙异宝不是 Inventory、背包物品或局外可装备传承；它由 Meta 唯一管理。第六稀有度 `hongmeng` 只允许局外天命遗物系统使用，不可混入功法、建筑、灵宠五档品质分布。
 
 ## 2. 开箱事务 v0.5
 
-\`\`\`text
+```text
 OpenRelicChest(count=1|10,txnId)
   → validate enough fate (40 × count)
   → validate transaction not already committed
@@ -48,7 +48,7 @@ OpenRelicChest(count=1|10,txnId)
        after each iteration: update draw totals and receipts
   → commit currency and results once
   → produce audio / visual receipts
-\`\`\`
+```
 
 - 单抽10次和十连1次从同一seed、同一初始状态下获得一样的顺序结果；
 - 每次普通箱单独判定一次鸿蒙，**一箱最多增加1件**；中奖也是正常普通箱奖励的额外物品；
@@ -76,10 +76,10 @@ const addedBaseStatsPct = completedResonanceLevels * 0.1; // +0..10%
 
 | effectKey | 生效目标 | 类型 | 限制 |
 |---|---|---|---|
-| \`ultraHeroDamageMultiplier\` | 主角最终直接伤害（不含灵宠/环境） | 主角战斗乘区 | 最多一个同类鸿蒙倍率，不双重应用 |
-| \`ultraPetDamageMultiplier\` | 宠物最终输出伤害 | 灵宠战斗乘区 | 无出战宠物则无效 |
-| \`ultraCaveYieldBonusMultiplier\` | 建筑提供的正向**资源加成数值** | 洞府经济增量乘区 | 无建筑/该项为0则无增益 |
-| \`ultraTechniqueEffectMultiplier\` | 已装备功法允许放大的正向效果值 | 功法效果组 | 不直接乘最终战斗/经济总数 |
+| `ultraHeroDamageMultiplier` | 主角最终直接伤害（不含灵宠/环境） | 主角战斗乘区 | 最多一个同类鸿蒙倍率，不双重应用 |
+| `ultraPetDamageMultiplier` | 宠物最终输出伤害 | 灵宠战斗乘区 | 无出战宠物则无效 |
+| `ultraCaveYieldBonusMultiplier` | 建筑提供的正向**资源加成数值** | 洞府经济增量乘区 | 无建筑/该项为0则无增益 |
+| `ultraTechniqueEffectMultiplier` | 已装备功法允许放大的正向效果值 | 功法效果组 | 不直接乘最终战斗/经济总数 |
 
 ### 无循环的示例
 
@@ -101,9 +101,9 @@ const addedBaseStatsPct = completedResonanceLevels * 0.1; // +0..10%
 ~~~text
 CombatResolved(won, stageId)
  → 若首通: 记录账号 / 本世通关事件
- → 查询配置 map.mainlineIndex 得到最高普通主线深度
+ → 使用 stage.mainlineIndex 推进账号普通主线最高深度，不读取旧图扫荡或高难层数
  → QueryUnlocks(previousDepth, newDepth, implementedPhase)
- → 对满足条件的每个featureId执行一次 unlock
+ → 根据事件类型、功能前置和版本开关分别解锁 featureId
  → 奖励是 ONE_free_draw 指定当世卡包资格或 unlock_only
  → 记录 claimedUnlockRewardIds 防止轮回重领
  → 输出 UnlockAnnounced 供UI展现
@@ -112,7 +112,7 @@ CombatResolved(won, stageId)
 - 高难旧图重复刷、关卡重置、扫荡均不能冒领新系统首通奖励；
 - UI 不可直接创建功法/宠物/建筑；首次免费体验如需功能物品，**发给对应卡包的一次免费抽取次数**，真正物品仍从已注册池中抽；
 - 不在自动刷怪中连续弹十张“系统已开放”弹窗；多解锁事件合并为一个可稍后查看的“仙途新机缘”小抽屉；
-- 只有 \`implementedPhase\` 已实际加入功能才允许开放入口，后续章节可显示“未来章节”预告但不能误触不可玩内容。
+- 只有 `implementedPhase` 已实际加入功能才允许开放入口，后续章节可显示“未来章节”预告但不能误触不可玩内容。
 
 ## 6. 游戏性模拟与指标
 
@@ -137,10 +137,20 @@ simulateRelicChests(draws, seed) => MetaMetrics
 - 更换装备、卸下宠物后所有相应遗物和鸿蒙加成瞬间消失而无残留；
 - 出现极端鸿蒙欧皇时允许超强，但游戏绝不以这些账号的数值设置所有人的主线门槛。
 
+## 开发前补充：事件规则、数据源与迁移
+
+- 初始探索由 `account_created` 开启；第30层首通只解锁突破资格和主动轮回；天命箱由 `first_reincarnation_completed` 开启；P1险境必须已实装；赤砂主线必须实际完成筑基且P1已发布。
+- 不同系统用稳定的 `featureId`，同一深度可解锁多个功能；旧玩家版本升级时根据永久历史纪录**重新评估已达成的条件**，避免新版本解锁永远丢失。
+- 卡包奖励、轮回、关卡首通、天命箱使用幂等 `txnId`，只有游戏服务发奖，UI只消费结果。
+- [codex.v0.5.json](../data/codex/codex.v0.5.json) 是唯一设计源数据。编辑JSON后用 `node scripts/sync-codex-v0.5.mjs --write` 生成CSV，`--check` 阻止漂移。
+- 注册的五张境域只有青云普通1–30拥有数值样例，未实装地图不能默认可玩。
+- 仅当常规遗物全满、共鸣等级100、四件鸿蒙也全收集时，天命箱永久停止消费，绝不允许扣费空抽。
+- 施工须遵守 [IMPLEMENTATION-CONTRACT-v0.5.md](IMPLEMENTATION-CONTRACT-v0.5.md) 与 [PREDEV-AUDIT-v0.5.md](PREDEV-AUDIT-v0.5.md)。
+
 ## 7. 数值与版本化
 
-- \`data/codex/codex.v0.5.json\`：源配置（34件遗物，关卡解锁、五档常规和独立鸿蒙）；原 \`codex.v0.4.json\` 原封留档。
-- \`data/codex/relics.v0.5.csv\`：30常规+4鸿蒙的每层数值、上限与作用；普通遗物仍分级、鸿蒙为第六类别。
-- \`data/codex/catalog.v0.5.csv\`：全局检索目录，包括关卡解锁里程碑；
+- `data/codex/codex.v0.5.json`：源配置（34件遗物，关卡解锁、五档常规和独立鸿蒙）；原 `codex.v0.4.json` 原封留档。
+- `data/codex/relics.v0.5.csv`：30常规+4鸿蒙的每层数值、上限与作用；普通遗物仍分级、鸿蒙为第六类别。
+- `data/codex/catalog.v0.5.csv`：全局检索目录，包括关卡解锁里程碑；
 - [可筛选图鉴](../codex.html)：始终在页面上标明“设计值”，不把 v0.5 配置当成实装游戏存档。
 - 新配置不得覆盖 v0.1 真实存档、不默默把老三槽传承替换掉。若以后施工必须另做清晰的存档迁移/备份对照。
