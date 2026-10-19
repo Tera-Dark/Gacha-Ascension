@@ -34,3 +34,24 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.42;cursor:not-allowe
 .draw-card.rare-di,.draw-card.rare-tian{background:linear-gradient(135deg,#4e4531,#273323);border-color:#b99759}
 .milestone{color:#ebcf85;font-weight:700}.pack .lockedhint{font-size:11px;color:#a0a88f;margin-top:7px}
 @media(max-width:520px){.shell{padding:14px 10px 50px}.warning{font-size:11px;line-height:1.6}.pack{padding:12px}.packname{font-size:15px}.owned{padding:9px 10px}.draw-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dialog{padding:14px}.topstat b{font-size:18px}}
+
+/* M0.2 battle diagnosis + phones: exploring and drawing must be adjacent actions. */
+.diagnosis{margin:12px 0 0;padding:12px;border-radius:11px;border:1px solid #bca06380;
+ background:linear-gradient(120deg,#473d2266,#243b2b88);font-size:12px;line-height:1.7;color:#e8d7b2}
+.diagnosis strong{display:block;margin-bottom:3px;color:#f6d294;font-size:13px}
+.diagnosis .focus-pack{font-weight:800;color:#b9e2b9}
+.equip-btn{display:inline-flex;min-height:36px;align-items:center;justify-content:center;margin-top:6px;
+ border:1px solid #bda46d;background:#304737;color:#f2d89f;border-radius:8px;padding:6px 11px}
+.equip-btn.active{background:#dbc087;color:#263329}
+.owned.trait-item{border-color:#a78e5b;background:#2c3525}
+.mobile-quick{display:none}
+@media(max-width:780px){
+ .shell{padding-bottom:98px}
+ .mobile-quick{position:fixed;inset:auto 0 0;z-index:30;display:grid;grid-template-columns:1fr 1fr;
+ gap:10px;padding:9px max(12px,env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+ background:#101d17f5;border-top:1px solid #57745b;box-shadow:0 -7px 28px #0009;backdrop-filter:blur(12px)}
+ .mobile-quick button{background:#294634;color:#e2efdd;border:1px solid #8ca588;min-height:48px;border-radius:11px;font-weight:800;font-size:15px}
+ .mobile-quick button:last-child{background:#d9bc7f;color:#233124;border-color:#e0c38b}
+ .mobile-quick button span{font-size:18px;margin-right:7px}
+ #battlePanel,#packPanel{scroll-margin-top:8px}
+}
