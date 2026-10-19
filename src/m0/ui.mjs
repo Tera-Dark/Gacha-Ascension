@@ -192,7 +192,7 @@ el("goExplore").addEventListener("click",()=>el("battlePanel").scrollIntoView({b
 el("goGacha").addEventListener("click",()=>el("packPanel").scrollIntoView({behavior:"smooth",block:"start"}));
 el("packs").addEventListener("click",e=>{
  const btn=e.target.closest("[data-pack]");if(!btn||btn.disabled||!save)return;
- try{const before=battlePreview(save,catalog);const result=transaction({type:"DRAW",packId:btn.dataset.pack,count:Number(btn.dataset.count)});const after=battlePreview(save,catalog);openResults(result.result,before,after);}
+ try{const beforeSave=structuredClone(save);const result=transaction({type:"DRAW",packId:btn.dataset.pack,count:Number(btn.dataset.count)});beforeSave.seed=save.seed;const before=battlePreview(beforeSave,catalog),after=battlePreview(save,catalog);openResults(result.result,before,after);}
  catch(err){setStatus("抽卡失败："+err.message,true);}
 });
 el("single").addEventListener("click",()=>{stopAuto();oneBattle();});
