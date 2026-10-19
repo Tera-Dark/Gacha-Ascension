@@ -71,6 +71,13 @@ function paint(){
  el("auto").disabled=false;
  el("push").disabled=e.highestCleared>=STAGE_LIMIT || p.gateLocked;
  el("farm").disabled=e.highestCleared<1;
+ const selector=el("farmTarget");
+ selector.disabled=e.highestCleared<1;
+ if(selector.options.length!==e.highestCleared){
+  selector.innerHTML=Array.from({length:e.highestCleared},(_,i)=>'<option value="'+(i+1)+'">第'+(i+1)+'层</option>').join("")||
+   '<option value="0">先通关第1层</option>';
+ }
+ if(e.highestCleared>0)selector.value=String(e.mode==="farm"?e.farmFloor:e.highestCleared);
  el("single").textContent=e.mode==="farm"?"扫荡一场":"挑战一场";
  if(!el("progress").children.length){
    el("progress").innerHTML=Array.from({length:STAGE_LIMIT},(_,i)=>'<span class="floor" data-floor="'+(i+1)+'">'+(i+1)+'</span>').join("");
@@ -190,6 +197,11 @@ el("packs").addEventListener("click",e=>{
 });
 el("single").addEventListener("click",()=>{stopAuto();oneBattle();});
 el("auto").addEventListener("click",startAuto);
+el("farmTarget").addEventListener("change",event=>{
+ if(!save||!catalog)return;
+ try{transaction({type:"SET_FARM_TARGET",floor:Number(event.target.value)});}
+ catch(error){setStatus("无法切换扫荡层："+error.message,true);}
+});
 el("farm").addEventListener("click",()=>{if(!save)return;try{mode("farm");if(!auto)startAuto();}catch(e){setStatus(e.message,true);}});
 el("push").addEventListener("click",()=>{if(!save)return;try{mode("push");if(!auto)startAuto();}catch(e){setStatus(e.message,true);}});
 el("stop").addEventListener("click",()=>{stopAuto();if(save)mode("paused");});
