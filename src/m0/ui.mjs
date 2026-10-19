@@ -143,10 +143,20 @@ function startAuto(){
   auto=true;paint();oneBattle();schedule();
  }catch(e){stopAuto();setStatus("不能开始自动探索："+e.message,true);}
 }
-function openResults(result){
+function openResults(result,before,after){
  const pack=catalog.packs[result.packId];
  el("modalTitle").textContent=pack.name+" · "+result.count+"次机缘";
- el("modalResults").innerHTML='<p class="subtle">已花费'+result.cost+'灵石。所有卡牌和丹药已即时结算，同名卡自动叠层。</p>'+
+ const changes=before&&after?
+  '<div class="diagnosis"><strong>抽卡后的真实变化</strong>'+
+  '攻击 '+fmt(before.hero.attack)+' → '+fmt(after.hero.attack)+
+  ' · 气血 '+fmt(before.hero.hp)+' → '+fmt(after.hero.hp)+
+  ' · 防御 '+fmt(before.hero.defense)+' → '+fmt(after.hero.defense)+
+  ' · 灵石收益 +'+before.stoneBonusPct+'% → +'+after.stoneBonusPct+'%'+
+  ' · 修为收益 +'+before.xpBonusPct+'% → +'+after.xpBonusPct+'%'+
+  (before.stage.floor===after.stage.floor?
+   ' · 本关推演 '+(before.predicted.won?'可赢':'未过')+' → '+(after.predicted.won?'可赢':'未过'):
+   ' · 已自动切回下一层冲关')+'</div>':'';
+ el("modalResults").innerHTML='<p class="subtle">已花费'+result.cost+'灵石。卡牌与丹药已即时结算，同名卡叠层。</p>'+changes+
   '<div class="draw-grid">'+result.items.map(item=>'<div class="draw-card rare-'+item.rarity+'"><div class="rarity">'+RARITIES[item.rarity]+'</div><strong>'+safe(item.name)+'</strong><small>'+safe(item.description)+'</small></div>').join("")+'</div>';
  modalVisible=true;el("drawModal").classList.add("open");el("drawModal").setAttribute("aria-hidden","false");el("modalDone").focus();
 }
@@ -175,7 +185,7 @@ el("goExplore").addEventListener("click",()=>el("battlePanel").scrollIntoView({b
 el("goGacha").addEventListener("click",()=>el("packPanel").scrollIntoView({behavior:"smooth",block:"start"}));
 el("packs").addEventListener("click",e=>{
  const btn=e.target.closest("[data-pack]");if(!btn||btn.disabled||!save)return;
- try{const result=transaction({type:"DRAW",packId:btn.dataset.pack,count:Number(btn.dataset.count)});openResults(result.result);}
+ try{const before=battlePreview(save,catalog);const result=transaction({type:"DRAW",packId:btn.dataset.pack,count:Number(btn.dataset.count)});const after=battlePreview(save,catalog);openResults(result.result,before,after);}
  catch(err){setStatus("抽卡失败："+err.message,true);}
 });
 el("single").addEventListener("click",()=>{stopAuto();oneBattle();});
