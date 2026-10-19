@@ -2,6 +2,18 @@
 
 一个移动端优先的修仙抽卡增量肉鸽 MVP。开局凡人，万物靠抽；在每一世积累灵石、探索地图、提升卡包、构筑功法，并通过轮回抽取永久传承。
 
+## 当前施工进度：M0 已交付（独立验收台）
+
+**[直接进入 M0 GitHub Pages 验收版](https://tera-dark.github.io/Gacha-Ascension/m0.html)**
+
+M0 已拆分独立战斗/状态/奖励引擎：确定性随机战斗、普通主线30层的数值样例、灵石与修为结算、三向淬炼、失败转扫荡、资源防重复发放以及独立自动存档。可以在手机或电脑浏览器操作。
+
+- [M0 验收说明和操作清单](docs/M0-ACCEPTANCE.md)
+- [M0 核心源代码](src/m0/) · [自动测试](tests/m0.test.mjs) · [游玩模拟](scripts/simulate-m0.mjs)
+- 检查指令：`npm run check`（内容配置、自动测试、模拟及静态页面检查）。
+
+**M0 不是完整的 v0.5 玩法：** 它仍未实现功法、洞府、灵宠、正式轮回和天命箱。这些将在 M1～M3 按设计逐步实施。仓库根目录 `index.html` 仍为历史 v0.1 游戏，与 M0 的 LocalStorage 存档完全分开。
+
 ## 当前规划总入口：GDD v0.5
 
 - **[总体游戏设计 v0.5](docs/GDD-v0.5.md)** — 探索→修炼→挑战→轮回的主驱动力、逐层解锁、长期可玩循环。
@@ -16,7 +28,7 @@
 - **[v0.5 机器可读 JSON](data/codex/codex.v0.5.json)** / [总条目 CSV](data/codex/catalog.v0.5.csv) / [遗物 CSV](data/codex/relics.v0.5.csv) / [解锁节点 CSV](data/codex/unlocks.v0.5.csv)。
 - 校验：`node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs`。
 
-**重要：以上 v0.5 是策划与只读图鉴，并不是已开发版本。真正的游戏 `index.html` 仍然是 v0.1 原型，尚未根据 v0.5 改写战斗与成长体系。**
+**重要：v0.5 的完整玩法仍是设计方案，但 M0 的独立底层战斗/成长验收台已实装到 `m0.html`。根目录 `index.html` 仍是历史 v0.1 游戏。**
 
 ### 历史版本
 
