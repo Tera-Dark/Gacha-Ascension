@@ -186,11 +186,22 @@ function fight(manual){
  save();render();
 }
 function acquire(card){
- var old=s.collection[card.id]||0;
+ var old=s.collection[card.id]||0,autoReplaced=false;
  if(old>=8)return {card:card,text:'已满级 · 转化为灵石'};
- if(old===0){s.collection[card.id]=1;var count=s.equipped.filter(function(id){return allCards[id].p===card.p}).length;var pack=PACKS.find(function(p){return p.id===card.p});if(count<pack.limit)s.equipped.push(card.id)}
- else{s.collection[card.id]=old+1}
- return {card:card,text:old===0?'新卡入藏 '+(s.equipped.indexOf(card.id)>=0?'· 已装配':'· 待装配'):'强化至 Lv.'+s.collection[card.id]}
+ if(old===0){
+  s.collection[card.id]=1;
+  var equippedSame=s.equipped.filter(function(id){return allCards[id].p===card.p});
+  var pack=PACKS.find(function(p){return p.id===card.p});
+  if(equippedSame.length<pack.limit){s.equipped.push(card.id)}
+  else{
+   var weakest=equippedSame.sort(function(a,b){return allCards[a].r-allCards[b].r||(s.collection[a]||0)-(s.collection[b]||0)})[0];
+   if(weakest&&allCards[weakest].r<card.r){
+    s.equipped.splice(s.equipped.indexOf(weakest),1,card.id);
+    autoReplaced=true;
+   }
+  }
+ }else{s.collection[card.id]=old+1}
+ return {card:card,text:old===0?'新卡入藏 '+(autoReplaced?'· 自动替换低阶卡':s.equipped.indexOf(card.id)>=0?'· 已装配':'· 待装配'):'强化至 Lv.'+s.collection[card.id]}
 }
 function draw(packId,count){
  var price=100*count;if(s.stones<price){toast('灵石不足，继续探索或建造洞府吧');return}
@@ -209,7 +220,7 @@ function closeModal(){modalOpen=false;byId('modal').classList.remove('show')}
 function drawModal(results,title){
  var out='<div class="draw-grid">';
  results.forEach(function(x,i){var c=x.card,t=TIERS[c.r];out+='<div class="draw-card" style="border-top-color:'+t.color+';animation-delay:'+(Math.min(i,8)*.045)+'s"><div class="draw-emoji">'+c.e+'</div><div class="draw-name">'+c.n+'</div><div class="draw-tag" style="color:'+t.color+'">'+t.name+'</div><div class="draw-info">'+x.text+'</div></div>'});
- out+='</div>';openModal(title,'重复卡自动升至 Lv.8；空余槽位会自动装配。',out);
+ out+='</div>';openModal(title,'重复卡自动升至 Lv.8；新高阶卡将自动替换较低阶装备，也可手动调整。',out);
 }
 function equipCard(id){
  var card=allCards[id];if(!card||!s.collection[id])return;
