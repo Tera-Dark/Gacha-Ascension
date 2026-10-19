@@ -1083,7 +1083,10 @@
       "baseDefense": 6,
       "stones": 35,
       "cultivationXp": 18,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 1
     },
     {
       "id": "ST-QY-N-002",
@@ -1098,7 +1101,10 @@
       "baseDefense": 5,
       "stones": 42,
       "cultivationXp": 22,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 2
     },
     {
       "id": "ST-QY-N-003",
@@ -1113,7 +1119,10 @@
       "baseDefense": 9,
       "stones": 49,
       "cultivationXp": 26,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 3
     },
     {
       "id": "ST-QY-N-004",
@@ -1128,7 +1137,10 @@
       "baseDefense": 8,
       "stones": 56,
       "cultivationXp": 30,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 4
     },
     {
       "id": "ST-QY-N-005",
@@ -1143,7 +1155,10 @@
       "baseDefense": 9,
       "stones": 63,
       "cultivationXp": 34,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 5
     },
     {
       "id": "ST-QY-N-006",
@@ -1158,7 +1173,10 @@
       "baseDefense": 10,
       "stones": 70,
       "cultivationXp": 38,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 6
     },
     {
       "id": "ST-QY-N-007",
@@ -1173,7 +1191,10 @@
       "baseDefense": 28,
       "stones": 77,
       "cultivationXp": 42,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 7
     },
     {
       "id": "ST-QY-N-008",
@@ -1188,7 +1209,10 @@
       "baseDefense": 30,
       "stones": 84,
       "cultivationXp": 46,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 8
     },
     {
       "id": "ST-QY-N-009",
@@ -1203,7 +1227,10 @@
       "baseDefense": 24,
       "stones": 136,
       "cultivationXp": 75,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 9
     },
     {
       "id": "ST-QY-N-010",
@@ -1218,7 +1245,10 @@
       "baseDefense": 50,
       "stones": 196,
       "cultivationXp": 108,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 10
     },
     {
       "id": "ST-QY-N-011",
@@ -1233,7 +1263,10 @@
       "baseDefense": 20,
       "stones": 105,
       "cultivationXp": 58,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 11
     },
     {
       "id": "ST-QY-N-012",
@@ -1248,7 +1281,10 @@
       "baseDefense": 21,
       "stones": 112,
       "cultivationXp": 62,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 12
     },
     {
       "id": "ST-QY-N-013",
@@ -1263,7 +1299,10 @@
       "baseDefense": 23,
       "stones": 119,
       "cultivationXp": 66,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 13
     },
     {
       "id": "ST-QY-N-014",
@@ -1278,7 +1317,10 @@
       "baseDefense": 24,
       "stones": 126,
       "cultivationXp": 70,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 14
     },
     {
       "id": "ST-QY-N-015",
@@ -1293,7 +1335,10 @@
       "baseDefense": 22,
       "stones": 133,
       "cultivationXp": 74,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 15
     },
     {
       "id": "ST-QY-N-016",
@@ -1308,7 +1353,10 @@
       "baseDefense": 46,
       "stones": 140,
       "cultivationXp": 78,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 16
     },
     {
       "id": "ST-QY-N-017",
@@ -1323,7 +1371,10 @@
       "baseDefense": 24,
       "stones": 147,
       "cultivationXp": 82,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 17
     },
     {
       "id": "ST-QY-N-018",
@@ -1338,7 +1389,10 @@
       "baseDefense": 51,
       "stones": 154,
       "cultivationXp": 86,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 18
     },
     {
       "id": "ST-QY-N-019",
@@ -1353,7 +1407,10 @@
       "baseDefense": 88,
       "stones": 241,
       "cultivationXp": 135,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 19
     },
     {
       "id": "ST-QY-N-020",
@@ -1368,7 +1425,10 @@
       "baseDefense": 62,
       "stones": 336,
       "cultivationXp": 188,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 20
     },
     {
       "id": "ST-QY-N-021",
@@ -1383,7 +1443,10 @@
       "baseDefense": 27,
       "stones": 175,
       "cultivationXp": 98,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 21
     },
     {
       "id": "ST-QY-N-022",
@@ -1398,7 +1461,10 @@
       "baseDefense": 28,
       "stones": 182,
       "cultivationXp": 102,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 22
     },
     {
       "id": "ST-QY-N-023",
@@ -1413,7 +1479,10 @@
       "baseDefense": 29,
       "stones": 189,
       "cultivationXp": 106,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 23
     },
     {
       "id": "ST-QY-N-024",
@@ -1428,7 +1497,10 @@
       "baseDefense": 30,
       "stones": 196,
       "cultivationXp": 110,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 24
     },
     {
       "id": "ST-QY-N-025",
@@ -1443,7 +1515,10 @@
       "baseDefense": 50,
       "stones": 203,
       "cultivationXp": 114,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 25
     },
     {
       "id": "ST-QY-N-026",
@@ -1458,7 +1533,10 @@
       "baseDefense": 51,
       "stones": 210,
       "cultivationXp": 118,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 26
     },
     {
       "id": "ST-QY-N-027",
@@ -1473,7 +1551,10 @@
       "baseDefense": 53,
       "stones": 217,
       "cultivationXp": 122,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 27
     },
     {
       "id": "ST-QY-N-028",
@@ -1488,7 +1569,10 @@
       "baseDefense": 55,
       "stones": 224,
       "cultivationXp": 126,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 28
     },
     {
       "id": "ST-QY-N-029",
@@ -1503,7 +1587,10 @@
       "baseDefense": 111,
       "stones": 346,
       "cultivationXp": 195,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 29
     },
     {
       "id": "ST-QY-N-030",
@@ -1518,7 +1605,10 @@
       "baseDefense": 211,
       "stones": 476,
       "cultivationXp": 268,
-      "state": "example_only"
+      "state": "example_only",
+      "zoneId": "ZN-001",
+      "difficultyId": "normal",
+      "mainlineIndex": 30
     }
   ],
   "realms": [
@@ -1568,7 +1658,7 @@
       "phase": "P2"
     }
   ],
-  "notes": "v0.5 design only: base 30 ordinary relics retain v0.4 caps; 4 ultra Hongmeng prizes independent 0.01% jackpot with no pity; progressive unlock proposal; not implemented in online MVP. Post-audit corrections: initial exploration account_created, split depth-30 unlocks, relic chest post-reincarnation, no empty chests, reward pack IDs; candidate not implemented.",
+  "notes": "v0.5 design only: base 30 ordinary relics retain v0.4 caps; 4 ultra Hongmeng prizes independent 0.01% jackpot with no pity; progressive unlock proposal; not implemented in online MVP. Post-audit corrections: initial exploration account_created, split depth-30 unlocks, relic chest post-reincarnation, no empty chests, reward pack IDs; candidate not implemented. Stage global mainlineIndex and zone stubs define future expansion. Only zone ZN-001 normal 30-floor examples currently exist.",
   "ultras": [
     "TM-031",
     "TM-032",
@@ -1819,6 +1909,73 @@
       "progressSource": "first_mainline_clear",
       "prerequisiteFeatureIds": [],
       "freeDrawPackId": null
+    }
+  ],
+  "zones": [
+    {
+      "id": "ZN-001",
+      "name": "青云山麓",
+      "zoneKey": "qingyun",
+      "chapter": 1,
+      "mainlineStart": 1,
+      "mainlineEnd": 30,
+      "phase": "P0",
+      "state": "example_only",
+      "normalAvailableInSlice": true,
+      "dangerPhase": "P1",
+      "description": "基础三围、首次修炼、筑基"
+    },
+    {
+      "id": "ZN-002",
+      "name": "赤砂荒岭",
+      "zoneKey": "red_sand",
+      "chapter": 2,
+      "mainlineStart": 31,
+      "mainlineEnd": 60,
+      "phase": "P1",
+      "state": "proposal",
+      "normalAvailableInSlice": false,
+      "dangerPhase": "P2",
+      "description": "高攻击敌人、筑基期挑战"
+    },
+    {
+      "id": "ZN-003",
+      "name": "沧溟古泽",
+      "zoneKey": "old_marsh",
+      "chapter": 3,
+      "mainlineStart": 61,
+      "mainlineEnd": 90,
+      "phase": "P1",
+      "state": "proposal",
+      "normalAvailableInSlice": false,
+      "dangerPhase": "P2",
+      "description": "高防与经济成长"
+    },
+    {
+      "id": "ZN-004",
+      "name": "九霄雷泽",
+      "zoneKey": "thunder_realm",
+      "chapter": 4,
+      "mainlineStart": 91,
+      "mainlineEnd": 120,
+      "phase": "P2",
+      "state": "proposal",
+      "normalAvailableInSlice": false,
+      "dangerPhase": "P2",
+      "description": "爆发敌人、速通挑战"
+    },
+    {
+      "id": "ZN-005",
+      "name": "太虚天门",
+      "zoneKey": "void_gate",
+      "chapter": 5,
+      "mainlineStart": 121,
+      "mainlineEnd": 150,
+      "phase": "P2",
+      "state": "proposal",
+      "normalAvailableInSlice": false,
+      "dangerPhase": "P2",
+      "description": "道统终局挑战"
     }
   ]
 }
