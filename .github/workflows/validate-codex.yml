@@ -1,0 +1,29 @@
+name: Validate game design codex
+on:
+  push:
+    paths:
+      - "data/codex/**"
+      - "docs/**"
+      - "scripts/validate-codex.mjs"
+      - ".github/workflows/validate-codex.yml"
+  pull_request:
+    paths:
+      - "data/codex/**"
+      - "docs/**"
+      - "scripts/validate-codex.mjs"
+      - ".github/workflows/validate-codex.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify codex data
+        run: node scripts/validate-codex.mjs
