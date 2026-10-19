@@ -24,7 +24,13 @@ export function fight(snapshot,seed){
  let heroAttackCount=0,procs=0,regenTotal=0;
  const shieldCap=id==="ward"?Math.floor(hero.hp*Math.min(.4,.10+.05*n)):0;
  let shield=shieldCap,absorbed=0;
- const log=[],addLog=event=>{if(log.length<18)log.push(event)};
+ const log=[],tail=[],eventCap=18;
+ let totalEvents=0;
+ const addLog=event=>{
+  totalEvents++;
+  if(log.length<eventCap/2)log.push(event);
+  else{tail.push(event);if(tail.length>eventCap/2)tail.shift();}
+ };
  for(let t=0;t<TUNING.turnLimit;t++){
   turns=t+1;heroAttackCount++;
   let r=nextRandom(rng);rng=r.seed;
@@ -64,6 +70,6 @@ export function fight(snapshot,seed){
   won:enemyHp===0,turns,heroDamage,damageTaken,finalHeroHp:heroHp,finalEnemyHp:enemyHp,
   reason:enemyHp===0?"victory":heroHp===0?"defeat":"timeout",
   nextSeed:rng,mechanicId:id,mechanicProcs:procs,absorbed,regenTotal,
-  log,logTruncated:heroAttackCount*2>18
+  log:[...log,...tail],logTruncated:totalEvents>log.length+tail.length
  };
 }
