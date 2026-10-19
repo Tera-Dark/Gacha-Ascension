@@ -1,21 +1,95 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101914"><title>抽卡修仙传 · 卡关逆转与战术卡组验收</title><link rel="stylesheet" href="./m0.css"></head><body><main class="shell">
-<header class="mast"><div><div class="kicker">GACHA ASCENSION / M0.2 TACTICAL ASCENSION</div><h1>抽卡修仙传 <span style="color:var(--gold)">· 策略养成验收</span></h1><p>杀敌得资源 · 抽卡长实力 · 自动推进 · 丹药突破</p></div><nav class="linkrow"><a href="./index.html">历史 v0.1</a><a href="./codex.html">设计图鉴</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/M0.2-ACCEPTANCE-v0.7.md">M0.2 验收说明</a></nav></header>
-<div class="warning"><strong>核心规则已重做：</strong> 灵石不能直接强化属性。只有抽卡能获得战力、资源效率、修炼能力与丹药。第 5 / 10 / 16 层依次解锁新卡包，并新增连斩、裂甲、护盾、反击四种主战特性；击破第 20 层后必须有 <strong>筑基丹＋Lv.12</strong> 才能突破境界继续推图。这是独立的玩法验收切片，30层包含真实精英机制与候选平衡数值；旧 M0 / M0.1 / v0.1 存档均保留。</div>
-<section class="statstrip"><div class="topstat"><small>境界 / 修为等级</small><b id="level">练气 · Lv.1</b><small id="cap">修炼上限：Lv.10</small></div><div class="topstat"><small>灵石 · 抽卡资源</small><b id="stones">65</b><small>击杀与聚财卡提升收益</small></div><div class="topstat"><small>当前修为进度</small><b id="experience">0 / 45</b><div class="bar"><span id="xpbar"></span></div></div><div class="topstat"><small>最高通关层数</small><b id="depth">0 / 30</b><small id="speed">自动战斗 · 标准速度</small></div></section>
-<div class="workspace"><div class="column">
-<section class="panel" id="battlePanel"><div class="panelhead"><h2>仙途探索 · 青云山麓</h2><span class="badge" id="mode">自动冲关</span></div>
-<div class="fightfloor"><div class="kicker" id="stage">第1层</div><div class="fightopponent" aria-hidden="true">⚔</div><div class="enemyname" id="enemyName">加载中</div><div class="enemyline" id="enemyStats">战斗基础奖励</div>
-<div class="vsbanner"><div class="vsunit">修士<br><strong id="heroStats">—</strong></div><div class="vsunit">对手<br><strong id="enemyCompact">—</strong></div></div>
-<div class="combatline" id="preview">正在读取战斗数值</div></div>
-<div class="controls"><button class="btn primary" id="single">挑战一场</button><button class="btn" id="auto">开启自动推图</button><button class="btn secondary" id="push">主动再闯关</button><button class="btn secondary" id="farm">扫荡上一层</button><button class="btn secondary full" id="stop">暂停探索</button></div>
-<div class="diagnosis" id="diagnosis" aria-live="polite">卡关提示加载中……</div><div class="farm-picker"><label for="farmTarget">手动选择刷怪层</label><select id="farmTarget" aria-label="已通关关卡选择" disabled><option value="0">先通关第1层</option></select><span class="tiny">自动失败时仍默认退到最近通关层</span></div><p class="subtle" id="lastBattle" aria-live="polite">第一抽战力卡已备好。前期先抽战力，等卡关时再刷怪抽卡升级。</p></section>
-<section class="panel" id="realmPanel"><div class="panelhead"><h2>境界之门</h2><span class="badge" id="gateStatus">未抵达</span></div><p class="subtle" id="gateDescription">第20层守关以后会遇到境界锁。需要抽丹药包获得「筑基丹」，还要通过修为卡包提高等级上限并达到Lv.12。</p><div class="rowcompact"><span id="pillCounter">筑基丹 ×0</span><span id="gateLevel">修为等级 Lv.1 / 12</span></div><button id="breakthrough" class="btn primary full" disabled>未达到突破条件</button></section>
-<section class="panel"><div class="panelhead"><h2>关卡路线</h2><span class="badge" id="nextUnlock">下个解锁：第5层</span></div><div class="progressrow" id="progress"></div><p class="progresslabel">5层聚财 · 10层修为 · 16层丹药 · 20层境界门槛 · 30层验收终点</p></section>
-<section class="panel"><div class="panelhead"><h2>最新结算 / 机缘</h2><span class="badge" id="battles">0战</span></div><div class="logs" id="logs"><div class="log">等待第一场战斗或首次抽卡。</div></div></section>
-</div><aside class="column">
-<section class="panel" id="packPanel"><div class="panelhead"><h2>机缘卡包 · 万物皆抽</h2><span class="badge">4大成长路线</span></div><p class="subtle">普通加成卡抽中即生效；四种战斗特性只能同时装备一种，切换免费。同名再次抽到提升特性威力。</p><div id="packs" class="packs"></div></section>
-<section class="panel"><div class="panelhead"><h2>本世功法与藏品</h2><span class="badge" id="collectionCount">0种</span></div><div id="collection" class="collection"></div><p class="tiny">属性/聚财/修为卡自动叠加；主战特性点击“装配”可切换，同一时间只生效一种。</p></section>
-<section class="panel"><div class="panelhead"><h2>存档与验证</h2><span class="badge">M0.2 · schema 3</span></div><p class="subtle">战斗和抽卡共用可复现的随机种子，扣费与领奖是同一事务。本地存档与此前旧版隔离。新版存档另存，旧版进度不会被覆盖。</p><div class="controls"><button class="btn secondary" id="export">导出新存档</button><button class="btn critical" id="reset">备份并重开</button></div><p class="tiny" id="saveStatus">载入中……</p></section>
-</aside></div><p class="footer">这是核心玩法验收切片，不代表所有系统已开发完毕。后续洞府、灵宠、法宝及天命遗物会继续按“抽卡获取，再由所属系统发挥效果”的规则接入。</p>
-<nav class="mobile-quick" aria-label="高频操作"><button type="button" id="goExplore"><span>⚔</span> 探索</button><button type="button" id="goGacha"><span>✦</span> 抽卡</button></nav></main><div class="modal" id="drawModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true"><div class="dialog"><div class="panelhead"><h2 id="modalTitle">本次机缘</h2><button class="btn secondary" id="closeModal">关闭</button></div><div id="modalResults"></div><button class="btn primary full" id="modalDone">收入囊中</button></div></div>
-<script type="module" src="./src/m0/ui.mjs"></script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#101b19"/><title>抽卡修仙传 · v0.7.1 放置战斗工作台</title>
+<link rel="stylesheet" href="./m0-idle.css"/>
+</head>
+<body>
+<main class="game-shell" id="gameShell">
+<header class="app-header">
+  <div class="brand"><span class="brand-seal">仙</span><div><div class="brand-kicker">GACHA ASCENSION <span class="brand-version">v0.7.1</span></div><h1>抽卡修仙传</h1></div></div>
+  <div class="top-shortcuts"><span class="chip"><span class="gem">◆</span> <strong id="headerStones">65</strong> 灵石</span><span class="chip" id="headerRealm">练气 · Lv.1</span><a class="top-link" href="./codex.html" title="查看完整规划图鉴">图鉴 ↗</a></div>
+</header>
+<div class="app-frame">
+  <nav class="system-sidebar" aria-label="系统导航">
+    <div class="sidebar-heading">当前活动</div>
+    <button class="nav-item is-active" data-view="explore"><span class="nav-glyph">⚔</span><span>仙途探索<small>自动作战 / 扫荡</small></span></button>
+    <button class="nav-item" data-view="gacha"><span class="nav-glyph">✦</span><span>机缘抽卡<small>获取全部成长</small></span></button>
+    <button class="nav-item" data-view="collection"><span class="nav-glyph">▣</span><span>功法构筑<small>卡牌 / 主战特性</small></span></button>
+    <button class="nav-item" data-view="realm"><span class="nav-glyph">☯</span><span>境界突破<small>修为 / 丹道</small></span></button>
+    <div class="sidebar-heading spaced">活动记录</div>
+    <button class="nav-item" data-view="records"><span class="nav-glyph">≡</span><span>战斗日志<small>奖励 / 战况</small></span></button>
+    <button class="nav-item" data-view="settings"><span class="nav-glyph">⚙</span><span>设置与存档<small>导出 / 备份</small></span></button>
+    <div class="sidebar-heading spaced">后续系统</div>
+    <button class="nav-item locked-nav" disabled title="后续版本开放"><span class="nav-glyph">⌂</span><span>洞府 <small>规划中</small></span></button>
+    <button class="nav-item locked-nav" disabled title="后续版本开放"><span class="nav-glyph">♧</span><span>灵宠 <small>规划中</small></span></button>
+    <button class="nav-item locked-nav" disabled title="后续版本开放"><span class="nav-glyph">❖</span><span>天命遗物 <small>规划中</small></span></button>
+    <div class="sidebar-bottom">当前为30层玩法验证切片<br/>不会结算离线收益</div>
+  </nav>
+  <div class="app-main">
+    <div class="overview-strip">
+      <div class="overview-item"><span>境界修为</span><strong id="level">练气 · Lv.1</strong><small id="cap">等级上限 10</small></div>
+      <div class="overview-item"><span>持有灵石</span><strong id="stones" class="gold-value">65</strong><small id="speed">灵石 +0% / 修为 +0%</small></div>
+      <div class="overview-item"><span>已通主线</span><strong id="depth">0 <i>/ 30 层</i></strong><small id="nextUnlock">第5层开放聚财</small></div>
+      <div class="overview-item overview-xp"><span>修为进度</span><strong id="experience">0 / 45</strong><div class="track xp-track"><div class="track-fill xp-fill" id="xpbar"></div></div></div>
+    </div>
+    <div class="work-area">
+      <div class="work-column">
+        <div class="view-header"><div><small id="viewEyebrow">CURRENT ACTIVITY / EXPLORATION</small><h2 id="viewTitle">仙途探索</h2></div><span class="live-status" id="mode">探索待命</span></div>
+        <div class="views">
+          <section class="view is-active" data-view-panel="explore" id="battlePanel">
+            <section class="activity-card">
+              <div class="activity-top"><div><span class="eyebrow" id="stage">普通 · 第 1 层</span><h3 id="enemyName">青云山麓</h3><p id="enemyStats">基础资源正在载入</p></div><span id="battleTier" class="enemy-tier">普通遭遇</span></div>
+              <div class="combat-theatre" id="combatTheatre" aria-label="战斗播放区">
+                <div class="fighter hero-fighter" id="heroFighter">
+                  <div class="fighter-heading"><span>修士</span><b id="heroHpValue">245 / 245</b></div>
+                  <div class="track health-track"><div class="track-fill hero-health" id="heroBar" style="width:100%"></div></div>
+                  <div class="sprite hero-sprite" id="heroSprite" aria-hidden="true"><span>仙</span></div>
+                  <div class="fighter-stats" id="heroStats">攻 — · 防 —</div>
+                </div>
+                <div class="clash-center"><div class="clash-sigil" id="clashSigil">⚔</div><small id="duelLabel">准备迎敌</small></div>
+                <div class="fighter enemy-fighter" id="enemyFighter">
+                  <div class="fighter-heading"><span id="duelEnemyName">妖物</span><b id="enemyHpValue">— / —</b></div>
+                  <div class="track health-track"><div class="track-fill enemy-health" id="enemyBar" style="width:100%"></div></div>
+                  <div class="sprite enemy-sprite" id="enemySprite" aria-hidden="true"><span>妖</span></div>
+                  <div class="fighter-stats" id="enemyCompact">攻 — · 防 —</div>
+                </div>
+                <div id="damageLayer" class="damage-layer" aria-hidden="true"></div>
+              </div>
+              <div class="activity-interval"><div class="interval-caption"><span id="battleStatus">等待自动探索</span><span id="intervalLabel">下一次交锋</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
+              <div class="battle-feedback"><span class="result-bullet" id="lastBattle">点击自动探索开始战斗；战斗胜利即领取奖励。</span><span class="last-earn" id="rewardPulse">灵石、修为由战斗产出</span></div>
+              <div class="battle-controls"><button class="action-btn primary-action" id="auto">▶ 开始自动探索</button><button class="action-btn" id="single">手动挑战</button><button class="action-btn" id="push">重新冲关</button><button class="action-btn quiet-action" id="farm">旧层扫荡</button><button class="action-btn quiet-action" id="stop">暂停</button></div>
+              <div class="activity-meta"><label for="farmTarget">扫荡层数</label><select id="farmTarget" disabled><option value="0">暂无已通关层</option></select><span id="battles">0 场战斗</span><button type="button" class="text-action" data-view="gacha">前往抽卡 →</button></div>
+            </section>
+            <div class="lower-panels">
+              <section class="compact-card diagnose-card"><div class="compact-heading"><h3>修行指引</h3><span>战斗预测</span></div><p id="preview">正在推演交锋</p><div id="diagnosis" class="diagnosis">加载中……</div></section>
+              <section class="compact-card route-card"><div class="compact-heading"><h3>主线路线</h3><span>青云山麓</span></div><div class="progressrow" id="progress" aria-label="前30层进度"></div><div class="route-tip">5 聚财 · 10 修为 · 16 丹道 · 20 筑基 · 30 首领</div></section>
+            </div>
+          </section>
+          <section class="view" data-view-panel="gacha" id="packPanel"><div class="view-intro">灵石通过战斗获得；抽卡则决定角色战力、资源效率、修为上限与突破资源。同名卡自动成长。</div><div class="packs" id="packs"></div></section>
+          <section class="view" data-view-panel="collection"><div class="panel-toolbar"><div><strong>本世卡牌与功法</strong><small>基础卡被动生效，战斗特性同时只装备一种</small></div><span id="collectionCount">0张</span></div><div class="collection" id="collection"></div></section>
+          <section class="view" data-view-panel="realm" id="realmPanel"><div class="realm-summary"><span class="realm-symbol">☯</span><div><span class="eyebrow">REALM / CULTIVATION</span><h3>灵脉境界</h3><p>击败第20层守关者后，满足修为等级与指定丹药才能筑基。</p></div></div><div class="realm-state"><span id="gateStatus">未抵达</span><p id="gateDescription">需要达到Lv.12，并从丹道宝匣取得筑基丹。</p><div class="realm-needs"><span id="pillCounter">筑基丹 ×0</span><span id="gateLevel">Lv.1 / 12</span></div></div><button class="action-btn primary-action realm-button" id="breakthrough" disabled>突破条件未满足</button></section>
+          <section class="view" data-view-panel="records"><div class="panel-toolbar"><strong>最近的战斗与成长记录</strong><span>实时记录</span></div><div class="logs" id="logs"><div class="log">等待探索开始。</div></div></section>
+          <section class="view" data-view-panel="settings"><div class="panel-toolbar"><strong>存档与操作偏好</strong><span>Schema 3</span></div><p class="view-intro">当前使用独立的 M0.2 本地存档。历史 M0.1 和 v0.1 存档不会被清除。无离线战斗收益，切换后台时自动暂停。</p><div class="settings-actions"><button id="export" class="action-btn">导出 JSON 存档</button><button id="reset" class="action-btn danger-btn">备份并重开</button></div><p class="save-state" id="saveStatus" role="status">载入中……</p><p class="view-intro"><a href="./index.html">历史 v0.1</a> · <a href="./codex.html">规划图鉴</a> · <a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/M0.2-ACCEPTANCE-v0.7.md">验收说明</a></p></section>
+        </div>
+      </div>
+      <aside class="detail-rail" aria-label="当前修士状态">
+        <div class="rail-card character-card"><div class="rail-heading"><h3>角色状态</h3><span>当前世</span></div><div class="portrait-avatar">仙</div><div class="stat-pair"><span>攻击</span><strong id="sideAttack">42</strong></div><div class="stat-pair"><span>气血</span><strong id="sideHp">245</strong></div><div class="stat-pair"><span>防御</span><strong id="sideDefense">15</strong></div><div class="rail-divider"></div><div class="stat-pair"><span>主战特性</span><strong id="sideTrait">未装备</strong></div><div class="stat-pair"><span>灵石增益</span><strong id="sideGoldPct">+0%</strong></div><div class="stat-pair"><span>修为增益</span><strong id="sideXpPct">+0%</strong></div></div>
+        <div class="rail-card rail-goal"><div class="rail-heading"><h3>下一目标</h3><span>自动提醒</span></div><p id="sideTip">先开始战斗，抽取战力卡来增强实力。</p><button class="rail-cta" type="button" data-view="gacha">打开机缘卡包 →</button></div>
+        <div class="rail-footer">导航中的洞府、灵宠、天命遗物为后续系统预留；本版不展示未完工的入口。</div>
+      </aside>
+    </div>
+  </div>
+</div>
+<nav class="mobile-tabs" aria-label="游戏功能快速切换">
+<button data-view="explore" class="is-active"><span>⚔</span>探索</button>
+<button data-view="gacha"><span>✦</span>抽卡</button>
+<button data-view="collection"><span>▣</span>构筑</button>
+<button data-view="realm"><span>☯</span>境界</button>
+<button data-view="records"><span>≡</span>记录</button>
+<button data-view="settings"><span>⚙</span>设置</button>
+</nav>
+<div class="modal" id="drawModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modalTitle"><div class="dialog"><div class="dialog-header"><h2 id="modalTitle">机缘获取</h2><button class="close-modal" id="closeModal" type="button" aria-label="关闭">✕</button></div><div id="modalResults"></div><button class="action-btn primary-action modal-confirm" id="modalDone">收入囊中</button></div></div>
+<script type="module" src="./src/m0/ui.mjs"></script>
+</main></body></html>
