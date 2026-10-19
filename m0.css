@@ -19,3 +19,18 @@ button{font:inherit;cursor:pointer}button:disabled{opacity:.42;cursor:not-allowe
 .footer{margin-top:18px;font-size:11px;color:var(--muted);line-height:1.8}
 @media(max-width:780px){.shell{padding:19px 12px 65px}.workspace{grid-template-columns:1fr}.statstrip{grid-template-columns:repeat(2,1fr)}.topstat b{font-size:19px}.panel{padding:15px}.mast h1{font-size:22px}.vsunit{font-size:11px}.fightfloor{padding:20px 12px}.fightopponent{font-size:42px}}
 @media(prefers-reduced-motion:reduce){.bar span{transition:none}}
+
+/* M0.1: growth is entirely mediated by gacha draws, not currency training. */
+.rowcompact{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border:1px solid #556a5277;border-radius:9px;background:#102219;padding:12px;font-size:12px;color:#d7d5c0;margin:12px 0}
+.packs{display:flex;flex-direction:column;gap:11px}.pack{border:1px solid #4b6150;background:linear-gradient(135deg,#243c2d,#16271e);border-radius:13px;padding:14px;position:relative}
+.pack.locked{background:#141e19;border-color:#364a3c;color:#90a394}.pack.locked .packname{color:#adbbaa}.packhead{display:flex;justify-content:space-between;align-items:center;gap:10px}.packname{font-size:16px;font-weight:800;color:var(--gold)}.packinfo{font-size:11px;color:var(--muted);line-height:1.65;margin:8px 0}.packtag{padding:3px 8px;border-radius:50px;border:1px solid #ac946c99;color:var(--gold);font-size:10px;white-space:nowrap}
+.packstats{font-size:11px;color:#c7d5c4;margin:8px 0}.packstats strong{color:var(--gold)}.packactions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.packactions .btn{padding:9px 6px;font-size:12px;min-height:44px}.packactions button:disabled{opacity:.45}
+.collection{display:flex;flex-direction:column;gap:7px;max-height:360px;overflow:auto}.owned{background:#14271d;border:1px solid #405b47;border-radius:9px;padding:10px 11px;display:flex;justify-content:space-between;gap:10px;align-items:start}.owned b{font-size:12px}.owned small{font-size:10px;color:var(--muted);display:block;line-height:1.6;margin-top:5px}.owned .count{white-space:nowrap;color:var(--gold);font-weight:800}.collection .empty{font-size:12px;color:var(--muted);padding:12px;border:1px dashed #46614e;border-radius:9px}
+.rare-huang{color:#c8d4c6}.rare-xuan{color:#90d2ac}.rare-di{color:#99bbeb}.rare-tian{color:#f1bc73}
+.modal{position:fixed;inset:0;background:#020806d7;z-index:60;display:none;align-items:center;justify-content:center;padding:14px}.modal.open{display:flex}
+.dialog{width:min(510px,100%);max-height:90dvh;overflow:auto;border:1px solid #cda865;border-radius:16px;background:linear-gradient(155deg,#273f30,#111e18);padding:20px;box-shadow:0 22px 60px #000a}
+.draw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0}
+.draw-card{padding:12px 9px;border-radius:10px;border:1px solid #526f58;background:#17281f;min-height:92px}.draw-card .rarity{font-size:10px;margin-bottom:6px}.draw-card strong{font-size:14px;display:block}.draw-card small{font-size:11px;color:#adbeae;display:block;margin-top:6px;line-height:1.4}
+.draw-card.rare-di,.draw-card.rare-tian{background:linear-gradient(135deg,#4e4531,#273323);border-color:#b99759}
+.milestone{color:#ebcf85;font-weight:700}.pack .lockedhint{font-size:11px;color:#a0a88f;margin-top:7px}
+@media(max-width:520px){.shell{padding:14px 10px 50px}.warning{font-size:11px;line-height:1.6}.pack{padding:12px}.packname{font-size:15px}.owned{padding:9px 10px}.draw-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dialog{padding:14px}.topstat b{font-size:18px}}
