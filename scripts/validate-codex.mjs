@@ -50,7 +50,7 @@ const sections = ["relics", "packs", "prototypes", "enemies", "stages", "realms"
 const all = sections.flatMap((section) => data[section] || []);
 check(data.schemaVersion === "0.4", "Invalid schemaVersion");
 check(new Set(all.map(x => x.id)).size === all.length, "Duplicate catalog ID");
-check(all.every(x => x.id && x.name), "Missing id/name");
+check(all.every(x => x.id && (x.name || (x.floor > 0 && x.zone && x.enemyId))), "Missing id/name or stage identifiers");
 check(data.relics.length === 30, "Expected 30 proposed relics");
 check(data.fateChest.tierWeightsPct.length === 5, "Five rarity weights required");
 check(Math.abs(data.fateChest.tierWeightsPct.reduce((sum, n) => sum + n, 0) - 100) < 1e-9, "Rarity weights must sum to 100");
