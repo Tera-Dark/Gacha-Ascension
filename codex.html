@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102019"><title>抽卡修仙传 · 设计总图鉴</title>
+<style>
+:root{--bg:#101a15;--box:#1b2d22;--line:#3b5340;--ink:#f0f0e6;--muted:#a0b4a1;--gold:#e0bc7a}*{box-sizing:border-box}
+body{font:14px system-ui,"Microsoft YaHei",sans-serif;background:radial-gradient(ellipse at 80% 0,#2f593f55,transparent 45%),var(--bg);color:var(--ink);margin:0}
+main{max-width:1180px;margin:auto;padding:28px 18px 60px}h1{font-size:28px;margin:9px 0}p{color:var(--muted);line-height:1.7}a{color:var(--gold)}
+nav{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin:14px 0}.eyebrow{color:var(--gold);font-size:11px;letter-spacing:.18em}
+.notice{background:#4b442c55;color:#edd7a6;padding:12px;border:1px solid #89754377;border-radius:12px;font-size:12px;margin:20px 0}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:19px 0}.summary div{background:var(--box);border:1px solid var(--line);border-radius:12px;padding:16px}.summary b{display:block;font-size:22px;color:var(--gold)}.summary small{color:var(--muted)}
+.filters{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:9px;background:var(--box);padding:14px;border-radius:14px;border:1px solid var(--line)}
+label{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:6px}input,select{background:#101e17;color:var(--ink);border:1px solid #4b6650;border-radius:8px;padding:10px;width:100%;min-height:43px;font:inherit}button{font:inherit;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#count{font-size:12px;color:var(--muted);margin:15px 0}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.item{background:linear-gradient(135deg,#24392a,#17271e);border:1px solid #46604a;border-radius:12px;color:var(--ink);text-align:left;padding:14px;min-height:137px}.item:hover{border-color:var(--gold)}
+.itemhead{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);margin-bottom:10px}.item h3{font-size:16px;margin:0 0 8px}.item p{font-size:12px;margin:0}.item .foot{font-size:11px;color:var(--gold);margin-top:10px}
+.modal{display:none;position:fixed;inset:0;background:#040a07d9;z-index:10;padding:14px;align-items:center;justify-content:center}.modal.open{display:flex}
+.dialog{width:min(550px,100%);max-height:90dvh;overflow:auto;border:1px solid #b79b68;border-radius:15px;padding:24px;background:#1c3023}
+.dialog header{display:flex;align-items:start;justify-content:space-between;gap:10px}.dialog h2{font-size:24px;margin:5px 0 15px}
+.close{border:1px solid var(--line);border-radius:7px;padding:8px 13px;background:#284332;color:var(--ink)}
+.detailrow{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid #46584255;padding:10px 0;font-size:12px}
+.detailrow span{color:var(--muted)}.detailrow strong{text-align:right;max-width:70%}
+.sim{background:#102016;padding:15px;border:1px solid var(--line);border-radius:10px;margin-top:14px}.sim input{margin:8px 0 0;accent-color:var(--gold)}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.filters{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){h1{font-size:22px}.cards{grid-template-columns:1fr}.filters label:first-child{grid-column:1/-1}main{padding:20px 12px 40px}}
+</style></head><body><main>
+<div class="eyebrow">GACHA ASCENSION · DESIGN CODEX V0.4</div><h1>抽卡修仙传 · 总图鉴</h1><p>110 项候选内容的统一索引。支持分类、品质、系统筛选；点击每个条目可查看遗物层数、上限及关卡数值。</p>
+<nav><a href="index.html">旧版游戏</a><a href="docs/GDD-v0.4.md">总体设计</a><a href="docs/CODEX.md">Markdown 图鉴</a><a href="data/codex/catalog.v0.4.csv">全目录 CSV</a></nav>
+<div class="notice">注意：当前仅为设计提案与数值预览，并非在线 MVP 已实装功能。所有数值尚待模拟校准。</div>
+<div class="summary" id="stats"><div><b>—</b><small>条目总数</small></div><div><b>—</b><small>永久遗物</small></div><div><b>—</b><small>功能卡片</small></div><div><b>—</b><small>关卡样例</small></div></div>
+<div class="filters"><label>搜索名称 / ID / 属性<input id="search" placeholder="TM-025、玄龟、功法、灵石"></label>
+<label>类型<select id="type"><option value="">全部类型</option><option value="relic">永久遗物</option><option value="prototype">功能卡牌</option><option value="enemy">敌人</option><option value="stage">关卡</option><option value="realm">境界</option><option value="pack">卡包</option></select></label>
+<label>稀有度<select id="rarity"><option value="">全部稀有度</option><option value="huang">黄阶</option><option value="xuan">玄阶</option><option value="di">地阶</option><option value="tian">天阶</option><option value="xian">仙阶</option></select></label>
+<label>所属系统<select id="system"><option value="">全部系统</option></select></label></div>
+<div id="count" role="status">正在加载数据……</div><section class="cards" id="items"></section>
+<p>数据源：本仓库 <a href="data/codex/codex.v0.4.json">codex.v0.4.json</a>。本页不会修改游戏存档。</p></main>
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="dialog"><header><div><div class="eyebrow" id="detailType"></div><h2 id="detailTitle"></h2></div><button class="close" id="close">关闭</button></header><div id="details"></div></div></div>
+<script>
+(function(){
+'use strict';
+var el=function(id){return document.getElementById(id)};
+var tiers={huang:'黄阶',xuan:'玄阶',di:'地阶',tian:'天阶',xian:'仙阶'};
+var colors={huang:'#b6c0ac',xuan:'#81c7a3',di:'#90bdf3',tian:'#ceabed',xian:'#f1d188'};
+var rows=[];
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(k){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[k]})}
+function normalize(data){
+ var arr=[];
+ data.relics.forEach(function(x){arr.push(Object.assign({kind:'relic',kindName:'天命遗物',summary:'每层 +'+x.valuePerStack+x.unit+' · 上限 '+x.maxStacks+' 层 · '+x.description},x))});
+ data.prototypes.forEach(function(x){arr.push(Object.assign({kind:'prototype',kindName:'功能卡牌',summary:x.effectSummary},x))});
+ data.enemies.forEach(function(x){arr.push(Object.assign({kind:'enemy',kindName:'敌人',system:'探索',rarity:'',summary:x.trait+' / 攻击×'+x.attackMultiplier+' / 气血×'+x.healthMultiplier+' / 防御×'+x.defenseMultiplier},x))});
+ data.stages.forEach(function(x){arr.push(Object.assign({kind:'stage',kindName:'关卡',system:'探索',rarity:'',name:x.zone+'·'+x.floor+'层',summary:x.enemyName+' · 攻'+x.baseAttack+' / 血'+x.baseHp+' / 防'+x.baseDefense+' · 灵石+'+x.stones},x))});
+ data.realms.forEach(function(x){arr.push(Object.assign({kind:'realm',kindName:'境界',system:'修士',rarity:'',summary:'等级 '+x.levelStart+'-'+x.levelEnd+' / 下一境界 '+x.breakthroughTo},x))});
+ data.packs.forEach(function(x){arr.push(Object.assign({kind:'pack',kindName:'卡包',rarity:'',summary:x.asset+' / 消耗'+x.currency},x))});
+ return arr;
+}
+function render(){
+ var q=el('search').value.trim().toLowerCase(),k=el('type').value,r=el('rarity').value,s=el('system').value;
+ var list=rows.filter(function(x){return (!k||x.kind===k)&&(!r||x.rarity===r)&&(!s||x.system===s)&&(!q||[x.id,x.name,x.summary,x.system,x.effectKey].join(' ').toLowerCase().includes(q))});
+ el('count').textContent='当前显示 '+list.length+' / '+rows.length+' 项';
+ el('items').innerHTML=list.length?list.map(function(x){return '<button class="item" data-id="'+esc(x.id)+'"><div class="itemhead"><span>'+esc(x.kindName)+' · '+esc(x.id)+'</span><span style="color:'+(colors[x.rarity]||'#aac4b5')+'">'+esc(tiers[x.rarity]||'')+'</span></div><h3>'+esc(x.name)+'</h3><p>'+esc(x.summary)+'</p><div class="foot">'+esc(x.system)+' · '+(x.state==='example_only'?'数值样例':'设计提案')+'</div></button>'}).join(''):'<p>没有符合条件的条目。</p>';
+}
+function row(k,v){return '<div class="detailrow"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>'}
+function detail(x){
+ var html=row('编号',x.id)+row('类型',x.kindName)+row('系统',x.system)+row('品质',tiers[x.rarity]||'不适用')+row('状态',x.state||'设计提案')+row('说明',x.description||x.summary);
+ if(x.kind==='relic')html+=row('属性 Key',x.effectKey)+row('每层增益','+'+x.valuePerStack+x.unit)+row('最高层数',x.maxStacks)+row('最高原始总增益','+'+x.maxRawValue+x.unit)+row('获取来源','轮回因果 · 天命遗物箱')+'<div class="sim"><strong>模拟收藏层数：<span id="simCount">0/'+x.maxStacks+'</span></strong><input id="simSlider" aria-label="查看不同遗物层数数值" type="range" min="0" max="'+x.maxStacks+'" value="0"><div id="simOutput">实际原始增益：+0'+esc(x.unit)+'</div></div>';
+ if(x.kind==='stage')html+=row('敌人ID',x.enemyId)+row('基础攻击',x.baseAttack)+row('基础气血',x.baseHp)+row('基础防御',x.baseDefense)+row('基础灵石收益',x.stones)+row('基础修为收益',x.cultivationXp);
+ el('detailType').textContent=x.kindName+' · '+x.id;el('detailTitle').textContent=x.name;el('details').innerHTML=html;el('modal').classList.add('open');
+ if(x.kind==='relic')el('simSlider').addEventListener('input',function(e){var n=+e.target.value;el('simCount').textContent=n+'/'+x.maxStacks;el('simOutput').textContent='当前原始增益：+'+Number((n*x.valuePerStack).toFixed(2))+x.unit});
+}
+el('items').addEventListener('click',function(e){var item=e.target.closest('[data-id]');if(item){var x=rows.find(function(y){return y.id===item.dataset.id});if(x)detail(x)}});
+['search','type','rarity','system'].forEach(function(id){el(id).addEventListener(id==='search'?'input':'change',render)});
+function close(){el('modal').classList.remove('open')}
+el('close').addEventListener('click',close);el('modal').addEventListener('click',function(e){if(e.target===el('modal'))close()});document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+fetch('data/codex/codex.v0.4.json').then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(function(d){
+ rows=normalize(d);var systems=Array.from(new Set(rows.map(function(x){return x.system}))).sort();
+ el('system').innerHTML='<option value="">全部系统</option>'+systems.map(function(s){return '<option value="'+esc(s)+'">'+esc(s)+'</option>'}).join('');
+ el('stats').innerHTML='<div><b>'+rows.length+'</b><small>条目总数</small></div><div><b>'+d.relics.length+'</b><small>永久遗物</small></div><div><b>'+d.prototypes.length+'</b><small>功能卡片</small></div><div><b>'+d.stages.length+'</b><small>关卡样例</small></div>';
+ render();
+}).catch(function(error){el('count').textContent='读取失败';el('items').innerHTML='<p>无法读取图鉴数据：'+esc(error.message)+'。请通过 GitHub Pages 或本地 HTTP 服务访问。</p>'});
+})();
+</script></body></html>
