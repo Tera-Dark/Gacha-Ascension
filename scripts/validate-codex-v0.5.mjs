@@ -100,7 +100,7 @@ for(const [type,path] of sheets){
  for(const row of rows){
   let entry=src.get(row.id);ok(!!entry,path+" missing "+row.id);if(!entry)continue;
   for(const [field,val] of Object.entries(row)){
-   if(field in entry){const expect=String(Array.isArray(entry[field])?entry[field].join("|"):entry[field]);ok(expect===val,path+" mismatch "+row.id+"."+field);}
+   if(field in entry){const expect=String(entry[field]==null?"":Array.isArray(entry[field])?entry[field].join("|"):entry[field]);ok(expect===val,path+" mismatch "+row.id+"."+field);}
   }
  }
 }
