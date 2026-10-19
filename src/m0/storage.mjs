@@ -5,8 +5,21 @@ export function loadM0Save(storage=globalThis.localStorage) {
   if(!storage) return {state:createM0Save(),status:"memory"};
   let raw=storage.getItem(M0_SAVE_KEY);
   if(!raw)return {state:createM0Save(),status:"new"};
-  try {return {state:validateM0Save(JSON.parse(raw)),status:"restored"};}
-  catch(error){return {state:createM0Save(),status:"invalid",error:String(error)};}
+  try {
+    const parsed=JSON.parse(raw);
+    if(parsed && parsed.schemaVersion===1 && parsed.txSequence===undefined){
+      // Early M0 experimental save: retain progress, archive old receipt IDs,
+      // and move to bounded monotonically sequenced transactions.
+      storage.setItem(BACKUP_KEY,raw);
+      parsed.txSequence=0;
+      parsed.receipts={};
+      parsed.receiptOrder=[];
+      validateM0Save(parsed);
+      storage.setItem(M0_SAVE_KEY,JSON.stringify(parsed));
+      return {state:parsed,status:"migrated"};
+    }
+    return {state:validateM0Save(parsed),status:"restored"};
+  }catch(error){return {state:createM0Save(),status:"invalid",error:String(error)};}
 }
 export function saveM0Save(state,storage=globalThis.localStorage) {
   validateM0Save(state);
