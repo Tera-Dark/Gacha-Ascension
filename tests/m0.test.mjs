@@ -174,3 +174,14 @@ test("battle forecasts are deterministic and do not spend random seeds",()=>{
  assert.deepEqual(a.predicted,b.predicted);
  assert.deepEqual(s,copy);
 });
+
+test("auto-retry never bypasses a pending realm gate after new card or equipment",()=>{
+ let s=supplied(13,20);
+ s.run.exploration.mode="farm";s.run.exploration.farmFloor=20;s.run.exploration.farmReason="defeat";
+ s.run.gacha.cards["B-09"]=1;
+ const r=call(s,"DRAW",{packId:"battle",count:1});
+ assert.equal(r.state.run.exploration.mode,"farm");
+ assert.throws(()=>call(r.state,"SET_MODE",{mode:"push"}),/境界锁/);
+ const equipped=call(r.state,"EQUIP_TRAIT",{cardId:"B-09"});
+ assert.equal(equipped.state.run.exploration.mode,"farm");
+});
