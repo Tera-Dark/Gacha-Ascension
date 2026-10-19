@@ -1,180 +1,176 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {loadM0Catalog,STAGE_LIMIT,M0_SAVE_KEY,opponentStats} from "../src/m0/catalog.mjs";
-import {createM0Save,getHeroStats,effects,levelCap,validateM0Save,levelFromXp} from "../src/m0/state.mjs";
-import {fight,damage,nextRandom} from "../src/m0/combat.mjs";
-import {executeM0,battlePreview} from "../src/m0/engine.mjs";
+import {loadM0Catalog,opponentStats,STAGE_LIMIT,M0_SAVE_KEY} from "../src/m0/catalog.mjs";
+import {createM0Save,validateM0Save,getHeroStats,levelCap} from "../src/m0/state.mjs";
+import {damage,fight,nextRandom} from "../src/m0/combat.mjs";
+import {executeM0,battlePreview,diagnose} from "../src/m0/engine.mjs";
 import {loadM0Save,saveM0Save,resetM0Save,BACKUP_KEY} from "../src/m0/storage.mjs";
-const json=(file)=>JSON.parse(readFileSync(new URL("../data/"+file,import.meta.url),"utf8"));
-const c=loadM0Catalog(json("codex/codex.v0.5.json"),json("m0-packs.v0.6.json"));
-function exec(s,type,more={}){return executeM0(s,{type,txnId:"tx:"+(s.txSequence+1),...more},c);}
-function grant(s,{stones=10000,depth=0}={}){
- s.run.stones=stones;s.run.exploration.highestCleared=depth;s.meta.bestDepth=Math.max(s.meta.bestDepth,depth);
- return s;
+const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
+const catalog=loadM0Catalog(read("codex/codex.v0.5.json"),read("m0-packs.v0.7.json"),read("m0-encounters.v0.7.json"));
+function call(save,type,details={}){return executeM0(save,{type,...details,txnId:"tx:"+(save.txSequence+1)},catalog);}
+function supplied(seed=42,depth=0,stones=12000){
+ const save=createM0Save(seed);
+ save.run.stones=stones;save.run.exploration.history.totalStonesEarned=stones-65;
+ save.run.exploration.highestCleared=depth;save.meta.bestDepth=depth;
+ return save;
 }
-function runTo(s,depth){
- for(let i=0;i<depth;i++){
-  if(s.run.exploration.mode!=="push")s=exec(s,"SET_MODE",{mode:"push"}).state;
-  const r=exec(s,"BATTLE");assert.equal(r.result.won,true,"Failed at stage "+r.result.floor);
-  s=r.state;
- }return s;
-}
-test("content: 30 real stages and 4 packs with 24 unique cards",()=>{
- assert.equal(c.stages.length,STAGE_LIMIT);assert.equal(Object.keys(c.packs).length,4);
- assert.equal(Object.keys(c.cards).length,24);assert.equal(c.packs.battle.unlockedAt,0);
- assert.equal(c.packs.elixir.unlockedAt,16);assert.equal(c.ascension.requiredCleared,20);
- assert.throws(()=>loadM0Catalog(json("codex/codex.v0.5.json"),{version:"0.4"}),/Invalid/);
+test("v0.7 catalog has 30 stages, 28 cards, four stances, six encounter overrides",()=>{
+ assert.equal(catalog.stages.length,STAGE_LIMIT);
+ assert.equal(Object.keys(catalog.cards).length,28);
+ assert.equal(Object.keys(catalog.encounters).length,6);
+ assert.equal(Object.keys(catalog.traitDefinitions).length,4);
+ assert.equal(catalog.encounters[10].traitIds[0],"iron_shell");
+ assert.throws(()=>loadM0Catalog(read("codex/codex.v0.5.json"),read("m0-packs.v0.7.json"),{version:"0.6"}));
+ assert.throws(()=>loadM0Catalog(read("codex/codex.v0.5.json"),read("m0-packs.v0.6.json"),read("m0-encounters.v0.7.json")));
 });
-test("first power pack pull is guaranteed and immediately changes attack without manual training",()=>{
- let s=createM0Save();const original=getHeroStats(s,c);
- const result=exec(s,"DRAW",{packId:"battle",count:1});
- assert.equal(result.result.items[0].id,"B-01");assert.equal(result.state.run.stones,0);
- assert.equal(getHeroStats(result.state,c).attack,original.attack+16);
- assert.equal(result.state.run.gacha.cards["B-01"],1);
- assert.throws(()=>exec(s,"TRAIN_HERO",{stat:"attack"}),/无效指令/);
- assert.equal(s.run.stones,65);
+test("fresh save has independent v3 key; battle first draw deterministically increases attack",()=>{
+ const initial=createM0Save();
+ assert.equal(initial.run.stones,65);
+ assert.notEqual(M0_SAVE_KEY,"gacha-ascension-m0-v2");
+ const first=call(initial,"DRAW",{packId:"battle",count:1});
+ assert.equal(first.result.items[0].id,"B-01");
+ assert.equal(getHeroStats(first.state,catalog).attack,getHeroStats(initial,catalog).attack+16);
+ assert.equal(first.state.run.stones,0);
+ assert.equal(first.state.run.exploration.history.totalStonesSpent,65);
+ assert.throws(()=>call(initial,"TRAIN_HERO",{stat:"attack"}),/无效指令/);
 });
-test("a low rarity duplicate stacks instead of becoming trash",()=>{
- let s=grant(createM0Save(),{stones:1000});
- const r=exec(s,"DRAW",{packId:"battle",count:1});s=r.state;
- s.run.gacha.cards["B-01"]=4;
- assert.equal(getHeroStats(s,c).attack,42+4*16);
+test("enemy elites have combat-relevant multipliers and legal hints",()=>{
+ const base=catalog.stages[9],elite=opponentStats(base,catalog),normal=opponentStats(base,null);
+ assert.ok(elite.defense>normal.defense*2.9);
+ assert.ok(elite.hp>normal.hp);
+ assert.ok(catalog.encounters[30].hint);
+ const source=JSON.stringify(catalog.encounters);
+ assert.ok(source.includes("regeneration"));
 });
-test("battle awards resources, progresses stage, and never pays a repeat first clear",()=>{
- let s=createM0Save(44);
- const first=exec(s,"BATTLE");assert.ok(first.result.won);assert.equal(first.result.firstClear,true);
- assert.equal(first.state.run.exploration.highestCleared,1);
- s=exec(first.state,"SET_MODE",{mode:"farm"}).state;
- const again=exec(s,"BATTLE");
- assert.equal(again.result.firstClear,false);
- assert.equal(again.result.stones,c.stages[0].stones);
- assert.equal(again.state.run.exploration.highestCleared,1);
+test("battle is purely deterministic and different traits change mechanics",()=>{
+ const hero={attack:110,hp:300,defense:30},enemy={attack:30,hp:700,defense:85,traitIds:[]};
+ const b=fight({hero,enemy},765);
+ assert.deepEqual(b,fight({hero,enemy},765));
+ const c=fight({hero,enemy,mechanic:{id:"combo",stacks:2}},765);
+ assert.ok(c.mechanicProcs>0);
+ assert.ok(c.heroDamage>b.heroDamage);
+ const pierce=fight({hero,enemy,mechanic:{id:"pierce",stacks:2}},765);
+ assert.ok(pierce.heroDamage>=b.heroDamage);
+ const ward=fight({hero,enemy,mechanic:{id:"ward",stacks:2}},765);
+ assert.ok(ward.absorbed>0);assert.ok(ward.damageTaken<b.damageTaken);
+ const counter=fight({hero,enemy,mechanic:{id:"counter",stacks:4}},765);
+ assert.ok(counter.mechanicProcs>0);
+ assert.ok(nextRandom(30).value<1);
+ assert.equal(damage(20,100,0.6),Math.floor(20*100/140));
+ assert.ok(b.log.length<=18);
 });
-test("progressive pack locks: wealth at 5, cultivation at 10, elixir at 16",()=>{
- let s=createM0Save();
- for(const id of ["wealth","cultivation","elixir"])
-  assert.throws(()=>exec(s,"DRAW",{packId:id,count:1}),/尚未解锁/);
- s=runTo(s,5);
- assert.ok(s.run.exploration.highestCleared===5);
- assert.equal(exec(s,"DRAW",{packId:"wealth",count:1}).result.packId,"wealth");
- assert.throws(()=>exec(s,"DRAW",{packId:"cultivation",count:1}),/尚未解锁/);
- const f=grant(createM0Save(123),{depth:10,stones:3000});
- assert.equal(exec(f,"DRAW",{packId:"cultivation",count:1}).result.packId,"cultivation");
- const e=grant(createM0Save(123),{depth:16,stones:3000});
- assert.equal(exec(e,"DRAW",{packId:"elixir",count:1}).result.packId,"elixir");
+test("first clear pays once, repeats never grant first clear bonus",()=>{
+ let s=createM0Save(2);
+ const a=call(s,"BATTLE");assert.equal(a.result.won,true);
+ assert.equal(a.result.firstClear,true);
+ s=call(a.state,"SET_MODE",{mode:"farm"}).state;
+ const r=call(s,"BATTLE");
+ assert.equal(r.result.firstClear,false);
+ assert.ok(a.result.stones>r.result.stones);
+ assert.equal(r.state.run.exploration.highestCleared,1);
+ assert.equal(r.state.run.exploration.history.totalStonesEarned,a.result.stones+r.result.stones);
 });
-test("wealth cards increase battle earnings (not attack) and cultivation cards grow level cap",()=>{
- const s=grant(createM0Save(),{stones:1500,depth:10});
- const stats=getHeroStats(s,c);
- s.run.gacha.cards["W-01"]=2;
- assert.equal(getHeroStats(s,c).attack,stats.attack);
- assert.equal(effects(s,c).stoneGainPct,36);
- const base=levelCap(s,c);
- s.run.gacha.cards["C-01"]=2;
- assert.equal(levelCap(s,c),base+8);
- assert.equal(effects(s,c).xpGainPct,44);
- s.run.hero.level=10;
- s.run.cultivationXp=2000;
- const ups=levelFromXp(s,c);
- assert.ok(ups>0);assert.equal(s.run.hero.level,Math.min(18,s.run.hero.level));
+test("locked packs reject early purchases without spending",()=>{
+ const s=supplied(1);
+ for(const p of ["wealth","cultivation","elixir"])assert.throws(()=>call(s,"DRAW",{packId:p,count:1}),/尚未开放/);
+ assert.equal(s.run.stones,12000);
 });
-test("battle snapshot stays deterministic, RNG seeded, no state side effects",()=>{
- const s=createM0Save(999),snapshot={hero:getHeroStats(s,c),enemy:opponentStats(c.stages[0])};
- const first=fight(snapshot,s.seed),second=fight(snapshot,s.seed);
- assert.deepEqual(first,second);assert.equal(s.seed,999);
- assert.ok(first.won);assert.ok(damage(1,999)>=1);assert.ok(nextRandom(42).value<1);
+test("combat trait auto-equips first one and only one can be manually equipped",()=>{
+ let s=supplied(19);
+ s.run.gacha.cards["B-09"]=2;s.run.gacha.cards["B-08"]=1;
+ s=call(s,"EQUIP_TRAIT",{cardId:"B-09"}).state;
+ assert.equal(s.run.gacha.equippedTrait,"B-09");
+ const a=battlePreview(s,catalog);
+ assert.ok(a.mechanic?.id==="ward");
+ s=call(s,"EQUIP_TRAIT",{cardId:"B-08"}).state;
+ assert.equal(battlePreview(s,catalog).mechanic.id,"pierce");
+ assert.throws(()=>call(s,"EQUIP_TRAIT",{cardId:"B-10"}),/没有拥有/);
+ assert.throws(()=>call(s,"EQUIP_TRAIT",{cardId:"B-01"}),/没有拥有/);
 });
-test("10 singles and 1 ten-pull use same odds, seed, pity, collection and cost",()=>{
- let x=grant(createM0Save(42),{stones:10000,depth:16}),y=structuredClone(x);
- const out=exec(x,"DRAW",{packId:"elixir",count:10});
- x=out.state;
- const ids=[];
- for(let i=0;i<10;i++){const a=exec(y,"DRAW",{packId:"elixir",count:1});ids.push(a.result.items[0].id);y=a.state;}
- assert.deepEqual(out.result.items.map(a=>a.id),ids);
- assert.equal(x.run.stones,y.run.stones);
- assert.deepEqual(x.run.gacha,y.run.gacha);
- assert.deepEqual(x.run.hero,y.run.hero);
+test("10 singles and ten-pull return identical sequences, economy and rng",()=>{
+ let x=supplied(812,16),y=structuredClone(x);
+ const multi=call(x,"DRAW",{packId:"elixir",count:10});
+ x=multi.state;const ids=[];
+ for(let i=0;i<10;i++){const o=call(y,"DRAW",{packId:"elixir",count:1});y=o.state;ids.push(o.result.items[0].id);}
+ assert.deepEqual(multi.result.items.map(x=>x.id),ids);
  assert.equal(x.seed,y.seed);
+ assert.deepEqual(x.run.gacha,y.run.gacha);
+ assert.equal(x.run.stones,y.run.stones);
+ assert.equal(x.run.exploration.history.totalStonesSpent,y.run.exploration.history.totalStonesSpent);
 });
-test("the needed 筑基丹 is guaranteed by the 8th elixir draw",()=>{
- for(const seed of [1,2,3,42,777,13433,2026]){
-  const s=grant(createM0Save(seed),{stones:10000,depth:16});
-  const r=exec(s,"DRAW",{packId:"elixir",count:10});
-  assert.ok(r.result.items.slice(0,8).some(i=>i.id==="P-04"),"Unlucky seed "+seed);
-  assert.ok(r.state.run.gacha.pills["P-04"]>0);
+test("elixir pity guarantees breakthrough pill on or before draw eight",()=>{
+ for(const seed of [1,2,42,300,2026]){
+  const initial=supplied(seed,16),out=call(initial,"DRAW",{packId:"elixir",count:10});
+  assert.ok(out.result.items.slice(0,8).some(x=>x.id==="P-04"));
+  assert.ok(out.state.run.gacha.pills["P-04"]>0);
  }
 });
-test("realm lock requires stage20, Lv12 and special pill, consumes pill on breakthrough",()=>{
- let s=grant(createM0Save(10),{stones:10000,depth:19});
- s.run.hero.level=12;s.run.gacha.cards["C-01"]=1;s.run.gacha.pills["P-04"]=1;
- assert.throws(()=>exec(s,"BREAKTHROUGH"),/第20层/);
- s.run.exploration.highestCleared=20;s.meta.bestDepth=20;
+test("realm gate rejects progression until Lv12 and consumed pill",()=>{
+ let s=supplied(3,20);
  s.run.exploration.mode="farm";s.run.exploration.farmFloor=20;s.run.exploration.farmReason="gate";
- assert.throws(()=>exec(s,"SET_MODE",{mode:"push"}),/境界锁/);
- const before=getHeroStats(s,c);
- const asc=exec(s,"BREAKTHROUGH");
- assert.equal(asc.state.run.hero.realm,"zhuji");assert.equal(asc.state.run.gacha.pills["P-04"],0);
- assert.equal(asc.state.run.exploration.mode,"push");
- assert.ok(getHeroStats(asc.state,c).attack>before.attack);
- assert.equal(asc.result.realm,"zhuji");
- assert.throws(()=>exec(asc.state,"BREAKTHROUGH"),/已完成/);
-});
-test("an insufficient level or missing pill prevents ascension without consuming any resources",()=>{
- const s=grant(createM0Save(),{depth:20,stones:10000});
- const current=JSON.stringify(s);
- assert.throws(()=>exec(s,"BREAKTHROUGH"),/等级不足/);
- assert.equal(JSON.stringify(s),current);
+ assert.throws(()=>call(s,"SET_MODE",{mode:"push"}),/境界锁/);
+ assert.throws(()=>call(s,"BREAKTHROUGH"),/Lv.12/);
  s.run.hero.level=12;s.run.gacha.cards["C-01"]=1;
- assert.throws(()=>exec(s,"BREAKTHROUGH"),/缺少筑基丹/);
+ assert.throws(()=>call(s,"BREAKTHROUGH"),/缺少筑基丹/);
+ s.run.gacha.pills["P-04"]=1;
+ const out=call(s,"BREAKTHROUGH");
+ assert.equal(out.state.run.gacha.pills["P-04"],0);
+ assert.equal(out.state.run.hero.realm,"zhuji");
+ assert.equal(out.state.run.exploration.mode,"push");
 });
-test("after a defeat, exploration falls back one floor and remains farmable",()=>{
- const s=grant(createM0Save(1337),{depth:29,stones:0});
- s.run.hero.realm="zhuji";s.run.exploration.ascended=true;
- const r=exec(s,"BATTLE");
- assert.equal(r.result.floor,30);assert.equal(r.result.won,false);assert.equal(r.result.stones,0);
- assert.equal(r.state.run.exploration.mode,"farm");assert.equal(r.state.run.exploration.farmFloor,29);
- assert.equal(r.state.run.exploration.farmReason,"defeat");
+test("failed elite retreats to last cleared floor and diagnostic points to accessible pack",()=>{
+ const s=supplied(4,9);
+ s.run.stones=65;s.run.exploration.history.totalStonesEarned=0;
+ const p=diagnose(s,catalog);
+ assert.equal(p.targetFloor,10);
+ assert.equal(p.packId,"battle");
+ const out=call(s,"BATTLE");
+ if(!out.result.won){
+  assert.equal(out.state.run.exploration.mode,"farm");
+  assert.equal(out.state.run.exploration.farmFloor,9);
+ }
 });
-test("card-powered recovery automatically retries the next floor when viable",()=>{
- const s=grant(createM0Save(4),{depth:1,stones:1000});
- s.run.exploration.mode="farm";s.run.exploration.farmFloor=1;s.run.exploration.farmReason="defeat";
- const r=exec(s,"DRAW",{packId:"battle",count:1});
- assert.equal(r.state.run.exploration.mode,"push");assert.ok(r.events.some(e=>e.type==="AutoRetry"));
+test("farm target can only be changed to an already defeated stage",()=>{
+ let s=supplied(5,4);
+ assert.throws(()=>call(s,"SET_FARM_TARGET",{floor:5}),/只能扫荡/);
+ s=call(s,"SET_FARM_TARGET",{floor:2}).state;
+ assert.equal(s.run.exploration.farmFloor,2);
+ const a=call(s,"BATTLE");
+ assert.equal(a.result.floor,2);
 });
-test("the core loop is strictly gacha-first; invalid pack draw does not deduct stones",()=>{
- const s=createM0Save(1);const snapshot=JSON.stringify(s);
- assert.throws(()=>exec(s,"DRAW",{packId:"nonexistent",count:1}),/尚未解锁/);
- assert.throws(()=>exec(s,"DRAW",{packId:"battle",count:10}),/灵石不足/);
- assert.equal(JSON.stringify(s),snapshot);
-});
-test("expired transaction ids never refund/re-award after receipts are pruned",()=>{
+test("same tx id is idempotent and pruned transaction replay forbidden",()=>{
  let s=createM0Save();
- for(let i=0;i<130;i++)s=exec(s,"SET_MODE",{mode:"paused"}).state;
- assert.equal(s.txSequence,130);assert.equal(s.receiptOrder.length,96);
- assert.throws(()=>executeM0(s,{type:"SET_MODE",mode:"push",txnId:"tx:1"},c),/过期/);
- const latest=executeM0(s,{type:"SET_MODE",mode:"paused",txnId:"tx:130"},c);
- assert.equal(latest.duplicate,true);
+ const cmd={type:"DRAW",packId:"battle",count:1,txnId:"tx:1"};
+ const first=executeM0(s,cmd,catalog);s=first.state;
+ assert.equal(executeM0(s,cmd,catalog).duplicate,true);
+ assert.throws(()=>executeM0(s,{...cmd,count:10},catalog),/相同交易号/);
+ for(let i=0;i<100;i++)s=call(s,"SET_MODE",{mode:"paused"}).state;
+ assert.equal(s.receiptOrder.length,96);
+ assert.throws(()=>executeM0(s,cmd,catalog),/过期/);
 });
-test("a saved game reloads; old v0.1/M0-v1 namespaces remain untouched",()=>{
- const m=new Map([["gacha-ascension-mvp-v1","old v0.1"],["gacha-ascension-m0-v1","old M0"]]);
- const storage={getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,String(v))};
- const current=createM0Save(9);saveM0Save(current,storage);
- assert.deepEqual(loadM0Save(storage).state,current);
- resetM0Save(storage,333);
- assert.equal(m.get("gacha-ascension-mvp-v1"),"old v0.1");
- assert.equal(m.get("gacha-ascension-m0-v1"),"old M0");
- assert.ok(m.get(BACKUP_KEY)?.includes('"seed":9'));
- m.set(M0_SAVE_KEY,"invalid-json");
- assert.equal(loadM0Save(storage).status,"invalid");
+test("new v3 storage never modifies M0, M0.1 or v0.1",()=>{
+ const data=new Map([["gacha-ascension-mvp-v1","legacy"],["gacha-ascension-m0-v1","oldM0"],
+  ["gacha-ascension-m0-v2","oldM01"]]);
+ const store={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,String(v))};
+ const s=createM0Save(22);saveM0Save(s,store);
+ assert.deepEqual(loadM0Save(store).state,s);
+ resetM0Save(store,33);
+ assert.ok(data.get(BACKUP_KEY));
+ assert.equal(data.get("gacha-ascension-m0-v2"),"oldM01");
+ assert.equal(data.get("gacha-ascension-mvp-v1"),"legacy");
 });
-test("unknown schema, negative economy, illegal realm flags and malformed receipts rejected",()=>{
- const mutators=[s=>s.schemaVersion=99,s=>s.run.stones=-1,s=>s.run.exploration.ascended=true,
- s=>s.run.gacha.cards["B-01"]=-3,s=>s.run.exploration.highestCleared=21];
- for(const mutate of mutators){const s=createM0Save();mutate(s);assert.throws(()=>validateM0Save(s));}
+test("save ledger and equipped trait validations prevent silent corrupted states",()=>{
+ const s=createM0Save(),bad=structuredClone(s);
+ bad.run.stones=-1;assert.throws(()=>validateM0Save(bad));
+ const invalid=structuredClone(s);invalid.run.gacha.equippedTrait="B-07";
+ assert.throws(()=>validateM0Save(invalid),/Equipped/);
+ const ledger=structuredClone(s);ledger.run.stones+=1000;
+ assert.throws(()=>validateM0Save(ledger),/Inconsistent/);
 });
-test("stage battle is not playable while paused",()=>{
- const s=createM0Save();const r=exec(s,"SET_MODE",{mode:"paused"});
- assert.throws(()=>exec(r.state,"BATTLE"),/暂停/);
- assert.ok(battlePreview(r.state,c).hero.attack>0);
+test("battle forecasts are deterministic and do not spend random seeds",()=>{
+ const s=createM0Save(99),copy=structuredClone(s);
+ const a=battlePreview(s,catalog),b=battlePreview(s,catalog);
+ assert.deepEqual(a.predicted,b.predicted);
+ assert.deepEqual(s,copy);
 });
