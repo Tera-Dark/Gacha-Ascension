@@ -8,6 +8,7 @@ on:
       - "tests/**"
       - "package.json"
       - "scripts/verify-m0-pages.mjs"
+      - "scripts/simulate-m0.mjs"
       - ".github/workflows/m0-tests.yml"
       - "data/codex/codex.v0.5.json"
   pull_request:
@@ -35,5 +36,7 @@ jobs:
           node-version: '22'
       - name: Run M0 gameplay tests
         run: npm test
+      - name: Simulate 30-floor progression
+        run: npm run simulate:m0
       - name: Verify static Pages assets
         run: npm run build
