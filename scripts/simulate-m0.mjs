@@ -13,9 +13,9 @@ const source=JSON.parse(readFileSync(new URL("../data/codex/codex.v0.5.json",imp
 const catalog=loadM0Catalog(source);
 const metrics=[];
 function run(seed) {
-  let state=createM0Save(seed), serial=0, training=0, defeats=0;
+  let state=createM0Save(seed), training=0, defeats=0;
   const call=(type,args={})=>{
-    const response=executeM0(state,{type,txnId:"sim-"+seed+"-"+(++serial),...args},catalog);
+    const response=executeM0(state,{type,txnId:"tx:"+(state.txSequence+1),...args},catalog);
     state=response.state;return response.result;
   };
   const assess=(hero,enemy)=> {
