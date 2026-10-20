@@ -196,3 +196,44 @@
 .v8-relic-inventory .v8-item{min-width:0}
 .v8-future-map .v8-atlas{max-height:55dvh;overflow-y:auto;scrollbar-width:thin}
 @media(max-width:560px){.v8-relic-inventory .v8-inventory{grid-template-columns:1fr}}
+
+
+/* v0.9 foundation — six material pack reveals and an independent fate ritual. */
+.v8-reveal[hidden]{display:none!important}
+.v8-reveal{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:rgba(3,9,14,.94);padding:clamp(12px,3vw,40px);overscroll-behavior:contain}
+.v8-reveal-stage{--accent:#dfd2b2;position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center;gap:10px;background:radial-gradient(ellipse at 50% 5%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 67%),#101d22;border:1px solid color-mix(in srgb,var(--accent) 49%,#263b39);box-shadow:0 15px 80px #000e,0 0 65px color-mix(in srgb,var(--accent) 12%,transparent);border-radius:17px;padding:clamp(17px,3vw,36px);width:min(640px,100%);max-height:92dvh;overflow-y:auto;text-align:center}
+.v8-reveal-stage[data-pack="battle"]{--accent:#f0b878}
+.v8-reveal-stage[data-pack="wealth"]{--accent:#d8c164}
+.v8-reveal-stage[data-pack="cultivation"]{--accent:#92bade}
+.v8-reveal-stage[data-pack="technique"]{--accent:#c3a7e4}
+.v8-reveal-stage[data-pack="cave"]{--accent:#a8c58e}
+.v8-reveal-stage[data-pack="pet"]{--accent:#8dcbcc}
+.v8-reveal-stage[data-pack="elixir"]{--accent:#e6a28e}
+.v8-reveal-stage[data-pack="fate"]{--accent:#dfbaf3}
+.v8-reveal-head{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;color:#b4c7c1;font-size:11px}
+.v8-reveal-head button{min-height:42px;min-width:92px;padding:8px 12px;border-radius:9px;border:1px solid #6a786b;background:#263833;color:#f6e2bc;cursor:pointer}
+.v8-reveal-sigil{font-size:clamp(46px,13vw,84px);color:var(--accent);height:clamp(70px,20vw,115px);line-height:1.3;filter:drop-shadow(0 0 17px var(--accent));display:grid;place-items:center}
+.v8-reveal-stage[data-phase="charge"] .v8-reveal-sigil{animation:v8-sigil-charge .65s ease-in-out infinite alternate}
+.v8-reveal-stage[data-phase="reveal"] .v8-reveal-sigil{animation:v8-sigil-release .5s ease-out both}
+.v8-reveal-stage[data-max-rarity="taigu"] .v8-reveal-sigil{color:#ffa2ae}
+.v8-reveal-stage[data-max-rarity="hongmeng"] .v8-reveal-sigil{color:#ffd8ff;filter:drop-shadow(0 0 35px #f4b3ff)}
+.v8-reveal-stage h2{font-family:serif;color:#ffe0a8;font-size:clamp(23px,5vw,36px);margin:0}
+.v8-reveal-stage p{font-size:12px;color:#adc1b7;margin:0 0 5px}
+.v8-reveal-cards{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:9px}
+.v8-reveal-card{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;border:1px solid #6a7769;border-radius:10px;background:#213530;color:#fae4b9;min-height:100px;padding:11px;box-shadow:0 6px 22px #0006}
+.v8-reveal-card small{font-size:10px;color:#acc5b7}
+.v8-reveal-card strong{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+.v8-reveal-card span{font-size:10px;color:#b1beb5;line-height:1.5}
+.v8-reveal-card.rarity-di{border-color:#86a8da}
+.v8-reveal-card.rarity-tian{border-color:#dcb969;box-shadow:0 0 15px #deb86d2b}
+.v8-reveal-card.rarity-xian{border-color:#d794d7;box-shadow:0 0 25px #ebafeb57}
+.v8-reveal-card.rarity-taigu{border:2px solid #f6a7a7;background:#492b38;box-shadow:0 0 28px #b5375088}
+.v8-reveal-card.rarity-hongmeng{border:2px solid #f1d3ff;background:linear-gradient(145deg,#543360,#282c5c);box-shadow:0 0 32px #ca81ffbb}
+.v8-reveal-stage[data-phase="charge"] .v8-reveal-cards{min-height:64px}
+.v8-reveal-stage[data-phase="reveal"] .v8-reveal-card{animation:v8-card-enter .5s ease-out both;animation-delay:calc(var(--entry)*65ms)}
+.v8-reveal-close{width:min(330px,100%);min-height:48px;border:1px solid #e5ca8a;border-radius:11px;color:#132b25;background:linear-gradient(110deg,#efd39c,#c7ac75);font-weight:800;font-size:14px;cursor:pointer}
+@keyframes v8-sigil-charge{from{transform:scale(.88) rotate(-8deg);opacity:.60}to{transform:scale(1.10) rotate(9deg);opacity:1}}
+@keyframes v8-sigil-release{from{transform:scale(.75);filter:brightness(1.6)}to{transform:scale(1.0);filter:brightness(1)}}
+@keyframes v8-card-enter{from{transform:translateY(20px) scale(.88);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@media(max-width:560px){.v8-reveal{padding:10px}.v8-reveal-stage{max-height:89dvh}.v8-reveal-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.v8-reveal-card{min-height:84px;padding:7px}.v8-reveal-card strong{font-size:12px}.v8-reveal-card span{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.v8-reveal *{animation:none!important;transition:none!important}}
