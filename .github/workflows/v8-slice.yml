@@ -14,6 +14,7 @@ on:
       - "tests/v8*.test.mjs"
       - "tests/v8-mobile-smoke.html"
       - "tests/v8-landscape-smoke.html"
+      - "tests/v8-live-combat-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
@@ -57,6 +58,15 @@ jobs:
           if ! grep -q 'data-result="PASS"' /tmp/v8-mobile-functional.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-mobile-functional.html || true
             cat /tmp/v8-mobile-errors.log
+            exit 1
+          fi
+      - name: Verify visible HP damage before auto combat settles
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=14000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-live-combat-smoke.html >/tmp/v8-live-combat.html 2>/tmp/v8-live-combat-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-live-combat.html; then
+            grep -o 'FAIL:[^<]*' /tmp/v8-live-combat.html || true
+            cat /tmp/v8-live-combat-errors.log
             exit 1
           fi
       - name: Validate actual landscape touch layout and equipment drawer in Chromium
