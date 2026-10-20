@@ -38,9 +38,10 @@
       "cave": 0,
       "pet": 0,
       "elixir": 0,
-      "equipment": 3
+      "equipment": 3,
+      "artifact": 30
     },
-    "comment": "Previews keep seven original packs open; equipment unlocks at global checkpoint 3 for gradual discovery."
+    "comment": "Original seven packs remain available in the preview, equipment opens at 3, artifact gacha requires realmIndex>=4 (筑基) and global checkpoint 30."
   },
   "packs": [
     {
@@ -567,6 +568,75 @@
           "description": "法脉相连"
         }
       ]
+    },
+    {
+      "id": "artifact",
+      "name": "法器天机",
+      "icon": "☯",
+      "cost": 320,
+      "description": "筑基期开启首个法器槽，大境界每提升一阶新增一槽。战斗不掉法器，必须抽取。",
+      "cards": [
+        {
+          "id": "F001",
+          "name": "赤霄剑匣",
+          "rarity": "xuan",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "strike",
+          "artifactValue": 18,
+          "description": "装备后攻击强度+18%，法器独立于双武器"
+        },
+        {
+          "id": "F002",
+          "name": "玄武璧",
+          "rarity": "huang",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "ward",
+          "artifactValue": 22,
+          "description": "装备后防御+22%，提高存活"
+        },
+        {
+          "id": "F003",
+          "name": "锁魂铃",
+          "rarity": "di",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "curse",
+          "artifactValue": 20,
+          "description": "令对手攻击下降20%"
+        },
+        {
+          "id": "F004",
+          "name": "长生梭",
+          "rarity": "xuan",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "blessing",
+          "artifactValue": 12,
+          "description": "提升自己出手速度12%"
+        },
+        {
+          "id": "F005",
+          "name": "九转定海珠",
+          "rarity": "tian",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "ward",
+          "artifactValue": 38,
+          "description": "防御+38%，高阶生存构筑"
+        },
+        {
+          "id": "F006",
+          "name": "太乙镇魂镜",
+          "rarity": "tian",
+          "effect": "artifact",
+          "value": 1,
+          "artifactKind": "curse",
+          "artifactValue": 32,
+          "description": "大幅降低敌人攻击32%"
+        }
+      ]
     }
   ],
   "rarityWeights": {
@@ -823,5 +893,20 @@
       "value": 1.5,
       "description": "战斗灵石×1.5，不作用于天命箱成本"
     }
-  ]
+  ],
+  "dropRates": {
+    "mob": {
+      "gear": 0.012,
+      "herb": 0.065
+    },
+    "guardian": {
+      "gear": 0.06,
+      "herb": 0.24
+    },
+    "boss": {
+      "gear": 0.25,
+      "herb": 0.65
+    }
+  },
+  "lootNotes": "装备箱只开黄/玄基础装备；药草箱只开三种药草（每次2-5）。法器、功法和绝大部分成长只由抽卡产生。"
 }
