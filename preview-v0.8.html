@@ -51,6 +51,14 @@
 <button class="action-btn challenge-boss" id="challengeBoss">挑战地图Boss</button>
 <button class="action-btn quiet-action" id="autoPush">自动冲关：关</button>
 </div>
+<div class="farm-focus-bar">
+ <label for="farmFocus">当前关刷怪：</label>
+ <select id="farmFocus" aria-label="同一关卡选择不同小怪积累目标">
+ <option value="balanced">均衡积累</option>
+ <option value="stones">灵石优先</option>
+ <option value="cultivation">修为优先</option></select>
+ <span id="farmFocusTip">当前小怪只产基础资源，不掉卡牌</span>
+</div>
 <div class="checkpoint-wrap"><div class="checkpoint-title"><b>地图关卡进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
 </div>
 <div class="lower-panels">
