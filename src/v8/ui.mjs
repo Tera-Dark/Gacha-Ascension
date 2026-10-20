@@ -2,6 +2,7 @@ import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRe
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
+import {unlockedPack} from "./modules.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -198,10 +199,10 @@ function renderCultivate(){
 function renderPacks(){
  const r=s.run;
  $("packList").innerHTML=c.packs.map(p=>{
-  const price=packCost(s,c,p.id),count=r.draws[p.id]||0,canSingle=r.stones>=price,canTen=r.stones>=price*10;
+  const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
   return '<div class="pack"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
   '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
-  '<div class="packstats">已抽'+count+'次 · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
+  '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
   (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+'</div>'+
   '<div class="packactions"><button class="action-btn primary-action" data-draw="'+p.id+'" data-count="1" '+(canSingle?"":"disabled")+'>单抽 ◆'+fmt(price)+'</button>'+
   '<button class="action-btn" data-draw="'+p.id+'" data-count="10" '+(canTen?"":"disabled")+'>十连 ◆'+fmt(price*10)+'</button></div></div>';
