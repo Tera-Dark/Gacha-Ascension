@@ -1,0 +1,47 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V8 actual mobile interactive smoke</title>
+<style>body{margin:0;background:#101b18;color:#e6d5a0;font:14px sans-serif}#result{padding:12px}iframe{display:block;border:0;width:100%;height:80vh}</style></head>
+<body><output id="result" data-result="PENDING">RUNNING</output>
+<iframe id="app" src="../preview-v0.8.html" title="Game under interactive test"></iframe>
+<script>
+const result=document.getElementById("result");
+const frame=document.getElementById("app");
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const verify=(ok,msg)=>{if(!ok)throw Error(msg)};
+async function start(){
+ try{
+  const d=frame.contentDocument,w=frame.contentWindow;
+  for(let i=0;i<100&&!d.querySelector("#packList [data-draw]");i++)await sleep(50);
+  verify(!!d.querySelector("#packList [data-draw]"),"No real card pack rendered");
+  verify(!d.getElementById("explore").open,"Combat numerical detail should be initially folded");
+  const nav=d.querySelector(".mobile-tabs");
+  verify(w.getComputedStyle(nav).display!=="none","Mobile dock hidden on narrow screen");
+  verify(nav.querySelectorAll("button").length===5,"Mobile dock should have 5 buttons");
+  verify(nav.querySelector("button").getBoundingClientRect().height>=44,"Primary touch target too small");
+  d.querySelector('#explore>summary').click();await sleep(160);
+  verify(d.getElementById("explore").open,"Combat detail cannot expand");
+  verify(d.querySelectorAll("#detail-explore .v8-data-row").length>=14,"Combat stat breakdown was not populated");
+  const text=d.getElementById("detail-explore").textContent;
+  verify(text.includes("攻击")&&text.includes("气血")&&text.includes("命中"),"Missing detailed hero combat numbers");
+  d.querySelector('#explore>summary').click();await sleep(130);
+  verify(!d.getElementById("explore").open,"Combat detail cannot close");
+  d.getElementById("moreSystems").click();
+  verify(!d.getElementById("mobileSheet").hidden,"More sheet did not open");
+  verify(d.getElementById("moreSystems").getAttribute("aria-expanded")==="true","More sheet accessibility state missing");
+  d.querySelector('#mobileSheet button[data-view="cave"]').click();
+  verify(d.getElementById("mobileSheet").hidden,"More sheet did not dismiss after navigating");
+  verify(d.querySelector('[data-view-panel="cave"]').classList.contains("is-active"),"Cave page was not activated");
+  d.querySelector('#cave>summary').click();await sleep(140);
+  verify(d.getElementById("detail-cave").textContent.includes("洞府灵石贡献"),"Cave numerical data did not appear");
+  d.querySelector('.mobile-tabs button[data-view="gacha"]').click();
+  verify(d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active"),"Gacha cannot open through dock");
+  d.querySelector('#gacha>summary').click();await sleep(140);
+  verify(d.getElementById("detail-gacha").textContent.includes("概率"),"Gacha pool probability details absent");
+  verify(d.documentElement.scrollWidth<=w.innerWidth+1,"Horizontal page overflow on mobile: "+d.documentElement.scrollWidth+" > "+w.innerWidth);
+  result.dataset.result="PASS";result.textContent="PASS: real mobile nav, accordion stats, gacha probability, cave and responsive touch layout";
+ }catch(err){
+  result.dataset.result="FAIL";result.textContent="FAIL: "+err.message;
+ }
+}
+frame.addEventListener("load",start);
+</script></body></html>
