@@ -1,6 +1,7 @@
 import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
+import {showReveal} from "./reveal.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -8,7 +9,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -220,12 +221,20 @@ function renderFate(){
  set("reincarnations",fmt(s.meta.reincarnations));set("fatePoints",fmt(s.meta.fate));set("bestMap","第"+s.meta.bestMap+"图");
  $("reincarnate").disabled=!s.run.bossCleared;
  $("openRelic").disabled=s.meta.fate<c.fate.price;
- set("reincarnationHint",s.run.bossCleared?"已击败第四图Boss。轮回可以获得55～65因果，当前世全部修炼与抽卡重置。":
- "还未击败第四张地图Boss。轮回只在本切片全部完成后开启。");
- $("relicList").innerHTML=c.relics.map(x=>{
-  const n=s.meta.relics[x.id]||0;return '<div class="v8-item '+(n?"":"missing")+'"><div class="v8-item-name">'+
-   escapeHTML(x.name)+"<span>×"+n+"</span></div><div class='v8-item-desc'>永久 "+x.stat+" +"+x.value+"% / 份，最高"+x.max+"份</div></div>";
- }).join("")+c.ultras.filter(x=>s.meta.ultras[x.id]).map(x=>'<div class="v8-item active"><div class="v8-item-name">鸿蒙 · '+escapeHTML(x.name)+'</div><div class="v8-item-desc">全世生效 · 专项×'+x.value+'</div></div>').join("");
+ set("reincarnationHint",s.run.bossCleared?"已击败第四图Boss。轮回获得55～65因果，卡牌与境界重置。":
+ "需要先击败第四张地图Boss。轮回是自由选择，不会自动触发。");
+ const regular=c.relics.map(x=>{
+  const n=s.meta.relics[x.id]||0,amount=x.stat==="flatAttack"||x.stat==="flatHp"?"点":"%";
+  return '<div class="v8-item '+(n?"":"missing")+'"><div class="v8-item-name">'+
+   escapeHTML(x.name)+"<span>×"+n+"</span></div><div class='v8-item-desc'>"+
+   (x.max==null?"永久无上限叠加":"最高"+x.max+"份（满级退出池）")+
+   " · 单份 "+x.stat+" +"+x.value+amount+"</div></div>";
+ }).join("");
+ const apex=c.apex.map(x=>'<div class="v8-item '+(s.meta.apex?.[x.id]?"active":"missing")+'"><div class="v8-item-name">太古 · '+escapeHTML(x.name)+'</div><div class="v8-item-desc">'+
+  (s.meta.apex?.[x.id]?"已拥有 · ":"十万分之一 · ")+escapeHTML(x.description)+'</div></div>').join("");
+ const ultra=c.ultras.map(x=>'<div class="v8-item '+(s.meta.ultras[x.id]?"active":"missing")+'"><div class="v8-item-name">鸿蒙 · '+escapeHTML(x.name)+'</div><div class="v8-item-desc">'+
+  (s.meta.ultras[x.id]?"已拥有 · ":"百万分之一 · ")+escapeHTML(x.description)+'</div></div>').join("");
+ $("relicList").innerHTML=regular+apex+ultra;
 }
 function renderAtlas(){
  const card=m=>'<div class="v8-atlas-entry '+(m.index<=c.playableMaps?"playable":"")+'"><div><b>'+
@@ -259,15 +268,20 @@ function render(){
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
  renderFate();renderAtlas();renderDetailPanels();
 }
-function drawPack(packId,count){
- const before=heroStats(s,c),result=doCommand("DRAW",{packId,count});
- if(!result)return;
- const after=heroStats(s,c);
- const items=result.items.map(x=>'<span class="v8-draw-card '+x.rarity+'">'+escapeHTML(x.name)+'</span>').join("");
- $("drawResults").innerHTML='<div>本次消耗灵石 '+fmt(result.cost)+'，获得：</div>'+items+
+async function drawPack(packId,count){
+ if(revealBusy)return;
+ revealBusy=true;
+ try{
+  const before=heroStats(s,c),result=doCommand("DRAW",{packId,count});
+  if(!result)return;
+  const after=heroStats(s,c);
+  const items=result.items.map(x=>'<span class="v8-draw-card '+x.rarity+'">'+escapeHTML(x.name)+'</span>').join("");
+  $("drawResults").innerHTML='<div>本次消耗灵石 '+fmt(result.cost)+'，获得：</div>'+items+
    '<div>攻击 '+fmt(before.attack)+' → '+fmt(after.attack)+' · 气血 '+fmt(before.hp)+' → '+fmt(after.hp)+
-   ' · 觉悟 '+fmt(s.run.insight)+' · 现存灵石 '+fmt(s.run.stones)+'</div>';
- toast("抽卡成功 · "+result.items.length+"张机缘已结算");
+   ' · 悟道 '+fmt(s.run.insight)+' · 现存灵石 '+fmt(s.run.stones)+'</div>';
+  await showReveal({packId,items:result.items,title:count===10?"十道机缘 · 天命已定":"机缘已至"});
+  toast("已收下 "+result.items.length+" 张机缘");
+ }finally{revealBusy=false}
 }
 function afterBattle(result){
  if(!result)return;
@@ -352,11 +366,21 @@ async function init(){
   $("breakthrough").addEventListener("click",()=>{const r=doCommand("BREAKTHROUGH");if(r){toast("突破成功："+r.name+"！");changeView("cultivate")}});
   $("reincarnate").addEventListener("click",()=>{if(!window.confirm("确认轮回？会清空本世地图、修为、灵石和全部当世卡牌，但保留天命与因果。"))return;
    stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
-  $("openRelic").addEventListener("click",()=>{const r=doCommand("OPEN_RELIC");if(r){
-   $("relicResult").innerHTML='获得 <strong>'+escapeHTML(r.relic.name)+'</strong> ×'+r.stacks+
-    (r.ultra?'<div class="v8-draw-card tian">鸿蒙异宝追加获得：'+escapeHTML(r.ultra.name)+'</div>':"");
-   toast("天命箱开启成功，永久加成已写入跨世存档！")
-  }});
+  $("openRelic").addEventListener("click",async()=>{
+   if(revealBusy)return;
+   revealBusy=true;
+   try{
+    const r=doCommand("OPEN_RELIC");if(!r)return;
+    $("relicResult").innerHTML='常规：<strong>'+escapeHTML(r.relic.name)+'</strong> ×'+r.stacks+
+     (r.apex?'<div class="v8-draw-card tian">太古奇珍：'+escapeHTML(r.apex.name)+'</div>':"")+
+     (r.ultra?'<div class="v8-draw-card tian">鸿蒙异宝：'+escapeHTML(r.ultra.name)+'</div>':"");
+    const items=[{...r.relic,rarity:r.rarity,description:r.relic.max==null?"无上限永久叠加":"永久遗物 ×"+r.stacks}];
+    if(r.apex)items.push({...r.apex,rarity:"taigu"});
+    if(r.ultra)items.push({...r.ultra,rarity:"hongmeng"});
+    await showReveal({packId:"fate",items,title:r.ultra?"鸿蒙降世":r.apex?"太古奇珍":"天命遗物"});
+    toast("天命箱已结算，永久加成保留至下一世");
+   }finally{revealBusy=false}
+  });
   $("exportSave").addEventListener("click",exportSave);
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
    stopAuto();playToken++;s=backupAndReset(c);set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
