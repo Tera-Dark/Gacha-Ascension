@@ -176,51 +176,59 @@ function snapshot(hpId,barId,current,max){
  set(hpId,fmt(current)+" / "+fmt(max));
  const el=$(barId);if(el)el.style.width=Math.max(0,Math.min(100,100*current/max||0))+"%";
 }
-function damagePop(actor,amount){
+function damagePop(event){
  const layer=$("damageLayer"),el=document.createElement("span");
- const side=actor==="enemy"||actor==="counter"?"hero-dmg":actor==="regen"?"heal-dmg":"enemy-dmg";
- el.className="damage-pop "+side;
- el.textContent=actor==="miss"?"闪避":(actor==="regen"?"+":"−")+fmt(amount);
- layer.append(el);setTimeout(()=>el.remove(),650);
- const src=$(actor==="enemy"||actor==="counter"?"heroSprite":"enemySprite");
+ const isMiss=event.actor==="miss",isHeal=["potion","regen"].includes(event.actor);
+ const toHero=event.actor==="enemy"||event.actor==="counter"||event.actor==="potion"||
+  (isMiss&&event.owner==="enemy");
+ el.className="damage-pop "+(isHeal?"heal-dmg":toHero?"hero-dmg":"enemy-dmg");
+ el.textContent=isMiss?"闪避":(isHeal?"+":"−")+fmt(event.amount||0);
+ el.style.left=(toHero? "21%":"68%");
+ layer.append(el);setTimeout(()=>el.remove(),800);
+ if(isMiss||isHeal)return;
+ const src=$(toHero?"heroSprite":"enemySprite");
  src.classList.remove("impact");void src.offsetWidth;src.classList.add("impact");
- setTimeout(()=>src.classList.remove("impact"),250);
+ setTimeout(()=>src.classList.remove("impact"),220);
 }
 function animateCombat(result){
- playToken++;const token=playToken;
- const {combat}=result,logs=combat.logs;
+ playToken++;const token=playToken,{combat}=result,logs=combat.logs||[];
  if(view!=="explore"){battleBusy=false;return}
  battleBusy=true;
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
- snapshot("enemyHP","enemyBar",combat.enemy.hp,combat.enemy.hp);
- set("enemyLabel",combat.enemy.name);
- set("combatStatus","交锋中");
- $("heroAttackBar").style.animationPlayState="running";$("enemyAttackBar").style.animationPlayState="running";
- const important=new Set();
- for(let i=0;i<logs.length;i++)if(logs[i].actor==="wave")important.add(i);
- for(const i of [0,1,2,logs.length-3,logs.length-2,logs.length-1])
-  if(i>=0&&i<logs.length)important.add(i);
- for(let i=3;i<logs.length-3&&important.size<10;i+=3)important.add(i);
- const items=[...important].sort((a,b)=>a-b).map(i=>logs[i]);
- const duration=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?30:780;
- items.forEach((event,index)=>{
+ snapshot("enemyHP","enemyBar",combat.waves?.[0]?.hp||combat.enemy.hp,combat.waves?.[0]?.hp||combat.enemy.hp);
+ set("enemyLabel",combat.waves?.[0]?.name||combat.enemy.name);
+ set("combatStatus","逐次交锋 · 每次攻击独立扣血");
+ $("heroAttackBar").style.animationPlayState="running";
+ $("enemyAttackBar").style.animationPlayState="running";
+ const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ const duration=reduce?Math.min(700,Math.max(100,logs.length*12)):Math.min(11000,Math.max(1400,logs.length*140));
+ const full=Math.max(1,combat.timeMs||1);
+ logs.forEach((event,index)=>{
+  // Exact chronological event record; speed up the *replay*, never the settlement.
+  const relative=Math.min(1,Math.max(0,(event.timeMs||0)/full));
+  const ms=reduce?Math.round(index/(logs.length||1)*duration):
+   Math.min(duration-20,Math.floor(relative*duration));
   setTimeout(()=>{
-   if(playToken!==token)return;
+   if(playToken!==token||view!=="explore")return;
    if(event.actor==="wave"){
     set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
     set("wbWave","第"+event.stage+"/"+event.total+"波");
     snapshot("enemyHP","enemyBar",event.hp,event.max);
-    set("combatStatus","连续守关 · 第"+event.stage+"/"+event.total+"波");
+    set("combatStatus","进入第"+event.stage+"/"+event.total+"波");
     return;
    }
-   const hero=event.actor==="enemy"||event.actor==="counter"||
+   const toHero=event.actor==="enemy"||event.actor==="counter"||event.actor==="potion"||
     event.actor==="miss"&&event.owner==="enemy";
-   if(hero)snapshot("heroHP","heroBar",event.hp,event.max);
+   if(toHero)snapshot("heroHP","heroBar",event.hp,event.max);
    else snapshot("enemyHP","enemyBar",event.hp,event.max);
-   damagePop(event.actor,event.amount);
-   set("combatStatus",event.actor==="miss"?"攻击落空":event.actor==="pet"?"灵宠追击":
-    event.actor==="regen"?"敌人恢复":event.actor==="counter"?"剑气反震":hero?"敌人攻击":"剑气交锋");
-  },50+Math.floor(duration*(index/Math.max(items.length,1))));
+   if(!reduce)damagePop(event);
+   set("combatStatus",event.actor==="miss"?"攻击落空":
+    event.actor==="potion"?"回春丹：紧急恢复气血":
+    event.actor==="regen"?"敌方恢复":
+    event.actor==="pet"?"灵宠协战":
+    event.actor==="counter"?"敌方反震":
+    toHero?"敌方命中 · 气血减少":"我方命中 · 敌方气血减少");
+  },Math.max(10,ms));
  });
  setTimeout(()=>{
   if(playToken!==token)return;
@@ -228,10 +236,11 @@ function animateCombat(result){
   snapshot("enemyHP","enemyBar",combat.enemyRemaining,combat.enemy.hp);
   battleBusy=false;
   set("enemyLabel",combat.enemy.name);
-  set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":"✕ 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波挑战失败");
-  if(result.won){$("enemySprite").classList.add("defeated");setTimeout(()=>$("enemySprite").classList.remove("defeated"),340)}
+  set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":
+   "✕ 挑战失败 · 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波");
+  if(result.won){$("enemySprite").classList.add("defeated");setTimeout(()=>$("enemySprite").classList.remove("defeated"),320)}
   if(!auto){$("heroAttackBar").style.animationPlayState="paused";$("enemyAttackBar").style.animationPlayState="paused"}
- },duration+90);
+ },duration+100);
 }
 function incomePreview(){
  const map=s.run.mapIndex,k=s.run.checkpoint,b=c.balance,y=yields(s,c);
