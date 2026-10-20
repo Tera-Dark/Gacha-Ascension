@@ -7,7 +7,7 @@ const files=["m0.html","assets/css/workbench.css","src/m0/presentation.mjs","src
 for(const p of files)assert.ok(existsSync(url(p)),"Missing Pages asset: "+p);
 const html=readFileSync(url("m0.html"),"utf8");
 assert.match(html,/src="\.\/src\/m0\/ui\.mjs"/);
-assert.match(html,/href="\.\/m0-idle\.css"/);
+assert.match(html,/href="\.\/assets\/css\/workbench\.css"/);
 const ui=readFileSync(url("src/m0/ui.mjs"),"utf8");
 assert.match(ui,/data\/codex\/codex\.v0\.5\.json/);
 assert.match(ui,/m0-packs\.v0\.7\.json/);
