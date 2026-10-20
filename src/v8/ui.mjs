@@ -52,8 +52,11 @@ function changeView(target){
 function doCommand(type,more={}){
  if(!s||!c)return null;
  try{
+  const resync=auto&&s.run.idle?.active&&!["START_IDLE","CLAIM_IDLE","STOP_IDLE","BATTLE"].includes(type);
   const out=dispatch(s,c,{type,seq:s.seq+1,now:Date.now(),...more});
   writeGame(out.state,c);s=out.state;buildAdvice=null;render();
+  // A card or equipment change alters the next deterministic fight.
+  if(resync)schedule();
   return out.result;
  }catch(error){toast(error.message,true);return null}
 }
@@ -551,6 +554,9 @@ function afterBattle(result,{replay=true,onComplete=null}={}){
 }
 function stopAuto(){
  if(timer!==null)clearTimeout(timer);timer=null;
+ const wasLive=livePreview;
+ clearLiveTimeline();
+ if(wasLive){++playToken;battleBusy=false}
  const wasActive=auto;auto=false;
  if(wasActive&&s?.run?.idle?.active){
   const claim=doCommand("STOP_IDLE");
@@ -576,27 +582,49 @@ function schedule(){
  if(timer!==null)clearTimeout(timer);timer=null;
  if(!auto||document.hidden)return;
  const next=fight(s,c,"mob",{seed:s.seed});
- const delay=Math.max(100,Math.ceil(next.timeMs-(s.run.idle?.carryMs||0)));
- set("fightTimer","本场预计 "+(next.timeMs/1000).toFixed(2)+"秒 · 真实攻速结算");
+ // Do not restart the countdown after rerender, resuming or an equipment change.
+ const idle=s.run.idle;
+ const elapsed=(idle?.carryMs||0)+Math.max(0,Date.now()-(idle?.at||Date.now()));
+ const timeline=combatTimeline(next,elapsed);
+ if(timeline.remainingMs===0){
+  const recovered=doCommand("CLAIM_IDLE");
+  if(!recovered){stopAuto();return}
+  if(recovered.lastBattle)afterBattle(recovered.lastBattle,{replay:false});
+  if(!recovered.active){auto=false;reportIdle(recovered);renderTop();return}
+  timer=setTimeout(schedule,0);return;
+ }
+ set("fightTimer","本场 "+(next.timeMs/1000).toFixed(2)+"秒 · 攻击与扣血同步");
  const fill=$("intervalFill");fill.classList.remove("running");void fill.offsetWidth;
- fill.style.setProperty("--interval-duration",delay+"ms");fill.classList.add("running");
+ fill.style.setProperty("--interval-duration",timeline.remainingMs+"ms");fill.classList.add("running");
+ startLiveTimeline(next,timeline);
  timer=setTimeout(()=>{
   timer=null;if(!auto||document.hidden)return;
   const summary=doCommand("CLAIM_IDLE");
   if(!summary){stopAuto();return}
-  if(summary.lastBattle)afterBattle(summary.lastBattle);
+  if(summary.lastBattle)afterBattle(summary.lastBattle,{replay:false});
   if(!summary.active){auto=false;reportIdle(summary);renderTop();return}
   if(autoPush&&!s.run.bossCleared){
    const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
    const risk=combatAssessment(s,c,target,24);
    if(risk.safeToAuto){
-    const next=doCommand("BATTLE",{enemyType:target});
-    afterBattle(next);
-    if(!next?.won){autoPush=false;toast("守关失败，自动冲关关闭，继续刷本关小怪。",true)}
+    const challenge=doCommand("BATTLE",{enemyType:target});
+    if(challenge){
+     // A new mob fight must not overwrite the ongoing guardian/Boss replay.
+     afterBattle(challenge,{onComplete:()=>{
+      if(!auto)return;
+      const recovered=doCommand("CLAIM_IDLE");
+      if(!recovered){stopAuto();return}
+      if(recovered.lastBattle)afterBattle(recovered.lastBattle,{replay:false});
+      if(!recovered.active){auto=false;reportIdle(recovered);renderTop();return}
+      schedule();
+     }});
+     if(!challenge.won){autoPush=false;toast("守关失败，自动冲关关闭，继续刷本关小怪。",true)}
+     return;
+    }
    }
   }
   schedule();
- },delay);
+ },Math.max(10,Math.ceil(timeline.remainingMs)));
 }
 function startAuto(){
  if(auto){stopAuto();return}
@@ -727,9 +755,18 @@ async function init(){
    if(applied)toast("功法与灵宠已联合装配，战斗增益即时生效");
   });
   $("autoFarm").addEventListener("click",startAuto);
-  $("killMob").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"mob"})));
-  $("challenge").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"guardian"})));
-  $("challengeBoss").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"boss"})));
+  $("killMob").addEventListener("click",()=>{
+   if(auto){toast("自动战斗正在逐击运行；先停止挂机再手动攻击。");return}
+   afterBattle(doCommand("BATTLE",{enemyType:"mob"}));
+  });
+  $("challenge").addEventListener("click",()=>{
+   if(auto)stopAuto();
+   afterBattle(doCommand("BATTLE",{enemyType:"guardian"}));
+  });
+  $("challengeBoss").addEventListener("click",()=>{
+   if(auto)stopAuto();
+   afterBattle(doCommand("BATTLE",{enemyType:"boss"}));
+  });
   $("autoPush").addEventListener("click",()=>{autoPush=!autoPush;render();toast("自动冲关已"+(autoPush?"开启，战斗风险评估通过才进行挑战。":"关闭。"))});
   $("farmFocus").addEventListener("change",event=>{
    const result=doCommand("SET_FARM_FOCUS",{id:event.target.value});
@@ -757,7 +794,10 @@ async function init(){
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
    stopAuto();playToken++;s=backupAndReset(c);set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
   document.addEventListener("visibilitychange",()=>{
-   if(document.hidden&&auto){if(timer!==null)clearTimeout(timer);timer=null;return}
+   if(document.hidden&&auto){
+    if(timer!==null)clearTimeout(timer);timer=null;
+    clearLiveTimeline();++playToken;battleBusy=false;return;
+   }
    if(!document.hidden&&auto){
     const claim=doCommand("CLAIM_IDLE");
     reportIdle(claim);
