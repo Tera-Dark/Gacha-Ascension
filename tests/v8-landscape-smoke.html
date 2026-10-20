@@ -21,6 +21,10 @@ frame.addEventListener("load",async()=>{
   const panes=[...d.querySelectorAll(".battle-workbench>.wb-pane")];
   check(panes.every(x=>x.getBoundingClientRect().width>170),"combat panel too narrow");
   check(Math.abs(panes[0].getBoundingClientRect().top-panes[1].getBoundingClientRect().top)<2,"player/enemy panels not horizontal");
+  // New players see the three-step guide instead of ten inert slots.
+  check(!d.getElementById("noviceGuide").hidden,"first-life guide was not offered");
+  d.getElementById("noviceSkip").click();await sleep(60);
+  check(d.getElementById("noviceGuide").hidden,"novice guide skip did not work");
   check(d.querySelector(".wb-gear-slot").getBoundingClientRect().height>=44,"equipment touch target smaller than 44px");
   d.querySelector('[data-gear-slot="weapon1"]').click();await sleep(35);
   check(!d.getElementById("equipmentDrawer").hidden,"equipment modal not displayed");

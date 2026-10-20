@@ -20,7 +20,12 @@ export function play(seed,policy="battle",limit=3600){
  };
  for(let tick=0;tick<limit&&!s.run.bossCleared;tick++){
   const r=s.run,need=breakthroughRequirements(s,c);
-  if(need.canBreak&&r.realmIndex<3){command("BREAKTHROUGH");upgrades++;continue}
+  if(need.canBreak&&r.realmIndex<4){command("BREAKTHROUGH");upgrades++;continue}
+  // An unlocked map can still be farmed, but its guardian is gated until breakthrough.
+  if(r.mapIndex>r.realmIndex){
+   if(!need.hasInsight&&affordable("cultivation")){draw("cultivation");continue}
+   if(!need.hasQi||!need.hasInsight){const res=command("BATTLE",{enemyType:"mob"});battles++;if(!res.won)mobFailures++;continue}
+  }
   if(!need.hasInsight&&r.qi>=need.qi*.6&&affordable("cultivation")){draw("cultivation");continue}
   const goal=r.checkpoint===c.checkpointsPerMap-1?"boss":"guardian",estimate=combatAssessment(s,c,goal,16);
   if(estimate.winRate>=.875&&estimate.maxThreatHit<heroStats(s,c).hp*.67){

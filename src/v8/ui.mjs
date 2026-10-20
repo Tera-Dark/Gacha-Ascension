@@ -1,4 +1,4 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset,recoverInvalidSave} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
@@ -10,6 +10,7 @@ import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
 import {PAIR_SYNERGIES,activeSynergy} from "./synergy.mjs";
 import {recommendLoadout,nextStep} from "./advisor.mjs";
 import {combatTimeline} from "./combat-timeline.mjs";
+import {noviceStep} from "./onboarding.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -17,7 +18,9 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false,suggestedGearSlot=null;
+const NOVICE_SKIP_KEY="gacha-ascension-v8-novice-skip-v1";
+const QUICK_REVEAL_KEY="gacha-ascension-v8-quick-reveal-v1";
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -168,11 +171,32 @@ function renderItems(){
  $("autoPotionThreshold").value=String(a?.threshold??.35);
 }
 
+function safeGearUpgrades(){
+ const eq=equippedMap(s),used=Object.values(eq),found=[];
+ for(const slot of EQUIPMENT_SLOTS){
+  const cards=Object.values(c.cards).filter(x=>x.effect==="equipment"&&x.equipmentSlot===slot.type);
+  const candidates=cards.filter(x=>eq[slot.id]!==x.id&&
+    (s.run.cards[x.id]||0)>used.filter(id=>id===x.id).length);
+  for(const card of candidates){
+   const diff=comparison(s,c,slot.id,card.id).difference;
+   if(Object.values(diff).some(n=>n>0)&&Object.values(diff).every(n=>n>=0)){
+    found.push({slot:slot.id,card:card.id,
+     score:diff.attack*8+diff.hp*.25+diff.defense*6+diff.speedPct*3});
+   }
+  }
+ }
+ found.sort((a,b)=>b.score-a.score);
+ return found;
+}
 function renderGear(){
  const equipment=equippedMap(s);
+ const upgrades=safeGearUpgrades();
+ suggestedGearSlot=upgrades[0]?.slot||null;
+ const slots=new Set(upgrades.map(x=>x.slot));
+ set("openGearBag",slots.size?"打开背包 · "+slots.size+"槽可提升 ›":"打开背包 ›");
  $("equipmentGrid").innerHTML=EQUIPMENT_SLOTS.map(slot=>{
   const id=equipment[slot.id],card=id?c.cards[id]:null;
-  return '<button class="wb-gear-slot'+(card?" filled":"")+'" type="button" data-gear-slot="'+slot.id+'" aria-label="'+
+  return '<button class="wb-gear-slot'+(card?" filled":"")+(slots.has(slot.id)?" can-upgrade":"")+'" type="button" data-gear-slot="'+slot.id+'" aria-label="'+
     escapeHTML(slot.name+(card?" "+card.name:" 空槽"))+'"><span class="wb-gear-icon">'+slot.icon+'</span>'+
     '<span class="wb-gear-caption">'+escapeHTML(slot.name)+'</span>'+
     '<span class="wb-gear-name">'+escapeHTML(card?.name||"空")+'</span></button>';
@@ -410,6 +434,16 @@ function renderBuildAdvice(){
   apply.textContent="一键装配推荐构筑";
  }else set("buildAdvice",summary+" 当前配置在样本中已是较优选择。"+(caution||""));
 }
+function renderNovice(){
+ let skipped=false;try{skipped=localStorage.getItem(NOVICE_SKIP_KEY)==="1"}catch{}
+ const stage=skipped?null:noviceStep(s);
+ $("noviceGuide").hidden=!stage;
+ document.body.classList.toggle("novice-mode",!!stage);
+ if(!stage)return;
+ set("noviceStep","入门修行 · 第"+stage.index+"/3步");
+ set("noviceTitle",stage.title);set("noviceDescription",stage.description);
+ set("noviceAction",stage.action+" →");
+}
 function renderExplore(){
  const p=progress(s,c),r=s.run,h=heroStats(s,c),inc=incomePreview();
  set("mapTag","第"+(r.mapIndex+1)+"图 · "+majors[r.mapIndex<4?0:r.mapIndex] );
@@ -419,7 +453,8 @@ function renderExplore(){
  set("checkpointCount",r.bossCleared?"四图切片已通关":"第"+p.stage+"/"+c.checkpointsPerMap+"关");
  $("checkpointTrack").innerHTML=Array.from({length:c.checkpointsPerMap},(_,i)=>
   '<div class="checkpoint-node '+(i<r.checkpoint?"passed":i===r.checkpoint?"current":"")+'">'+(i===c.checkpointsPerMap-1?"B":i+1)+'</div>').join("");
- $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
+ const gate=pendingRealmGate(s,c);
+ $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||!!gate;
  $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
  $("killMob").disabled=auto||battleBusy;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
@@ -463,6 +498,16 @@ function renderExplore(){
    "当前构筑适合连续挑战"+(p.finalGuardian?"地图Boss":"守卫")+"。自动冲关将按风险判断执行。":
    "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
+ if(gate){
+  set("guardForecast","境界未达 · 暂停挑战");
+  set("combatAdvice","已经抵达新地图，但需先突破至"+gate.realm+"才能挑战守卫；当前地图小怪仍能继续刷取修为和灵石。");
+  set("goalHint","进入"+gate.map+"后，先完成"+gate.realm+"突破，再继续挑战守卫。积累修为和抽取悟道的入口不会锁死。");
+ }
+ if(r.mapIndex===3&&!r.bossCleared&&!r.pills.D004){
+  set("goalHint",gate?
+   "先突破至"+gate.realm+"，同时提前准备筑基丹：丹道宝匣最多还需"+Math.max(1,c.realmPillPity-r.pillPity)+"抽。":
+   "最终地图提示：击败Boss后筑基还需筑基丹，丹道宝匣保底最多还需"+Math.max(1,c.realmPillPity-r.pillPity)+"抽，可现在开始准备。");
+ }
  const step=nextStep(s,c,lastCombatAnalysis);
  set("nextGoalTitle",step.title);set("nextGoalDesc",step.description);
  set("rightGoal",step.description);
@@ -495,15 +540,35 @@ function renderCultivate(){
  $("realmRoute").innerHTML=c.realms.map((q,i)=>'<div class="realm-stage '+(i<r.realmIndex?"passed":i===r.realmIndex?"current":"")+'">'+escapeHTML(q.name)+'</div>').join("");
 }
 function renderPacks(){
- const r=s.run;
- $("packList").innerHTML=c.packs.map(p=>{
-  const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
-  return '<div class="pack" data-pack-id="'+p.id+'"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
-  '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
-  '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
-  (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+'</div>'+
-  '<div class="packactions"><button class="action-btn primary-action" data-draw="'+p.id+'" data-count="1" '+(canSingle?"":"disabled")+'>单抽 ◆'+fmt(price)+'</button>'+
-  '<button class="action-btn" data-draw="'+p.id+'" data-count="10" '+(canTen?"":"disabled")+'>十连 ◆'+fmt(price*10)+'</button></div></div>';
+ const r=s.run,step=nextStep(s,c,lastCombatAnalysis);
+ const focus=step.packId||(r.mapIndex===3&&r.realmIndex===3&&!r.pills.D004?"elixir":!Object.values(r.draws).some(n=>n>0)?"battle":null);
+ const labels={
+  battle:"直接增加攻防气血 · 卡关时快速变强",
+  wealth:"长期灵石收益 · 刷怪次数越多越划算",
+  cultivation:"悟道与修为收益 · 突破境界必备",
+  technique:"解锁剑术、护盾、灵宠或爆发构筑",
+  cave:"洞府长期经营 · 灵石、修为、攻速收益",
+  pet:"独立协战、护盾、破甲与功法共鸣",
+  elixir:"筑基丹与即时修为 · 大境界冲刺",
+  equipment:"永久至本世结束的穿戴装备 · 十槽配置",
+  artifact:"筑基后解锁的本命法器 · 攻防与控制"
+ };
+ const suggested=c.packById[focus];
+ set("gachaDirection",focus?
+  "当前推荐："+suggested.name+"。"+labels[focus]+"。其他卡包仍可自由抽取，合理搭配能减少后续重复刷怪。":
+  "当前没有唯一最优卡包。战力帮助过关，聚财和洞府提高刷怪长期收益；悟道、筑基丹关系到境界突破。");
+ const packs=[...c.packs].sort((a,b)=>Number(b.id===focus)-Number(a.id===focus));
+ $("packList").innerHTML=packs.map(p=>{
+  const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),
+  canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
+  return '<div class="pack'+(p.id===focus?" is-recommended":"")+'" data-pack-id="'+p.id+'"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+(p.id===focus?"★ 当前推荐":p.cards.length+"种卡")+'</span></div>'+
+   '<div class="packpurpose">'+escapeHTML(labels[p.id])+'</div>'+
+   '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
+   '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
+   (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+
+   (unlocked&&!canSingle?" · 灵石还差"+fmt(price-r.stones):"")+'</div>'+
+   '<div class="packactions"><button class="action-btn primary-action" data-draw="'+p.id+'" data-count="1" '+(canSingle?"":"disabled")+'>单抽 ◆'+fmt(price)+'</button>'+
+   '<button class="action-btn" data-draw="'+p.id+'" data-count="10" '+(canTen?"":"disabled")+'>十连 ◆'+fmt(price*10)+'</button></div></div>';
  }).join("");
 }
 function renderInventory(listId,effect,slot){
@@ -523,8 +588,15 @@ function renderFate(){
  set("reincarnations",fmt(s.meta.reincarnations));set("fatePoints",fmt(s.meta.fate));set("bestMap","第"+s.meta.bestMap+"图");
  $("reincarnate").disabled=!s.run.bossCleared;
  $("openRelic").disabled=s.meta.fate<c.fate.price;
- set("reincarnationHint",s.run.bossCleared?"已击败第四图Boss。轮回获得55～65因果，卡牌与境界重置。":
- "需要先击败第四张地图Boss。轮回是自由选择，不会自动触发。");
+ const earned=55+Math.max(0,s.run.realmIndex-3)*10;
+ set("reincarnationHint",s.run.bossCleared?
+  "本次轮回可得"+earned+"因果；先看清损失和永久收益，确定后再开始下一世。":
+  "先击败第四张地图Boss。轮回自愿进行；境界、当世卡牌与装备都将重置。");
+ set("reincarnationChoice",s.run.bossCleared?
+  s.run.realmIndex<4?
+  "目前55因果；完成筑基可得65因果（多10），刚好可购买40因果天命箱并解锁25因果自动吃药。建议先筑基，再轮回。":
+  "筑基圆满准备完成！本次获得65因果，可选择40因果天命箱＋25因果自动吃药。遗物永久保留，但具体效果取决于抽中内容。":
+  "未来轮回奖励：Boss通关后55因果；若先突破到筑基初期则为65因果。第一次轮回还会重置本世全部装备与卡牌。");
  const regular=c.relics.map(x=>{
   const n=s.meta.relics[x.id]||0,amount=x.stat==="flatAttack"||x.stat==="flatHp"?"点":"%";
   return '<div class="v8-item '+(n?"":"missing")+'"><div class="v8-item-name">'+
@@ -565,7 +637,7 @@ function renderDetailPanels(){
 }
 function render(){
  if(!c||!s)return;
- renderToken++;renderTop();renderExplore();renderCultivate();renderPacks();
+ renderToken++;renderTop();renderExplore();renderNovice();renderCultivate();renderPacks();
  renderInventory("techniqueList","technique","technique");
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
  renderItems();renderFate();renderAtlas();renderDetailPanels();
@@ -574,14 +646,16 @@ async function drawPack(packId,count){
  if(revealBusy)return;
  revealBusy=true;
  try{
-  const before=heroStats(s,c),result=doCommand("DRAW",{packId,count});
+  const before=heroStats(s,c),previousDraws=s.run.draws[packId]||0,result=doCommand("DRAW",{packId,count});
   if(!result)return;
   const after=heroStats(s,c);
   const items=result.items.map(x=>'<span class="v8-draw-card '+x.rarity+'">'+escapeHTML(x.name)+'</span>').join("");
   $("drawResults").innerHTML='<div>本次消耗灵石 '+fmt(result.cost)+'，获得：</div>'+items+
    '<div>攻击 '+fmt(before.attack)+' → '+fmt(after.attack)+' · 气血 '+fmt(before.hp)+' → '+fmt(after.hp)+
    ' · 悟道 '+fmt(s.run.insight)+' · 现存灵石 '+fmt(s.run.stones)+'</div>';
-  await showReveal({packId,items:result.items,title:count===10?"十道机缘 · 天命已定":"机缘已至"});
+  const quick=$("quickReveal").checked&&previousDraws>0&&
+   result.items.every(x=>["huang","xuan"].includes(x.rarity));
+  if(!quick)await showReveal({packId,items:result.items,title:count===10?"十道机缘 · 天命已定":"机缘已至"});
   toast("已收下 "+result.items.length+" 张机缘");
  }finally{revealBusy=false}
 }
@@ -696,6 +770,7 @@ async function init(){
   const loaded=readGame(c);
   if(loaded.status==="invalid"){offerInvalidSaveRecovery(loaded.raw,loaded.message);set("saveStatus",loaded.message);return}
   s=loaded.state;
+  try{$("quickReveal").checked=localStorage.getItem(QUICK_REVEAL_KEY)==="1"}catch{}
   set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
   render();
   for(const detail of document.querySelectorAll("details.v8-disclosure")){
@@ -708,11 +783,35 @@ async function init(){
   $("landscapeNavToggle").addEventListener("click",()=>document.body.classList.contains("wb-nav-open")?closeLandscapeNav():openLandscapeNav());
   $("openMapDrawer").addEventListener("click",openLandscapeNav);
   $("landscapeBackdrop").addEventListener("click",closeLandscapeNav);
-  $("openGearBag").addEventListener("click",()=>openGear("weapon1"));
+  $("openGearBag").addEventListener("click",()=>openGear(suggestedGearSlot||"weapon1"));
   $("closeEquipment").addEventListener("click",closeGear);
   let swipe=null;
   document.addEventListener("touchstart",event=>{const t=event.touches[0];swipe=t.clientX<24?{x:t.clientX,y:t.clientY}:null},{passive:true});
   document.addEventListener("touchend",event=>{if(!swipe)return;const t=event.changedTouches[0],dx=t.clientX-swipe.x,dy=Math.abs(t.clientY-swipe.y);if(dx>65&&dy<45)openLandscapeNav();swipe=null},{passive:true});
+  $("noviceAction").addEventListener("click",()=>{
+   const stage=noviceStep(s);if(!stage)return;
+   changeView(stage.view);
+   if(stage.packId){
+    const first=document.querySelector('[data-pack-id="'+stage.packId+'"] button[data-count="1"]');
+    first?.scrollIntoView({behavior:"auto",block:"center"});first?.focus({preventScroll:true});
+   }else if(stage.index===2){
+    if(!auto&&!battleBusy)startAuto();
+    $("autoFarm")?.scrollIntoView({behavior:"auto",block:"center"});
+   }else if(stage.target){
+    const button=$(stage.target);
+    button?.scrollIntoView({behavior:"auto",block:"center"});
+    button?.focus({preventScroll:true});
+   }
+  });
+  $("noviceSkip").addEventListener("click",()=>{
+   try{localStorage.setItem(NOVICE_SKIP_KEY,"1")}catch{}
+   render();
+   toast("已跳过入门指引，随时可按修行目标继续游戏。");
+  });
+  $("quickReveal").addEventListener("change",event=>{
+   try{localStorage.setItem(QUICK_REVEAL_KEY,event.target.checked?"1":"0")}catch{}
+   toast(event.target.checked?"普通重复机缘已启用快捷揭晓，首次和高品质仍保留仪式。":"已恢复完整的机缘揭晓演出。");
+  });
   $("closeMobileSheet").addEventListener("click",closeMobileSheet);
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
@@ -824,7 +923,10 @@ async function init(){
    if(result)toast("已将当前关小怪调整为："+farmTarget(s,c).name+"。进度保持不变。");
   });
   $("breakthrough").addEventListener("click",()=>{const r=doCommand("BREAKTHROUGH");if(r){toast("突破成功："+r.name+"！");changeView("cultivate")}});
-  $("reincarnate").addEventListener("click",()=>{if(!window.confirm("确认轮回？会清空本世地图、修为、灵石和全部当世卡牌，但保留天命与因果。"))return;
+  $("reincarnate").addEventListener("click",()=>{
+   const earned=55+Math.max(0,s.run.realmIndex-3)*10;
+   const alternative=s.run.realmIndex<4?"\n注意：先筑基再轮回能额外获得10因果，并凑足40因果遗物箱＋25因果自动服药。":"";
+   if(!window.confirm("确定轮回获得"+earned+"因果？当世地图、修为、灵石、装备和卡牌会全部清空；已拥有的永久遗物及因果保留。"+alternative))return;
    stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
   $("openRelic").addEventListener("click",async()=>{
    if(revealBusy)return;
@@ -843,7 +945,7 @@ async function init(){
   });
   $("exportSave").addEventListener("click",exportSave);
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
-   stopAuto();playToken++;s=backupAndReset(c);set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
+   stopAuto();playToken++;s=backupAndReset(c);try{localStorage.removeItem(NOVICE_SKIP_KEY)}catch{}set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
   document.addEventListener("visibilitychange",()=>{
    if(document.hidden&&auto){
     if(timer!==null)clearTimeout(timer);timer=null;

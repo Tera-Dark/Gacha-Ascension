@@ -1,7 +1,7 @@
 {
   "name": "gacha-ascension",
   "private": true,
-  "version": "0.9.3-preview",
+  "version": "0.9.4-preview",
   "type": "module",
   "description": "Current four-map idle/incremental/gacha preview with isolated historical M0 and codex",
   "scripts": {

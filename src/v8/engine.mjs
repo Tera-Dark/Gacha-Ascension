@@ -98,6 +98,15 @@ export function breakthroughRequirements(s,c){
   hasQi:s.run.qi>=qi,hasInsight:s.run.insight>=insight,hasPill:!needsPill||!!s.run.pills.D004,
   canBreak:i<4&&!needMapMilestone&&s.run.qi>=qi&&s.run.insight>=insight&&(!needsPill||(s.run.bossCleared&&s.run.pills.D004>0))};
 }
+/** Map entrances after a Boss require the matching cultivation breakthrough.
+ * Mobs stay available in the new map so nobody can become progression-locked.
+ */
+export function pendingRealmGate(s,c){
+ const required=Math.min(s.run.mapIndex,3);
+ if(!s.run.bossCleared&&s.run.realmIndex<required)
+  return {required,realm:c.realms[required].name,map:c.maps[s.run.mapIndex].name};
+ return null;
+}
 export function farmTarget(s,c){
  return c.farmTargets.find(x=>x.id===(s.run.farmFocus||"balanced"))||c.farmTargets[0];
 }
@@ -219,6 +228,10 @@ function battle(s,c,kind){
  const isLast=r.checkpoint===c.checkpointsPerMap-1;
  if(kind==="boss"&&!isLast)throw Error("需要先击败该图全部关卡守卫");
  if(kind==="guardian"&&isLast)throw Error("此关需要挑战地图Boss");
+ if(kind==="guardian"){
+  const gate=pendingRealmGate(s,c);
+  if(gate)throw Error("先突破至"+gate.realm+"，才能挑战"+gate.map+"的守卫。仍可在本关刷小怪积累灵石和修为");
+ }
  const result=fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
  s.seed=result.nextSeed;
  const items=inventory(s);
