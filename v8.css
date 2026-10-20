@@ -53,3 +53,11 @@
 @media(prefers-reduced-motion:reduce){.v8-toast{transition:none}}
 
 @media(max-width:850px){.mobile-tabs{display:flex!important;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;align-items:stretch;gap:2px;padding-left:5px;padding-right:5px}.mobile-tabs button{flex:0 0 65px;min-width:65px}}
+
+/* v0.8.2: combat-area readouts inspired by Melvor's accuracy/evasion/DR planning. */
+.v8-combat-insight{border-top:1px solid #3a5850;margin-top:7px;padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.v8-combat-insight>div{display:flex;flex-direction:column;gap:3px;min-width:0;border:1px solid #344e47;border-radius:7px;background:#162927;padding:7px}
+.v8-combat-insight span{color:#92aaa1;font-size:9px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.v8-combat-insight strong{font-size:11px;color:#e9c889;line-height:1.45}
+.v8-combat-judgement{border-top:1px solid #334c44;padding-top:7px;margin-top:7px;color:#a8c4ad;font-size:10px;line-height:1.7}
+@media(max-width:560px){.v8-combat-insight{grid-template-columns:1fr 1fr}.v8-combat-insight strong{font-size:10px}}
