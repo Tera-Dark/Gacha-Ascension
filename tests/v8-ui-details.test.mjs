@@ -7,7 +7,7 @@ const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const c=loadCatalog(JSON.parse(read("data/realms-maps.v0.8.proposal.json")),JSON.parse(read("data/v8-slice.json")));
 const page=read("preview-v0.8.html");
 test("all nine game systems offer closed-by-default accessible native numeric detail panels",()=>{
- const keys=["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"];
+ const keys=["explore","cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"];
  for(const key of keys){
   const re=new RegExp('<details class="v8-disclosure" id="'+key+'">');
   assert.match(page,re,"missing collapsed stats panel "+key);
@@ -29,7 +29,7 @@ test("compact mobile dock holds four primary destinations plus expandable access
  const sheet=page.match(/<div class="mobile-sheet"[\s\S]*?<\/div>\s*<\/div>/)?.[0];
  assert.ok(dock&&sheet);
  assert.equal((dock.match(/<button/g)||[]).length,5);
- assert.equal((sheet.match(/data-view="/g)||[]).length,9);
+ assert.equal((sheet.match(/data-view="/g)||[]).length,10);
  assert.match(dock,/id="moreSystems"[^>]*aria-expanded="false"/);
  assert.match(page,/id="mobileSheetBackdrop" hidden/);
  assert.match(page,/id="mobileSheet"[^>]*hidden/);
