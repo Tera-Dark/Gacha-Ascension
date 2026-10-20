@@ -1,0 +1,31 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>First play</title><style>body{margin:0;background:#10201c;color:white;font:13px sans-serif}output{padding:8px;display:block}iframe{width:100%;height:85vh;border:0}</style></head><body><output id="result" data-result="PENDING">RUNNING</output><iframe id="game" src="../preview-v0.8.html" title="Game"></iframe><script>
+const iframe=document.getElementById("game"),out=document.getElementById("result");
+const sleep=t=>new Promise(r=>setTimeout(r,t));
+iframe.addEventListener("load",async()=>{
+ try{
+ const d=iframe.contentDocument,w=iframe.contentWindow;
+ for(let i=0;i<80&&!d.querySelector('#packList [data-draw="battle"]');i++)await sleep(50);
+ if(!d.querySelector('#packList [data-draw="battle"]'))throw Error("Initial UI unrendered");
+ const text=id=>d.getElementById(id)?.textContent?.trim();
+ const pos=id=>{const e=d.getElementById(id),r=e?.getBoundingClientRect();return {top:Math.round(r?.top||0),height:Math.round(r?.height||0),disabled:!!e?.disabled}};
+ const report={viewport:[w.innerWidth,w.innerHeight],goal:text("nextGoalTitle"),goalCopy:text("nextGoalDesc"),
+  goalButton:text("goalAction"),chance:text("guardForecast"),auto:pos("autoFarm"),challenge:pos("challenge"),
+  gacha:pos("goalAction"),visiblePacks:d.querySelectorAll("#packList .pack").length,
+  enabledPacks:d.querySelectorAll('#packList button[data-draw][data-count="1"]:not([disabled])').length,
+  tutorialModal:!!d.querySelector('[id*="onboard"],[id*="tutorial"],[id*="welcome"]'),
+  legacyHeaderLink:!!d.querySelector(".app-header a[href*='m0.html']"),
+  navDock:[...d.querySelectorAll(".mobile-tabs button")].map(x=>x.textContent.trim())};
+ const nav=d.querySelector(".mobile-tabs button[data-view='gacha']")||d.querySelector(".system-sidebar button[data-view='gacha']");
+ nav.click();await sleep(50);
+ report.navSucceeded=d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active");
+ d.querySelector('#packList [data-draw="battle"][data-count="1"]').click();await sleep(120);
+ report.drawOverlay=!d.getElementById("revealOverlay").hidden;
+ d.getElementById("skipReveal").click();await sleep(80);
+ report.collectButton=!d.getElementById("closeReveal").hidden;
+ d.getElementById("closeReveal").click();await sleep(50);
+ report.endStones=text("topStone");report.endAttack=text("sideAtk");
+ report.collected=d.getElementById("revealOverlay").hidden;
+ out.dataset.result="PASS";out.textContent="AUDIT_UI="+JSON.stringify(report);
+ }catch(e){out.dataset.result="FAIL";out.textContent="FAIL: "+e.message}
+});
+</script></body></html>

@@ -1,0 +1,40 @@
+name: Novice first-life diagnostic
+on:
+  push:
+    branches: ["audit/novice-first-life-journey"]
+    paths:
+      - "scripts/audit-novice-first-life.mjs"
+      - "tests/v8-novice-ui-smoke.html"
+      - ".github/workflows/novice-journey-audit.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Follow production game prompts through first life
+        run: node scripts/audit-novice-first-life.mjs | tee /tmp/novice-journey.txt
+      - name: Serve game
+        run: |
+          python3 -m http.server 4173 >/tmp/novice-http.log 2>&1 &
+          sleep 2
+      - name: Click real novice UI in phone and landscape Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          for SIZE in 390,844 844,390; do
+            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=9000 --window-size="$SIZE" --dump-dom "http://127.0.0.1:4173/tests/v8-novice-ui-smoke.html" >"/tmp/novice-$SIZE.html" 2>"/tmp/novice-$SIZE.log"
+            grep -o 'AUDIT_UI=[^<]*' "/tmp/novice-$SIZE.html" || true
+            grep -o 'FAIL:[^<]*' "/tmp/novice-$SIZE.html" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: novice-first-run-diagnostic
+          path: |
+            /tmp/novice-journey.txt
+            /tmp/novice-390,844.html
+            /tmp/novice-844,390.html
