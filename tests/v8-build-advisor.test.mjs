@@ -9,7 +9,7 @@ const j=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8")
 const c=loadCatalog(j("realms-maps.v0.8.proposal.json"),j("v8-slice.json"));
 const cmd=(s,type,data={})=>dispatch(s,c,{seq:s.seq+1,type,...data});
 function longFight(tech,pet,synergy){
- const source=combatSnapshot(createSave(978),"guardian" in c?c:c,"guardian");
+ const source=combatSnapshot(createSave(978),c,"guardian");
  source.hero={attack:60,hp:50000,defense:25};
  source.enemy={attack:2,hp:10000000,defense:30};
  source.waves=[{...source.enemy,name:"测试靶",stage:1,style:"blade",special:"none"}];

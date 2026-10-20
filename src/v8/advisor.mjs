@@ -44,15 +44,15 @@ export function nextStep(s,c,forecast=null){
  if(req.canBreak&&r.realmIndex<4)return {title:"突破条件已齐",description:"境界条件已满足。先突破可获得新的基础属性，再继续探索。",view:"cultivate",action:"前往突破"};
  if(r.bossCleared){
   if(r.realmIndex>=4)return {title:"本世圆满",description:"四图和筑基境界均已达成，可选择轮回取得永久天命。",view:"fate",action:"查看轮回"};
-  if(req.needsPill&&!req.hasPill)return {title:"补齐筑基丹",description:"还缺筑基丹。丹道宝匣最多还需 "+Math.max(1,c.realmPillPity-r.pillPity)+" 抽保底。",view:"gacha",action:"抽丹道宝匣"};
-  if(!req.hasInsight)return {title:"补足悟道",description:"距突破还缺 "+(req.insight-r.insight)+" 点悟道；每次修为造化至少获得1点。",view:"gacha",action:"抽修为造化"};
+  if(req.needsPill&&!req.hasPill)return {title:"补齐筑基丹",description:"还缺筑基丹。丹道宝匣最多还需 "+Math.max(1,c.realmPillPity-r.pillPity)+" 抽保底。",view:"gacha",packId:"elixir",action:"抽丹道宝匣"};
+  if(!req.hasInsight)return {title:"补足悟道",description:"距突破还缺 "+(req.insight-r.insight)+" 点悟道；每次修为造化至少获得1点。",view:"gacha",packId:"cultivation",action:"抽修为造化"};
   if(!req.hasQi)return {title:"积累突破修为",description:"突破还需 "+(req.qi-r.qi)+" 修为。切换修为优先的小怪刷取。",view:"explore",action:"返回刷怪"};
   return {title:"选择下一世",description:"四图已通关，可选择继续积累或轮回。",view:"fate",action:"查看轮回"};
  }
  if(forecast?.winRate>=.83)return {title:"守关时机已到",description:"24场模拟胜率约 "+Math.round(forecast.winRate*100)+"%。可挑战"+(r.checkpoint===c.checkpointsPerMap-1?"地图Boss":"守卫")+"；死亡可能遗失穿戴装备。",view:"explore",action:"前往挑战"};
- if(!r.technique)return {title:"先取得功法",description:"未装备主修功法。功法秘卷能解锁流派克制，当前每抽 "+packCost(s,c,"technique")+" 灵石。",view:"gacha",action:"抽功法秘卷"};
- if(!r.pet)return {title:"灵宠协同作战",description:"已有功法，但尚无出战灵宠。御兽灵契可以增加独立攻击、护盾和共鸣组合。",view:"gacha",action:"抽御兽灵契"};
+ if(!r.technique)return {title:"先取得功法",description:"未装备主修功法。功法秘卷能解锁流派克制，当前每抽 "+packCost(s,c,"technique")+" 灵石。",view:"gacha",packId:"technique",action:"抽功法秘卷"};
+ if(!r.pet)return {title:"灵宠协同作战",description:"已有功法，但尚无出战灵宠。御兽灵契可以增加独立攻击、护盾和共鸣组合。",view:"gacha",packId:"pet",action:"抽御兽灵契"};
  if(!Object.keys(r.equipment||{}).length&&s.meta.bestCheckpoint>=c.features.unlockAtGlobalCheckpoint.equipment)
-  return {title:"补齐基础装备",description:"器物秘匣能补充十槽攻防；小怪也有概率掉落基础装备箱。",view:"gacha",action:"查看器物秘匣"};
+  return {title:"补齐基础装备",description:"器物秘匣能补充十槽攻防；小怪也有概率掉落基础装备箱。",view:"gacha",packId:"equipment",action:"查看器物秘匣"};
  return {title:"调整构筑后再战",description:"当前守关模拟胜率约 "+Math.round((forecast?.winRate||0)*100)+"%。试试战前推演，再定向抽卡补齐攻防。",view:"explore",action:"查看战前推演"};
 }

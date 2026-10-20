@@ -283,7 +283,7 @@ function renderBuildAdvice(){
  const pair=activeSynergy(s),r=s.run;
  set("synergyLabel",pair?"✦ "+pair.name:"尚无双修共鸣");
  set("synergyHint",pair?pair.description:
-  "指定功法和灵宠同时出战可触发："+PAIR_SYNERGIES.map(x=>x.name).join(" / "));
+  "指定功法与灵宠出战可触发共鸣。打开功法或御兽面板查看每个组合及效果。");
  const target=r.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
  $("analyzeBuild").disabled=r.bossCleared||battleBusy;
  const apply=$("equipSuggestedBuild");
@@ -360,7 +360,9 @@ function renderExplore(){
  const step=nextStep(s,c,lastCombatAnalysis);
  set("nextGoalTitle",step.title);set("nextGoalDesc",step.description);
  set("rightGoal",step.description);
- $("goalAction").dataset.view=step.view;set("goalAction",step.action+" →");
+ $("goalAction").dataset.view=step.view;
+ if(step.packId)$("goalAction").dataset.packId=step.packId;else delete $("goalAction").dataset.packId;
+ set("goalAction",step.action+" →");
  renderBuildAdvice();
  if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
   set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));
@@ -390,7 +392,7 @@ function renderPacks(){
  const r=s.run;
  $("packList").innerHTML=c.packs.map(p=>{
   const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
-  return '<div class="pack"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
+  return '<div class="pack" data-pack-id="'+p.id+'"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
   '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
   '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
   (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+'</div>'+
@@ -402,8 +404,11 @@ function renderInventory(listId,effect,slot){
  const cards=Object.values(c.cards).filter(x=>x.effect===effect);
  $(listId).innerHTML=cards.map(card=>{
   const n=s.run.cards[card.id]||0,active=slot?s.run[slot]===card.id:false;
+  const paired=PAIR_SYNERGIES.find(x=>effect==="technique"?x.technique===card.id:effect==="pet"&&x.pet===card.id);
+  const partner=paired?(effect==="technique"?paired.pet:paired.technique):null;
+  const pairing=partner?" · 共鸣「"+paired.name+"」搭配 "+c.cards[partner].name+"： "+paired.description:"";
   return '<div class="v8-item '+(active?"active":n?"":"missing")+'"><div class="v8-item-name">'+escapeHTML(card.name)+
-   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML(card.description||card.style||"卡牌效果实际参与战斗")+
+   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML((card.description||card.style||"卡牌效果实际参与战斗")+pairing)+
    '</div><div class="v8-item-meta">效果强度 +'+fmt(card.value*n)+(effect==="cave"?"%":"")+'</div>'+
    (slot?'<button data-equip="'+slot+'" data-card="'+card.id+'" '+(!n||active?"disabled":"")+">"+(active?"当前已装配":n?"装配出战":"尚未抽到")+'</button>':"")+'</div>';
  }).join("");
@@ -619,7 +624,10 @@ async function init(){
    const stageInfo=e.target.closest("button[data-stage-info]");
    if(stageInfo){const i=Number(stageInfo.dataset.stageInfo);toast(i===s.run.checkpoint?"当前第"+(i+1)+"关":i<s.run.checkpoint?"已通过的守卫关卡，当前无法回退刷关":"请先击败前面的守卫。");return}
    const nav=e.target.closest("button[data-view]");
-   if(nav){changeView(nav.dataset.view);return}
+   if(nav){const focus=nav.id==="goalAction"?nav.dataset.packId:null;
+     changeView(nav.dataset.view);
+     if(focus)document.querySelector('[data-pack-id="'+focus+'"]')?.scrollIntoView({behavior:"smooth",block:"nearest"});
+     return}
    const draw=e.target.closest("button[data-draw]");
    if(draw&&!draw.disabled){drawPack(draw.dataset.draw,Number(draw.dataset.count));return}
    const equip=e.target.closest("button[data-equip]");
