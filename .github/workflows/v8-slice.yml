@@ -18,6 +18,7 @@ on:
       - "tests/v8-logic-smoke.html"
       - "tests/v8-novice-onboarding-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
+      - "scripts/audit-newcomer-v094.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
       - ".github/workflows/v8-slice.yml"
@@ -35,6 +36,8 @@ jobs:
           node-version: '22'
       - name: Validate prototype mechanics, world data, save and UI
         run: npm run check:v8
+      - name: Ensure actual guided new accounts naturally break realms before new map Bosses
+        run: node scripts/audit-newcomer-v094.mjs
       - name: Serve preview for real browser smoke
         run: |
           python3 -m http.server 4173 >/tmp/v8-site.log 2>&1 &
