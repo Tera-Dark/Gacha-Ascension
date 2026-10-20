@@ -208,6 +208,6 @@ export function simulateEncounter(input,startSeed){
  return {won,reason:won?"victory":heroHp<=0?"defeat":"timeout",
   turns,completedWaves,totalWaves:waves.length,heroDealt,petDealt,blocked,misses,maxEnemyHit,
   heroRemaining:heroHp,enemyRemaining,hero,enemy:activeWave,waves,
-  timeMs,nextSeed:rng,usedAuto,usedPrepared,
+  timeMs,nextSeed:rng,usedAuto,usedPrepared,synergy,
   logs};
 }

@@ -34,6 +34,7 @@ test("synergy actually changes strike, shield, pet damage and burst outcomes",()
  const sword={style:"sword",power:40},none={style:"none",power:0};
  const before=longFight(sword,none,null),fox=longFight(sword,none,pairs["fox-blade"]);
  assert.ok(fox.heroDealt>before.heroDealt,"fox must improve real attack damage");
+ assert.equal(fox.synergy.name,"狐影随剑","combat replay should have a visible synergy identity");
  const spirit={style:"spirit",power:40},hawk={style:"pierce",power:35};
  const spiritBase=longFight(spirit,hawk,null),spiritPair=longFight(spirit,hawk,pairs["hawk-spirit"]);
  assert.ok(spiritPair.petDealt>spiritBase.petDealt,"hawk must improve pet damage");

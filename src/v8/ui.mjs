@@ -199,7 +199,7 @@ function animateCombat(result){
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
  snapshot("enemyHP","enemyBar",combat.waves?.[0]?.hp||combat.enemy.hp,combat.waves?.[0]?.hp||combat.enemy.hp);
  set("enemyLabel",combat.waves?.[0]?.name||combat.enemy.name);
- set("combatStatus","逐次交锋 · 每次攻击独立扣血");
+ set("combatStatus",combat.synergy?"✦ 共鸣生效："+combat.synergy.name:"逐次交锋 · 每次攻击独立扣血");
  $("heroAttackBar").style.animationPlayState="running";
  $("enemyAttackBar").style.animationPlayState="running";
  const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -224,7 +224,13 @@ function animateCombat(result){
    if(toHero)snapshot("heroHP","heroBar",event.hp,event.max);
    else snapshot("enemyHP","enemyBar",event.hp,event.max);
    if(!reduce)damagePop(event);
-   set("combatStatus",event.actor==="miss"?"攻击落空":
+   const resonance=combat.synergy;
+   const resonanceHit=resonance&&(
+    event.actor==="hero"&&event.amount>0&&(resonance.strike||resonance.burst&&event.turn%3===0)||
+    event.actor==="pet"&&event.amount>0&&resonance.petDamage||
+    event.actor==="enemy"&&event.blocked>0&&resonance.shieldHp);
+   set("combatStatus",resonanceHit?"✦ "+resonance.name+" · 共鸣触发":
+    event.actor==="miss"?"攻击落空":
     event.actor==="potion"?"回春丹：紧急恢复气血":
     event.actor==="regen"?"敌方恢复":
     event.actor==="pet"?"灵宠协战":
