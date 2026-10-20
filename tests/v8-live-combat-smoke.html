@@ -1,0 +1,38 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Actual live combat clock/HP regression</title>
+<style>body{background:#102420;color:#f5dfaa;font:14px sans-serif;margin:0}output{display:block;padding:12px}iframe{display:block;width:100%;height:75vh;border:0}</style></head>
+<body><output id="result" data-result="PENDING">RUNNING</output><iframe id="app" src="../preview-v0.8.html"></iframe>
+<script type="module">
+import {fight,loadCatalog} from "../src/v8/engine.mjs";
+const d=document.getElementById("app"),out=document.getElementById("result");
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const check=(truth,msg)=>{if(!truth)throw Error(msg)};
+d.addEventListener("load",async()=>{
+ try{
+  const doc=d.contentDocument,w=d.contentWindow;
+  for(let i=0;i<100&&!doc.getElementById("autoFarm");i++)await wait(30);
+  const c=loadCatalog(await (await fetch("../data/realms-maps.v0.8.proposal.json")).json(),
+    await (await fetch("../data/v8-slice.json")).json());
+  check(!!doc.querySelector('#packList [data-draw="battle"]'),"game data did not render");
+  doc.getElementById("autoFarm").click();
+  await wait(50);
+  const read=()=>JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  const state=read();
+  check(state?.run?.idle?.active,"auto mode did not persist");
+  const predicted=fight(state,c,"mob",{seed:state.seed});
+  const first=predicted.logs.find(e=>e.actor==="hero"&&e.amount>0&&e.timeMs<predicted.timeMs-100);
+  check(!!first,"test mob did not have a visible mid-encounter hit");
+  await wait(first.timeMs+130);
+  const shown=doc.getElementById("enemyHP").textContent;
+  check(shown.startsWith(first.hp+" /"),"HP did not change at the predicted attack: "+shown+" vs "+first.hp);
+  check(read().run.lastBattle===null,"battle reward/receipt settled before the countdown finished");
+  const balance=Math.max(0,predicted.timeMs-first.timeMs-130);
+  await wait(balance+350);
+  check(!!read().run.lastBattle,"combat did not settle at completion");
+  check(read().run.victories>=1,"battle victory was not persisted");
+  doc.getElementById("autoFarm").click();
+  check(!read().run.idle.active,"auto mode did not stop cleanly");
+  out.dataset.result="PASS";out.textContent="PASS: visible early hit, receipt only at encounter completion, deterministic rewards and safe stop";
+ }catch(error){out.dataset.result="FAIL";out.textContent="FAIL: "+error.message}
+});
+</script></body></html>
