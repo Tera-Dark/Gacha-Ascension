@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Structural validator for the active v0.5 DESIGN registry.
+ * Structural validator for the historical v0.5 catalog used by old M0 (not current gameplay).
  * Run: node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs
  */
 import { readFileSync } from "node:fs";
@@ -93,7 +93,7 @@ function walk(feature){
 }
 for(const u of d.unlocks)walk(u.featureId);
 ok(d.packs.find(p=>p.id==="PK-006").phase==="P0","Relic chest MVP phase mismatch");
-const sheets=[["relics","data/codex/relics.v0.5.csv"],["unlocks","data/codex/unlocks.v0.5.csv"],["stages","data/codex/stages.v0.5.csv"],["zones","data/codex/zones.v0.5.csv"],["prototypes","data/codex/prototypes.v0.4.csv"],["enemies","data/codex/enemies.v0.4.csv"]];
+const sheets=[["relics","data/codex/relics.v0.5.csv"],["unlocks","data/codex/unlocks.v0.5.csv"],["stages","data/codex/stages.v0.5.csv"],["zones","data/codex/zones.v0.5.csv"]];
 for(const [type,path] of sheets){
  const rows=csv(read(path)),src=new Map(d[type].map(x=>[x.id,x]));
  ok(rows.length===d[type].length,path+" row length");
