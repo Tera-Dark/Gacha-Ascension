@@ -236,9 +236,12 @@ function renderAtlas(){
  $("mapAtlasFuture").innerHTML=c.allMaps.slice(c.playableMaps).map(card).join("");
 }
 function renderDetailPanels(){
+ const keys=["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"];
+ const opened=keys.filter(key=>$(key)?.open);
+ if(!opened.length)return;
  const model=detailModel(s,c,lastCombatAnalysis);
- for(const [key,groups] of Object.entries(model)){
-  const parent=$("detail-"+key);if(!parent)continue;
+ for(const key of opened){
+  const groups=model[key],parent=$("detail-"+key);if(!parent)continue;
   parent.innerHTML=groups.map(group=>
    '<section class="v8-detail-section"><h4>'+escapeHTML(group.title)+'</h4>'+
    '<dl class="v8-data-table">'+group.rows.map(item=>
@@ -318,6 +321,12 @@ async function init(){
   s=loaded.state;
   set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
   render();
+  for(const detail of document.querySelectorAll("details.v8-disclosure")){
+   detail.addEventListener("toggle",()=>{
+    if(detail.open)renderDetailPanels();
+    else if(detail.id&&$("detail-"+detail.id))$("detail-"+detail.id).replaceChildren();
+   });
+  }
   $("moreSystems").addEventListener("click",toggleMobileSheet);
   $("closeMobileSheet").addEventListener("click",closeMobileSheet);
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
