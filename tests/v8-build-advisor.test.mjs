@@ -72,6 +72,15 @@ test("advice only compares owned builds with repeatable independent RNG",()=>{
  assert.ok([null,"P001","P002"].includes(advice.best.pet));
  assert.throws(()=>recommendLoadout(s,c,"guardian",1),/推演参数/);
 });
+test("hopeless boss fights cannot recommend a faster death as an improvement",()=>{
+ const s=createSave(888);
+ s.run.mapIndex=3;s.run.checkpoint=7;
+ s.run.cards.T001=1;s.run.cards.T002=1;s.run.cards.P001=1;s.run.cards.P002=1;
+ const advice=recommendLoadout(s,c,"boss",8);
+ assert.equal(advice.current.score.wins,0);
+ assert.equal(advice.improved,false);
+ assert.equal(advice.best.score.wins,0);
+});
 test("goal advice gives a useful first action and a distinct post-clear objective",()=>{
  const s=createSave(1728);
  const initial=nextStep(s,c,{winRate:0});

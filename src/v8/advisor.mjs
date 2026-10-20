@@ -6,18 +6,22 @@ import {combatSnapshot,breakthroughRequirements,packCost} from "./engine.mjs";
 import {simulateEncounter} from "./combat-depth.mjs";
 function score(s,c,kind,seeds){
  const snap=combatSnapshot(s,c,kind);
- let wins=0,remaining=0,ms=0;
+ let wins=0,remaining=0,ms=0,winMs=0;
  for(const seed of seeds){
   const r=simulateEncounter(snap,seed);
   wins+=Number(r.won);remaining+=r.heroRemaining/r.hero.hp;ms+=r.timeMs;
+  if(r.won)winMs+=r.timeMs;
  }
  return {wins,samples:seeds.length,rate:wins/seeds.length,
-  avgRemaining:remaining/seeds.length,avgMs:Math.round(ms/seeds.length)};
+  avgRemaining:remaining/seeds.length,avgMs:Math.round(ms/seeds.length),
+  avgWinMs:wins?Math.round(winMs/wins):null};
 }
 function better(a,b){
  if(a.score.wins!==b.score.wins)return a.score.wins>b.score.wins;
+ // Never recommend a configuration merely because it dies faster.
+ if(a.score.wins===0)return false;
  if(Math.abs(a.score.avgRemaining-b.score.avgRemaining)>.03)return a.score.avgRemaining>b.score.avgRemaining;
- return a.score.avgMs<b.score.avgMs*.92;
+ return a.score.avgWinMs<b.score.avgWinMs*.9;
 }
 export function recommendLoadout(s,c,kind="guardian",sampleCount=16){
  if(!["mob","guardian","boss"].includes(kind)||!Number.isInteger(sampleCount)||
