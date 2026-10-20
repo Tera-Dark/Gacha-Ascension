@@ -1,0 +1,459 @@
+{
+  "version": "0.8-playable-slice-1",
+  "playableMaps": 4,
+  "checkpointsPerMap": 8,
+  "startingStones": 80,
+  "balance": {
+    "mobHp": 65,
+    "mobAttack": 13,
+    "mobDefense": 4,
+    "mapHpFactor": 1.85,
+    "mapAttackFactor": 1.7,
+    "mapDefenseFactor": 1.72,
+    "checkpointHpFactor": 1.13,
+    "checkpointAtkFactor": 1.09,
+    "checkpointDefenseFactor": 1.08,
+    "mapRewardFactor": 1.66,
+    "checkpointRewardFactor": 1.07,
+    "guardianHp": 3.4,
+    "guardianAttack": 1.85,
+    "bossHp": 7.2,
+    "bossAttack": 2.7,
+    "qiPerKill": 12,
+    "stonesPerKill": 19
+  },
+  "realm": {
+    "qiBase": 100,
+    "qiMultiplier": 2.35,
+    "insightMultiplier": 1.26,
+    "breakStatSmall": 1.27,
+    "breakStatMajor": 2.15
+  },
+  "features": {
+    "unlockAtGlobalCheckpoint": {
+      "battle": 0,
+      "wealth": 0,
+      "cultivation": 0,
+      "technique": 0,
+      "cave": 0,
+      "pet": 0,
+      "elixir": 0
+    },
+    "comment": "All six feature packs enabled for testing. Final unlock milestones are not frozen."
+  },
+  "packs": [
+    {
+      "id": "battle",
+      "name": "战力秘藏",
+      "cost": 48,
+      "icon": "⚔",
+      "cards": [
+        {
+          "id": "B001",
+          "name": "破军剑心",
+          "rarity": "huang",
+          "effect": "attackPct",
+          "value": 23
+        },
+        {
+          "id": "B002",
+          "name": "血炼金身",
+          "rarity": "huang",
+          "effect": "hpPct",
+          "value": 24
+        },
+        {
+          "id": "B003",
+          "name": "护脉真元",
+          "rarity": "huang",
+          "effect": "defPct",
+          "value": 22
+        },
+        {
+          "id": "B004",
+          "name": "无双剑意",
+          "rarity": "di",
+          "effect": "attackPct",
+          "value": 60
+        },
+        {
+          "id": "B005",
+          "name": "天罡神躯",
+          "rarity": "tian",
+          "effect": "allPct",
+          "value": 48
+        }
+      ]
+    },
+    {
+      "id": "wealth",
+      "name": "聚财机缘",
+      "cost": 52,
+      "icon": "◆",
+      "cards": [
+        {
+          "id": "W001",
+          "name": "聚宝灵契",
+          "rarity": "huang",
+          "effect": "stonePct",
+          "value": 29
+        },
+        {
+          "id": "W002",
+          "name": "灵石寻脉",
+          "rarity": "xuan",
+          "effect": "stonePct",
+          "value": 48
+        },
+        {
+          "id": "W003",
+          "name": "行云急行",
+          "rarity": "di",
+          "effect": "speedPct",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "cultivation",
+      "name": "修为造化",
+      "cost": 50,
+      "icon": "☯",
+      "cards": [
+        {
+          "id": "C001",
+          "name": "悟道灵印",
+          "rarity": "huang",
+          "effect": "insight",
+          "value": 1
+        },
+        {
+          "id": "C002",
+          "name": "聚灵玉诀",
+          "rarity": "huang",
+          "effect": "qiPct",
+          "value": 25
+        },
+        {
+          "id": "C003",
+          "name": "灵台澄明",
+          "rarity": "xuan",
+          "effect": "insight",
+          "value": 2
+        },
+        {
+          "id": "C004",
+          "name": "大道顿悟",
+          "rarity": "di",
+          "effect": "insight",
+          "value": 4
+        },
+        {
+          "id": "C005",
+          "name": "仙骨蕴灵",
+          "rarity": "tian",
+          "effect": "allPct",
+          "value": 50
+        }
+      ]
+    },
+    {
+      "id": "technique",
+      "name": "功法秘卷",
+      "cost": 65,
+      "icon": "✦",
+      "cards": [
+        {
+          "id": "T001",
+          "name": "流云剑经",
+          "rarity": "huang",
+          "effect": "technique",
+          "style": "sword",
+          "value": 23,
+          "description": "每次攻击追加剑气伤害"
+        },
+        {
+          "id": "T002",
+          "name": "玄武炼体篇",
+          "rarity": "huang",
+          "effect": "technique",
+          "style": "guard",
+          "value": 23,
+          "description": "减少敌人的实际伤害"
+        },
+        {
+          "id": "T003",
+          "name": "御灵同心诀",
+          "rarity": "xuan",
+          "effect": "technique",
+          "style": "spirit",
+          "value": 28,
+          "description": "增幅灵宠的独立攻击"
+        },
+        {
+          "id": "T004",
+          "name": "九霄破军诀",
+          "rarity": "di",
+          "effect": "technique",
+          "style": "burst",
+          "value": 40,
+          "description": "每三回合触发爆发斩击"
+        }
+      ]
+    },
+    {
+      "id": "cave",
+      "name": "洞府营造",
+      "cost": 68,
+      "icon": "⌂",
+      "cards": [
+        {
+          "id": "H001",
+          "name": "九转灵田",
+          "rarity": "huang",
+          "effect": "cave",
+          "style": "stone",
+          "value": 25,
+          "description": "提高普通小怪战斗灵石收益"
+        },
+        {
+          "id": "H002",
+          "name": "聚灵阵枢",
+          "rarity": "huang",
+          "effect": "cave",
+          "style": "qi",
+          "value": 27,
+          "description": "提高小怪战斗修为收益"
+        },
+        {
+          "id": "H003",
+          "name": "凌风云台",
+          "rarity": "xuan",
+          "effect": "cave",
+          "style": "speed",
+          "value": 7,
+          "description": "缩短战斗间隔"
+        },
+        {
+          "id": "H004",
+          "name": "蕴兽灵台",
+          "rarity": "di",
+          "effect": "cave",
+          "style": "pet",
+          "value": 24,
+          "description": "提高灵宠伤害"
+        }
+      ]
+    },
+    {
+      "id": "pet",
+      "name": "御兽灵契",
+      "cost": 70,
+      "icon": "♧",
+      "cards": [
+        {
+          "id": "P001",
+          "name": "青狐",
+          "rarity": "huang",
+          "effect": "pet",
+          "style": "attack",
+          "value": 25,
+          "description": "每回合独立发动灵宠攻击"
+        },
+        {
+          "id": "P002",
+          "name": "玄龟",
+          "rarity": "huang",
+          "effect": "pet",
+          "style": "ward",
+          "value": 18,
+          "description": "每次战斗提供护主护盾"
+        },
+        {
+          "id": "P003",
+          "name": "雷隼",
+          "rarity": "xuan",
+          "effect": "pet",
+          "style": "pierce",
+          "value": 38,
+          "description": "无视部分防御的独立攻击"
+        },
+        {
+          "id": "P004",
+          "name": "灵鹿",
+          "rarity": "di",
+          "effect": "pet",
+          "style": "qi",
+          "value": 28,
+          "description": "提供灵气收益辅助"
+        }
+      ]
+    },
+    {
+      "id": "elixir",
+      "name": "丹道宝匣",
+      "cost": 82,
+      "icon": "⚗",
+      "cards": [
+        {
+          "id": "D001",
+          "name": "蕴灵丹",
+          "rarity": "huang",
+          "effect": "qiInstant",
+          "value": 80,
+          "description": "立即增加本世修为"
+        },
+        {
+          "id": "D002",
+          "name": "强身丹",
+          "rarity": "huang",
+          "effect": "attackPct",
+          "value": 10,
+          "description": "本世攻击永久提升10%"
+        },
+        {
+          "id": "D003",
+          "name": "固元丹",
+          "rarity": "xuan",
+          "effect": "hpPct",
+          "value": 16,
+          "description": "本世气血永久提升16%"
+        },
+        {
+          "id": "D004",
+          "name": "筑基丹",
+          "rarity": "xuan",
+          "effect": "pill",
+          "value": 1,
+          "description": "炼气圆满突破筑基所需"
+        }
+      ]
+    }
+  ],
+  "rarityWeights": {
+    "huang": 65,
+    "xuan": 25,
+    "di": 8,
+    "tian": 2
+  },
+  "relics": [
+    {
+      "id": "R001",
+      "name": "凡尘灵骨",
+      "rarity": "huang",
+      "stat": "attackPct",
+      "value": 3,
+      "max": 25
+    },
+    {
+      "id": "R002",
+      "name": "玄黄护符",
+      "rarity": "huang",
+      "stat": "hpPct",
+      "value": 3,
+      "max": 25
+    },
+    {
+      "id": "R003",
+      "name": "聚宝微光",
+      "rarity": "huang",
+      "stat": "stonePct",
+      "value": 4,
+      "max": 20
+    },
+    {
+      "id": "R004",
+      "name": "聚灵仙纹",
+      "rarity": "xuan",
+      "stat": "qiPct",
+      "value": 4,
+      "max": 20
+    },
+    {
+      "id": "R005",
+      "name": "剑道残章",
+      "rarity": "xuan",
+      "stat": "attackPct",
+      "value": 7,
+      "max": 16
+    },
+    {
+      "id": "R006",
+      "name": "御兽印记",
+      "rarity": "xuan",
+      "stat": "petPct",
+      "value": 6,
+      "max": 16
+    },
+    {
+      "id": "R007",
+      "name": "洞天玉髓",
+      "rarity": "di",
+      "stat": "stonePct",
+      "value": 10,
+      "max": 12
+    },
+    {
+      "id": "R008",
+      "name": "无量道衣",
+      "rarity": "di",
+      "stat": "hpPct",
+      "value": 12,
+      "max": 12
+    },
+    {
+      "id": "R009",
+      "name": "太初剑印",
+      "rarity": "tian",
+      "stat": "attackPct",
+      "value": 18,
+      "max": 10
+    },
+    {
+      "id": "R010",
+      "name": "灵海真图",
+      "rarity": "tian",
+      "stat": "qiPct",
+      "value": 16,
+      "max": 10
+    }
+  ],
+  "ultras": [
+    {
+      "id": "U001",
+      "name": "开天斧",
+      "effect": "heroMultiplier",
+      "value": 2.5
+    },
+    {
+      "id": "U002",
+      "name": "始祖印",
+      "effect": "petMultiplier",
+      "value": 4
+    },
+    {
+      "id": "U003",
+      "name": "洞天珠",
+      "effect": "caveMultiplier",
+      "value": 3
+    },
+    {
+      "id": "U004",
+      "name": "大道书",
+      "effect": "techniqueMultiplier",
+      "value": 2.5
+    }
+  ],
+  "fate": {
+    "price": 40,
+    "ultraChance": 0.0001,
+    "rarities": {
+      "huang": 50,
+      "xuan": 28,
+      "di": 14,
+      "tian": 8
+    },
+    "pityAt": 20
+  },
+  "realmPillPity": 8
+}
