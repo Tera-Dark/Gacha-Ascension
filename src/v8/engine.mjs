@@ -3,6 +3,8 @@ import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
 import {startIdle,claimIdle,stopIdle,battleIntervalMs} from "./idle.mjs";
 import {validateContentContract,unlockedPack} from "./modules.mjs";
 import {EQUIPMENT_SLOTS,validateEquipmentCards,verifyEquipment,equipmentStats,equipItem} from "./equipment.mjs";
+import {ARTIFACT_SLOTS,validateArtifacts,verifyArtifacts,equipArtifact,artifactBonuses} from "./artifacts.mjs";
+import {inventory,validateInventory,rollBoxDrop,openBox,brew,prepareItem,unlockAutoPotion,setAutoPotion} from "./treasure.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -11,13 +13,15 @@ const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const nat=n=>Number.isSafeInteger(n)&&n>=0;
 export function loadCatalog(world,slice){
  if(world?.maps?.length!==24||world?.cultivation?.length!==20||slice?.version!=="0.8-playable-slice-1")throw Error("版本化地图/卡池配置缺失");
- if(slice.playableMaps!==4||slice.packs.length!==8||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
+ if(slice.playableMaps!==4||slice.packs.length!==9||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
  validateContentContract(slice);
  if(!Array.isArray(slice.farmTargets)||slice.farmTargets.length!==3||
   new Set(slice.farmTargets.map(x=>x.id)).size!==3||
   slice.farmTargets.some(x=>!["balanced","stones","cultivation"].includes(x.id)||
     ["hpFactor","attackFactor","stoneFactor","qiFactor"].some(k=>!finite(x[k])||x[k]<=0)))throw Error("刷怪目标配置错误");
  validateEquipmentCards(slice.packs.flatMap(p=>p.cards));
+ validateArtifacts(slice.packs.flatMap(p=>p.cards));
+ for(const kind of ["mob","guardian","boss"])for(const type of ["gear","herb"]){const p=slice.dropRates?.[kind]?.[type];if(!finite(p)||p<0||p>1)throw Error("怪物宝箱概率配置异常")}
  const ids=new Set(),cards={};
  for(const p of slice.packs)for(const c of p.cards){
   if(ids.has(c.id))throw Error("重复卡牌 "+c.id);ids.add(c.id);cards[c.id]={...c,pack:p.id};
@@ -32,7 +36,7 @@ export function createSave(seed=20261020){
   run:createRun()};
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
- stones:110,farmFocus:"balanced",equipment:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
+ stones:110,farmFocus:"balanced",equipment:{},artifacts:{},boxes:{gear:0,herb:0},herbs:{},consumables:{},prepared:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
  victories:0,mobKills:0,guardianWins:0,bossWins:0,losses:0,
  totalEarned:0,totalSpent:0,lastBattle:null};}
 export function validateSave(s,c){
@@ -45,6 +49,7 @@ export function validateSave(s,c){
  if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
  verifyEquipment(s,c);
+ verifyArtifacts(s,c);validateInventory(s);
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
  for(const [id,count] of Object.entries(m.relics))if(!c.relics.some(x=>x.id===id)||!nat(count))throw Error("遗物记录损坏");
  if(m.apex&&Object.keys(m.apex).some(id=>!c.apex.some(x=>x.id===id)))throw Error("未知太古异宝");
@@ -128,8 +133,15 @@ function pet(s,c){
  */
 export function combatSnapshot(s,c,kind){
  const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c),p=pet(s,c),index=s.run.mapIndex;
+ const a=artifactBonuses(s,c),prepared=s.run.prepared||{},auto=s.meta.autoPotion;
+ h.attack=Math.max(1,Math.round(h.attack*(1+(a.strike+(prepared.P003?15:0))/100)));
+ h.defense=Math.max(0,Math.round(h.defense*(1+(a.ward+(prepared.P002?15:0))/100)));
+ f.attack=Math.max(1,Math.round(f.attack*(1-a.curse/100)));
+ const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
+  available:s.run.consumables?.P001||0,prepared:prepared.P001||0};
  return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
-  kind,mapIndex:index,heroSpeedPct:yields(s,c).speedPct,apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,
+  kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c).speedPct+a.blessing),
+  apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
   waves:encounterWaves(f,kind,index)};
 }
 export function combatAssessment(s,c,kind,samples=24){
@@ -173,6 +185,10 @@ function gainCard(s,c,card){
   const free=EQUIPMENT_SLOTS.find(slot=>slot.type===card.equipmentSlot&&!(run.equipment||{})[slot.id]);
   if(free)equipItem(s,c,free.id,card.id);
  }
+ if(card.effect==="artifact"){
+  const free=ARTIFACT_SLOTS.find(slot=>run.realmIndex>=slot.realmIndex&&!(run.artifacts||{})[slot.id]);
+  if(free)equipArtifact(s,c,free.id,card.id);
+ }
 }
 function draw(s,c,{packId,count}){
  const pack=c.packById[packId];
@@ -204,6 +220,12 @@ function battle(s,c,kind){
  if(kind==="guardian"&&isLast)throw Error("此关需要挑战地图Boss");
  const result=fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
  s.seed=result.nextSeed;
+ const items=inventory(s);
+ items.consumables.P001=Math.max(0,(items.consumables.P001||0)-(result.usedAuto||0));
+ items.prepared.P001=Math.max(0,(items.prepared.P001||0)-(result.usedPrepared||0));
+ // Non-healing combat consumables are spent once at encounter start.
+ for(const id of ["P002","P003"])if(items.prepared[id])items.prepared[id]--;
+ const potionUses={auto:result.usedAuto||0,prepared:result.usedPrepared||0};
  if(result.won){
   r.victories++;
   const economic=yields(s,c),b=c.balance;
@@ -220,6 +242,7 @@ function battle(s,c,kind){
   if(ownedApex(s,"A003"))qi=Math.max(1,Math.round(qi*1.5));
   if(!Number.isSafeInteger(stones)||!Number.isSafeInteger(qi)||!Number.isSafeInteger(r.stones+stones)||!Number.isSafeInteger(r.qi+qi))throw Error("资源即将超出安全整数范围；待升级大数模块");
   r.stones+=stones;r.qi+=qi;r.totalEarned+=stones;
+  const boxes=rollBoxDrop(s,c,kind,()=>roll(s));
   if(kind==="mob"){r.mobKills++}
   else if(kind==="guardian"){r.guardianWins++;r.checkpoint++;
    s.meta.bestCheckpoint=Math.max(s.meta.bestCheckpoint,r.mapIndex*c.checkpointsPerMap+r.checkpoint+1);
@@ -229,11 +252,21 @@ function battle(s,c,kind){
    else {r.bossCleared=true;s.meta.bestMap=4}
   }
   return {kind:"battle",type:kind,won:true,combat:result,stones,qi,mapBefore:m,checkpointBefore:k,
-   mapAfter:r.mapIndex,checkpointAfter:r.checkpoint,bossCleared:r.bossCleared};
+   mapAfter:r.mapIndex,checkpointAfter:r.checkpoint,bossCleared:r.bossCleared,boxes,potionUses};
  }
  r.losses++;
+ let lostGear=null;
+ const slots=Object.entries(r.equipment||{}).filter(([,id])=>!!id);
+ if(slots.length&&roll(s)<.5){
+  const [slot,id]=slots[Math.floor(roll(s)*slots.length)];
+  lostGear={slot,id,name:c.cards[id].name};
+  delete r.equipment[slot];
+  r.cards[id]--;
+  if(!r.cards[id])delete r.cards[id];
+ }
  return {kind:"battle",type:kind,won:false,combat:result,stones:0,qi:0,mapBefore:m,checkpointBefore:k,
-  mapAfter:r.mapIndex,checkpointAfter:r.checkpoint,bossCleared:r.bossCleared};
+  mapAfter:r.mapIndex,checkpointAfter:r.checkpoint,bossCleared:r.bossCleared,
+  lostGear,potionUses,boxes:[]};
 }
 function breakthrough(s,c){
  const r=s.run,needs=breakthroughRequirements(s,c);
@@ -285,6 +318,12 @@ export function dispatch(current,c,cmd){
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="technique"||!r.cards[id]))throw Error("功法未拥有");
   r.technique=id;result={kind:"equip",slot:"technique",id};break}
  case "EQUIP_ITEM":result=equipItem(s,c,cmd.slot,cmd.id);break;
+ case "EQUIP_ARTIFACT":result=equipArtifact(s,c,cmd.slot,cmd.id);break;
+ case "OPEN_BOX":result=openBox(s,c,cmd.id,()=>roll(s));break;
+ case "BREW":result=brew(s,cmd.id,cmd.count||1);break;
+ case "PREPARE_ITEM":result=prepareItem(s,cmd.id);break;
+ case "UNLOCK_AUTO_POTION":result=unlockAutoPotion(s);break;
+ case "SET_AUTO_POTION":result=setAutoPotion(s,cmd.enabled,cmd.threshold);break;
  case "EQUIP_PET":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="pet"||!r.cards[id]))throw Error("灵宠未拥有");
   r.pet=id;result={kind:"equip",slot:"pet",id};break}
@@ -300,7 +339,7 @@ export function dispatch(current,c,cmd){
  default:throw Error("未定义的玩法指令 "+cmd.type);
  }
  s.seq=cmd.seq;
- if(result.kind==="battle"){s.run.lastBattle={type:result.type,won:result.won,turns:result.combat.turns,stones:result.stones,qi:result.qi}}
+ if(result.kind==="battle"){s.run.lastBattle={type:result.type,won:result.won,turns:result.combat.turns,stones:result.stones,qi:result.qi,boxes:result.boxes,lostGear:result.lostGear||null,potionUses:result.potionUses}}
  validateSave(s,c);
  return {state:s,result};
 }
