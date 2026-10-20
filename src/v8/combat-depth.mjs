@@ -79,9 +79,16 @@ export function assessEncounter(snapshot,samples=24){
   lowestRemaining=Math.min(lowestRemaining,result.heroRemaining);
  }
  const winRate=wins/samples;
+ const boss=snapshot.waves.at(-1);
+ const ratings=unitRatings(snapshot.hero,boss,boss.special);
+ const encounterStyle=styleMatchup(combatStyle(snapshot.tech),boss.style);
+ const heroDr=mitigation(snapshot.hero.defense,snapshot.tech.style==="guard"?snapshot.tech.power:0);
  const safeToAuto=winRate>=.83&&snapshot.hero.hp>=highest*1.5;
  return {samples,wins,winRate,averageTurns:Math.round(turns/samples),
   maxThreatHit:highest,minHeroRemaining:lowestRemaining,
+  heroHitChance:ratings.heroHitChance,enemyHitChance:ratings.enemyHitChance,
+  damageReduction:heroDr,matchup:encounterStyle.label,heroStyle:STYLE_LABELS[combatStyle(snapshot.tech)],
+  enemyStyle:STYLE_LABELS[boss.style],waveCount:snapshot.waves.length,
   safeToAuto, risk:winRate>=.85?"稳健":winRate>=.6?"可尝试":"危险",
   opportunity:winRate>=.83?"适合冲关":winRate>=.6?"有风险，可手动挑战":"建议刷怪改善构筑"};
 }
