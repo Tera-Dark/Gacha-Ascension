@@ -9,6 +9,7 @@ import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./
 import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
 import {PAIR_SYNERGIES,activeSynergy} from "./synergy.mjs";
 import {recommendLoadout,nextStep} from "./advisor.mjs";
+import {combatTimeline} from "./combat-timeline.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -16,7 +17,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -192,50 +193,95 @@ function damagePop(event){
  src.classList.remove("impact");void src.offsetWidth;src.classList.add("impact");
  setTimeout(()=>src.classList.remove("impact"),220);
 }
-function animateCombat(result){
+/** All combat modes share one chronological event-to-HP renderer. */
+function showHitEvent(event,combat,withEffects=true){
+ if(event.actor==="wave"){
+  set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
+  set("wbWave","第"+event.stage+"/"+event.total+"波");
+  snapshot("enemyHP","enemyBar",event.hp,event.max);
+  set("combatStatus","进入第"+event.stage+"/"+event.total+"波");
+  return;
+ }
+ const toHero=event.actor==="enemy"||event.actor==="counter"||event.actor==="potion"||
+  event.actor==="miss"&&event.owner==="enemy";
+ if(toHero)snapshot("heroHP","heroBar",event.hp,event.max);
+ else snapshot("enemyHP","enemyBar",event.hp,event.max);
+ if(withEffects&&!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)damagePop(event);
+ const resonance=combat.synergy;
+ const resonanceHit=resonance&&(
+  event.actor==="hero"&&event.amount>0&&(resonance.strike||resonance.burst&&event.turn%3===0)||
+  event.actor==="pet"&&event.amount>0&&resonance.petDamage||
+  event.actor==="enemy"&&event.blocked>0&&resonance.shieldHp);
+ set("combatStatus",resonanceHit?"✦ "+resonance.name+" · 共鸣触发":
+  event.actor==="miss"?"攻击落空":
+  event.actor==="potion"?"回春丹：紧急恢复气血":
+  event.actor==="regen"?"敌方恢复":
+  event.actor==="pet"?"灵宠协战":
+  event.actor==="counter"?"敌方反震":
+  toHero?"敌方命中 · 气血减少":"我方命中 · 敌方气血减少");
+}
+function clearLiveTimeline(){
+ for(const id of liveTimers)clearTimeout(id);
+ liveTimers=[];livePreview=false;
+}
+function startLiveTimeline(combat,plan){
+ clearLiveTimeline();
+ const token=++playToken;
+ livePreview=true;battleBusy=true;
+ snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
+ const first=combat.waves?.[0]||combat.enemy;
+ snapshot("enemyHP","enemyBar",first.hp,first.hp);
+ set("enemyLabel",first.name);
+ set("combatStatus","自动交锋进行中 · 每次命中即时显示伤害");
+ $("heroAttackBar").style.animationPlayState="running";
+ $("enemyAttackBar").style.animationPlayState="running";
+ // Seeking after resume or a build change does not repeat past damage pops.
+ for(const event of plan.past)showHitEvent(event,combat,false);
+ for(const event of plan.future){
+  liveTimers.push(setTimeout(()=>{
+   if(token!==playToken||!auto||!s.run.idle?.active)return;
+   showHitEvent(event,combat,true);
+  },event.delayMs));
+ }
+}
+function settleLiveTimeline(result){
+ const hadLive=livePreview;
+ clearLiveTimeline();
+ if(hadLive)++playToken;
+ battleBusy=false;
+ const {combat}=result;
+ snapshot("heroHP","heroBar",combat.heroRemaining,combat.hero.hp);
+ snapshot("enemyHP","enemyBar",combat.enemyRemaining,combat.enemy.hp);
+ set("enemyLabel",combat.enemy.name);
+ set("combatStatus",result.won?"✓ 战斗胜利 · 每次攻击已即时呈现":"✕ 战斗失败 · 战斗结算已完成");
+ if(result.won){
+  $("enemySprite").classList.add("defeated");
+  setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
+ }
+}
+function animateCombat(result,onComplete=null){
+ clearLiveTimeline();
  playToken++;const token=playToken,{combat}=result,logs=combat.logs||[];
- if(view!=="explore"){battleBusy=false;return}
+ if(view!=="explore"){battleBusy=false;onComplete?.();return}
  battleBusy=true;
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
- snapshot("enemyHP","enemyBar",combat.waves?.[0]?.hp||combat.enemy.hp,combat.waves?.[0]?.hp||combat.enemy.hp);
- set("enemyLabel",combat.waves?.[0]?.name||combat.enemy.name);
+ const first=combat.waves?.[0]||combat.enemy;
+ snapshot("enemyHP","enemyBar",first.hp,first.hp);
+ set("enemyLabel",first.name);
  set("combatStatus",combat.synergy?"✦ 共鸣生效："+combat.synergy.name:"逐次交锋 · 每次攻击独立扣血");
  $("heroAttackBar").style.animationPlayState="running";
  $("enemyAttackBar").style.animationPlayState="running";
- const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
- const duration=reduce?Math.min(700,Math.max(100,logs.length*12)):Math.min(11000,Math.max(1400,logs.length*140));
+ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ const duration=reduced?Math.min(700,Math.max(100,logs.length*12)):
+  Math.min(11000,Math.max(1400,logs.length*140));
  const full=Math.max(1,combat.timeMs||1);
  logs.forEach((event,index)=>{
-  // Exact chronological event record; speed up the *replay*, never the settlement.
   const relative=Math.min(1,Math.max(0,(event.timeMs||0)/full));
-  const ms=reduce?Math.round(index/(logs.length||1)*duration):
+  const ms=reduced?Math.round(index/(logs.length||1)*duration):
    Math.min(duration-20,Math.floor(relative*duration));
   setTimeout(()=>{
    if(playToken!==token||view!=="explore")return;
-   if(event.actor==="wave"){
-    set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
-    set("wbWave","第"+event.stage+"/"+event.total+"波");
-    snapshot("enemyHP","enemyBar",event.hp,event.max);
-    set("combatStatus","进入第"+event.stage+"/"+event.total+"波");
-    return;
-   }
-   const toHero=event.actor==="enemy"||event.actor==="counter"||event.actor==="potion"||
-    event.actor==="miss"&&event.owner==="enemy";
-   if(toHero)snapshot("heroHP","heroBar",event.hp,event.max);
-   else snapshot("enemyHP","enemyBar",event.hp,event.max);
-   if(!reduce)damagePop(event);
-   const resonance=combat.synergy;
-   const resonanceHit=resonance&&(
-    event.actor==="hero"&&event.amount>0&&(resonance.strike||resonance.burst&&event.turn%3===0)||
-    event.actor==="pet"&&event.amount>0&&resonance.petDamage||
-    event.actor==="enemy"&&event.blocked>0&&resonance.shieldHp);
-   set("combatStatus",resonanceHit?"✦ "+resonance.name+" · 共鸣触发":
-    event.actor==="miss"?"攻击落空":
-    event.actor==="potion"?"回春丹：紧急恢复气血":
-    event.actor==="regen"?"敌方恢复":
-    event.actor==="pet"?"灵宠协战":
-    event.actor==="counter"?"敌方反震":
-    toHero?"敌方命中 · 气血减少":"我方命中 · 敌方气血减少");
+   showHitEvent(event,combat,!reduced);
   },Math.max(10,ms));
  });
  setTimeout(()=>{
@@ -246,8 +292,12 @@ function animateCombat(result){
   set("enemyLabel",combat.enemy.name);
   set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":
    "✕ 挑战失败 · 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波");
-  if(result.won){$("enemySprite").classList.add("defeated");setTimeout(()=>$("enemySprite").classList.remove("defeated"),320)}
+  if(result.won){
+   $("enemySprite").classList.add("defeated");
+   setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
+  }
   if(!auto){$("heroAttackBar").style.animationPlayState="paused";$("enemyAttackBar").style.animationPlayState="paused"}
+  onComplete?.();
  },duration+100);
 }
 function incomePreview(){
@@ -485,7 +535,7 @@ async function drawPack(packId,count){
   toast("已收下 "+result.items.length+" 张机缘");
  }finally{revealBusy=false}
 }
-function afterBattle(result){
+function afterBattle(result,{replay=true,onComplete=null}={}){
  if(!result)return;
  set("combatReport",result.won?(result.type==="mob"?"本关小怪":"挑战")+"胜利 · "+result.combat.turns+"回合":"挑战失败 · 仍在当前关刷小怪");
  set("rewardLabel","◆ +"+fmt(result.stones)+" / 修为 +"+fmt(result.qi));
@@ -494,7 +544,8 @@ function afterBattle(result){
    boxDrops?"🎁 本次额外获得："+boxDrops+" · 前往道具行囊开箱":
    result.won?"本场仅获得灵石与修为；装备箱/药草箱为独立概率掉落":"挑战失败，未获得奖励");
  if(result.lostGear)toast("战败：遗失了 "+result.lostGear.name,true);
- animateCombat(result);
+ if(replay)animateCombat(result,onComplete);
+ else settleLiveTimeline(result);
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
  else if(!result.won&&result.type!=="mob"&&!result.lostGear)toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
 }
