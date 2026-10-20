@@ -6,11 +6,11 @@ import {MODULES,unimplementedModules,unlockedPack,validateContentContract} from 
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const world=read("realms-maps.v0.8.proposal.json"),slice=read("v8-slice.json"),catalog=loadCatalog(world,slice);
 test("each shipping pack is registered and schema-valid",()=>{
- assert.equal(catalog.packs.length,8);
+ assert.equal(catalog.packs.length,9);
  assert.ok(validateContentContract(slice));
  for(const p of catalog.packs){
   assert.ok(MODULES.some(x=>x.id===p.id&&x.status==="live"));
-  assert.equal(unlockedPack(createSave(77),catalog,p.id),p.id!=="equipment");
+  assert.equal(unlockedPack(createSave(77),catalog,p.id),p.id!=="equipment"&&p.id!=="artifact");
  }
 });
 test("future module features are declared but never labeled implemented",()=>{
