@@ -180,7 +180,7 @@ function draw(s,c,{packId,count}){
 function battle(s,c,kind){
  if(!["mob","guardian","boss"].includes(kind))throw Error("无效战斗类型");
  const r=s.run;
- if(r.bossCleared)throw Error("本切片四张地图已通关，可以轮回或突破筑基");
+ if(r.bossCleared&&kind!=="mob")throw Error("四张地图Boss已通关，可以继续刷当前小怪、轮回或突破筑基");
  const isLast=r.checkpoint===c.checkpointsPerMap-1;
  if(kind==="boss"&&!isLast)throw Error("需要先击败该图全部关卡守卫");
  if(kind==="guardian"&&isLast)throw Error("此关需要挑战地图Boss");
