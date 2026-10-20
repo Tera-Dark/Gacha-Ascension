@@ -190,3 +190,9 @@
  .v8-combat-insight{grid-template-columns:1fr}
  .combat-theatre{min-height:144px}
 }
+
+/* Hidden library panes should not elongate a one-screen mobile workbench. */
+.v8-relic-inventory .v8-inventory{padding:10px;gap:8px}
+.v8-relic-inventory .v8-item{min-width:0}
+.v8-future-map .v8-atlas{max-height:55dvh;overflow-y:auto;scrollbar-width:thin}
+@media(max-width:560px){.v8-relic-inventory .v8-inventory{grid-template-columns:1fr}}
