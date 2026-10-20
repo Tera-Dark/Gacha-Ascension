@@ -18,4 +18,24 @@ export function backupAndReset(c,storage=globalThis.localStorage){
  writeGame(fresh,c,storage);
  return fresh;
 }
+/** Explicit recovery only: preserve the original invalid raw bytes before starting fresh.
+ * Never overwrite an existing backup and never silently reset a save on load.
+ */
+export function recoverInvalidSave(c,storage=globalThis.localStorage){
+ if(!storage)throw Error("当前没有可用的浏览器存储");
+ const raw=storage.getItem(SAVE_KEY);
+ if(raw===null)throw Error("没有需要恢复的存档");
+ try{validateSave(JSON.parse(raw),c)}
+ catch{
+  const base=SAVE_KEY+"-invalid-recovery";
+  let key=base,index=1;
+  while(storage.getItem(key)!==null)key=base+"-"+index++;
+  // If backup storage is full, abort without touching the original save.
+  storage.setItem(key,raw);
+  const fresh=createSave();
+  writeGame(fresh,c,storage);
+  return {state:fresh,backupKey:key};
+ }
+ throw Error("当前存档可以正常读取，无需重置");
+}
 export {SAVE_KEY,BACKUP_KEY};
