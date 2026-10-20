@@ -30,6 +30,20 @@ test("an action-limit stalemate never means death and must not roll 50% equipmen
   validateSave(out.state,tuned);
  }
 });
+test("offline stalemate report retains exact failure reason and never destroys equipment",()=>{
+ const tuned={...c,balance:{...c.balance,mobHp:2_000_000,mobAttack:1}};
+ const s=createSave(44444);s.run.cards.E001=1;s.run.equipment.weapon1="E001";
+ const start=dispatch(s,tuned,{type:"START_IDLE",seq:1,now:10000});
+ const predicted=fight(start.state,tuned,"mob",{seed:start.state.seed});
+ assert.equal(predicted.reason,"timeout");
+ const claim=dispatch(start.state,tuned,{type:"CLAIM_IDLE",seq:2,now:10000+predicted.timeMs+100});
+ assert.equal(claim.result.active,false);
+ assert.equal(claim.result.failureReason,"timeout");
+ assert.equal(claim.result.lastBattle.failureReason,"timeout");
+ assert.equal(claim.state.run.lastBattle.failureReason,"timeout");
+ assert.equal(claim.state.run.equipment.weapon1,"E001");
+ assert.equal(claim.state.run.cards.E001,1);
+});
 test("genuine lethal defeat retains intended roughly 50% gear loss",()=>{
  const tuned={...c,balance:{...c.balance,mobHp:2_000_000,mobAttack:100_000}};
  let drops=0;
