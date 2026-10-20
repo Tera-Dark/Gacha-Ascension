@@ -49,7 +49,7 @@ test("new map guard entrances are realm-gated while monster farming remains avai
 });
 test("advice does not send a resource-poor player to a disabled realm breakthrough pack",()=>{
  const s=createSave(2341);
- s.run.mapIndex=1;s.run.realmIndex=0;s.run.stones=0;
+ s.run.mapIndex=1;s.run.realmIndex=0;s.run.guardianWins=7;s.run.bossWins=1;s.run.stones=0;
  const step=nextStep(s,c,{winRate:1});
  assert.equal(step.view,"explore");
  assert.match(step.description,/灵石/);
