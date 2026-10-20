@@ -624,9 +624,16 @@ async function init(){
    const stageInfo=e.target.closest("button[data-stage-info]");
    if(stageInfo){const i=Number(stageInfo.dataset.stageInfo);toast(i===s.run.checkpoint?"当前第"+(i+1)+"关":i<s.run.checkpoint?"已通过的守卫关卡，当前无法回退刷关":"请先击败前面的守卫。");return}
    const nav=e.target.closest("button[data-view]");
-   if(nav){const focus=nav.id==="goalAction"?nav.dataset.packId:null;
+   if(nav){
+     const goal=nav.id==="goalAction";
+     const pack=goal?nav.dataset.packId:null,action=goal?nav.textContent:"";
      changeView(nav.dataset.view);
-     if(focus)document.querySelector('[data-pack-id="'+focus+'"]')?.scrollIntoView({behavior:"smooth",block:"nearest"});
+     if(pack)document.querySelector('[data-pack-id="'+pack+'"]')?.scrollIntoView({behavior:"auto",block:"nearest"});
+     if(goal&&nav.dataset.view==="explore"){
+      const id=action.includes("前往挑战")?(s.run.checkpoint===c.checkpointsPerMap-1?"challengeBoss":"challenge"):
+       action.includes("战前推演")?"analyzeBuild":action.includes("刷怪")?"autoFarm":null;
+      if(id){$(id)?.scrollIntoView({behavior:"auto",block:"center"});$(id)?.focus({preventScroll:true})}
+     }
      return}
    const draw=e.target.closest("button[data-draw]");
    if(draw&&!draw.disabled){drawPack(draw.dataset.draw,Number(draw.dataset.count));return}
