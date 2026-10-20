@@ -1,0 +1,83 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {loadCatalog,createSave,dispatch,heroStats,yields} from "../src/v8/engine.mjs";
+import {EQUIPMENT_SLOTS,equipmentStats,equipItem,comparison,validateEquipmentCards} from "../src/v8/equipment.mjs";
+const file=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+const conf=JSON.parse(file("data/v8-slice.json"));
+const c=loadCatalog(JSON.parse(file("data/realms-maps.v0.8.proposal.json")),conf);
+const move=(s,type,rest={})=>dispatch(s,c,{seq:s.seq+1,type,...rest});
+test("exact ten equipment slots with two independent weapon slots and two accessory slots",()=>{
+ assert.equal(EQUIPMENT_SLOTS.length,10);
+ assert.deepEqual(EQUIPMENT_SLOTS.filter(x=>x.type==="weapon").map(x=>x.id),["weapon1","weapon2"]);
+ assert.deepEqual(EQUIPMENT_SLOTS.filter(x=>x.type==="accessory").map(x=>x.id),["accessory1","accessory2"]);
+ assert.deepEqual(EQUIPMENT_SLOTS.map(x=>x.name),["主武器","副武器","头冠","帽子","衣服","足履","饰品一","饰品二","护符","腰带"]);
+});
+test("all 18 gacha-only equipment cards use at most two genuine combat affixes",()=>{
+ const cards=c.packs.find(x=>x.id==="equipment").cards;
+ assert.equal(cards.length,18);assert.ok(validateEquipmentCards(cards));
+ assert.ok(cards.every(x=>x.effect==="equipment"&&Object.keys(x.stats).length<=2));
+ assert.ok(cards.every(x=>Object.keys(x.stats).every(k=>["attack","hp","defense","speedPct"].includes(k))));
+ assert.equal(c.features.unlockAtGlobalCheckpoint.equipment,3);
+});
+test("dual wield and dual accessories require owned copies, cannot duplicate an item",()=>{
+ let s=createSave(7);s.run.cards.E001=2;s.run.cards.E012=1;
+ s=move(s,"EQUIP_ITEM",{slot:"weapon1",id:"E001"}).state;
+ s=move(s,"EQUIP_ITEM",{slot:"weapon2",id:"E001"}).state;
+ assert.deepEqual([s.run.equipment.weapon1,s.run.equipment.weapon2],["E001","E001"]);
+ assert.equal(equipmentStats(s,c).attack,16);
+ assert.throws(()=>equipItem(s,c,"accessory1","E001"),/不匹配/);
+ let p=createSave(7);p.run.cards.E001=1;p.run.cards.E012=1;
+ p=move(p,"EQUIP_ITEM",{slot:"weapon1",id:"E001"}).state;
+ assert.throws(()=>move(p,"EQUIP_ITEM",{slot:"weapon2",id:"E001"}),/没有多余/);
+ p=move(p,"EQUIP_ITEM",{slot:"accessory1",id:"E012"}).state;
+ assert.throws(()=>move(p,"EQUIP_ITEM",{slot:"accessory2",id:"E012"}),/没有多余/);
+});
+test("unequip/replacement updates actual battle stats and comparator is read-only",()=>{
+ let s=createSave(42),orig=heroStats(s,c);
+ s.run.cards.E001=1;s.run.cards.E002=1;s.run.cards.E011=1;
+ const old=structuredClone(s);
+ const cmp=comparison(s,c,"weapon1","E002");
+ assert.equal(cmp.difference.attack,22);
+ assert.deepEqual(s,old);
+ s=move(s,"EQUIP_ITEM",{slot:"weapon1",id:"E002"}).state;
+ s=move(s,"EQUIP_ITEM",{slot:"boots",id:"E011"}).state;
+ assert.ok(heroStats(s,c).attack>orig.attack);
+ assert.ok(yields(s,c).speedPct>0);
+ assert.equal(s.run.equipment.weapon1,"E002");
+ s=move(s,"EQUIP_ITEM",{slot:"weapon1",id:null}).state;
+ assert.equal(s.run.equipment.weapon1,undefined);
+});
+test("real equipment draw unlock gating and auto-equipment in an empty slot",()=>{
+ let s=createSave(77);
+ assert.throws(()=>move(s,"DRAW",{packId:"equipment",count:1}),/尚未解锁/);
+ s.meta.bestCheckpoint=3;
+ s.run.stones=600;s.run.totalEarned=490;
+ const r=move(s,"DRAW",{packId:"equipment",count:1});
+ assert.equal(r.result.packId,"equipment");
+ assert.equal(r.result.items.length,1);
+ const id=r.result.items[0].id;
+ assert.equal(r.state.run.cards[id],1);
+ assert.ok(Object.values(r.state.run.equipment).includes(id));
+ assert.ok(heroStats(r.state,c).attack>=heroStats(s,c).attack);
+});
+test("old schema 8 saves without equipment field remain valid, reincarnation clears current-life items",()=>{
+ let s=createSave(42);
+ delete s.run.equipment;
+ s.run.cards.E001=2;
+ s=move(s,"EQUIP_ITEM",{slot:"weapon1",id:"E001"}).state;
+ s.run.mapIndex=3;s.run.checkpoint=7;s.run.bossCleared=true;
+ const reincarnated=move(s,"REINCARNATE");
+ assert.ok(!Object.keys(reincarnated.state.run.equipment).length);
+ assert.ok(!reincarnated.state.run.cards.E001);
+});
+test("real landscape workstation markup preserves essential phone controls and semantic drawers",()=>{
+ const html=file("preview-v0.8.html"),css=file("assets/css/preview.css");
+ assert.match(html,/id="equipmentGrid"/);
+ assert.match(html,/id="heroAttackBar"/);assert.match(html,/id="enemyAttackBar"/);
+ assert.match(html,/id="equipmentDrawer"[^>]*hidden/);
+ assert.match(html,/id="landscapeNavToggle"[^>]*aria-expanded="false"/);
+ assert.match(css,/orientation:landscape/);
+ assert.match(css,/safe-area-inset-left/);
+ assert.match(css,/prefers-reduced-motion/);
+});
