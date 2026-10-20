@@ -1,5 +1,6 @@
 import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
+import {detailModel} from "./details.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -7,13 +8,25 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("visible"),3400);
 }
+function closeMobileSheet(){
+ const sheet=$("mobileSheet"),backdrop=$("mobileSheetBackdrop"),button=$("moreSystems");
+ if(!sheet||!backdrop||!button)return;
+ sheet.hidden=true;backdrop.hidden=true;button.setAttribute("aria-expanded","false");
+}
+function toggleMobileSheet(){
+ const sheet=$("mobileSheet"),backdrop=$("mobileSheetBackdrop"),button=$("moreSystems");
+ const shouldOpen=sheet.hidden;
+ sheet.hidden=!shouldOpen;backdrop.hidden=!shouldOpen;
+ button.setAttribute("aria-expanded",String(shouldOpen));
+}
 function changeView(target){
+ closeMobileSheet();
  if(!["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"].includes(target))return;
  view=target;
  for(const el of document.querySelectorAll("[data-view-panel]"))el.classList.toggle("is-active",el.dataset.viewPanel===target);
@@ -23,6 +36,7 @@ function changeView(target){
  }
  const names={explore:"地图探索",cultivate:"境界突破",gacha:"机缘抽卡",technique:"功法",cave:"洞府经营",pet:"御兽灵契",fate:"轮回天命",atlas:"世界图鉴",settings:"存档设置"};
  set("screenTitle",names[target]);
+ $("moreSystems").classList.toggle("is-active",["technique","cave","pet","atlas","settings"].includes(target));
  const panel=document.querySelector('[data-view-panel="'+target+'"]');if(panel)panel.scrollTop=0;
  render();
 }
@@ -140,6 +154,7 @@ function renderExplore(){
   snapshot("heroHP","heroBar",h.hp,h.hp);snapshot("enemyHP","enemyBar",e.hp,e.hp);
  }
  if(r.bossCleared){
+  lastCombatAnalysis=null;
   set("guardForecast","四图已经完成");
   set("combatStyles","已通关");set("hitRates","—");set("survivalRisk","—");
   set("waveSummary","四图终章完成");
@@ -147,6 +162,7 @@ function renderExplore(){
   set("goalHint","恭喜击败雾隐剑冢Boss！前往境界页面突破筑基，或通过轮回天命进入下一世。");
  }else{
   const target=p.finalGuardian?"boss":"guardian",a=combatAssessment(s,c,target,24);
+  lastCombatAnalysis=a;
   set("guardForecast",Math.round(a.winRate*100)+"% · "+a.risk);
   set("combatStyles",a.heroStyle+" / "+a.enemyStyle+" · "+a.matchup);
   set("hitRates",Math.round(a.heroHitChance*100)+"% / "+Math.round(a.enemyHitChance*100)+"%");
@@ -212,18 +228,33 @@ function renderFate(){
  }).join("")+c.ultras.filter(x=>s.meta.ultras[x.id]).map(x=>'<div class="v8-item active"><div class="v8-item-name">鸿蒙 · '+escapeHTML(x.name)+'</div><div class="v8-item-desc">全世生效 · 专项×'+x.value+'</div></div>').join("");
 }
 function renderAtlas(){
- $("mapAtlas").innerHTML=c.allMaps.map(m=>
-  '<div class="v8-atlas-entry '+(m.index<=c.playableMaps?"playable":"")+'"><div><b>'+
-  String(m.index).padStart(2,"0")+" "+escapeHTML(m.name)+'</b><small>'+
-  escapeHTML(m.mechanicDescription)+" · Boss "+escapeHTML(m.boss.name)+'</small></div><span>'+
-  (m.index>c.playableMaps?"待扩展":m.index<=s.meta.bestMap?"已抵达":"可玩待解锁")+'</span></div>').join("");
+ const card=m=>'<div class="v8-atlas-entry '+(m.index<=c.playableMaps?"playable":"")+'"><div><b>'+
+   String(m.index).padStart(2,"0")+" "+escapeHTML(m.name)+'</b><small>'+
+   escapeHTML(m.mechanicDescription)+" · Boss "+escapeHTML(m.boss.name)+'</small></div><span>'+
+   (m.index>c.playableMaps?"规划中":m.index<=s.meta.bestMap?"已抵达":"可玩待解锁")+'</span></div>';
+ $("mapAtlas").innerHTML=c.allMaps.slice(0,c.playableMaps).map(card).join("");
+ $("mapAtlasFuture").innerHTML=c.allMaps.slice(c.playableMaps).map(card).join("");
+}
+function renderDetailPanels(){
+ const model=detailModel(s,c,lastCombatAnalysis);
+ for(const [key,groups] of Object.entries(model)){
+  const parent=$("detail-"+key);if(!parent)continue;
+  parent.innerHTML=groups.map(group=>
+   '<section class="v8-detail-section"><h4>'+escapeHTML(group.title)+'</h4>'+
+   '<dl class="v8-data-table">'+group.rows.map(item=>
+    '<div class="v8-data-row"><dt>'+escapeHTML(item.label)+'</dt>'+
+    '<dd>'+escapeHTML(item.value)+(item.note?'<small>'+escapeHTML(item.note)+'</small>':"")+'</dd></div>'
+   ).join("")+'</dl>'+
+   (group.note?'<p class="v8-detail-note">'+escapeHTML(group.note)+'</p>':"")+
+   '</section>').join("");
+ }
 }
 function render(){
  if(!c||!s)return;
  renderToken++;renderTop();renderExplore();renderCultivate();renderPacks();
  renderInventory("techniqueList","technique","technique");
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
- renderFate();renderAtlas();
+ renderFate();renderAtlas();renderDetailPanels();
 }
 function drawPack(packId,count){
  const before=heroStats(s,c),result=doCommand("DRAW",{packId,count});
@@ -287,7 +318,10 @@ async function init(){
   s=loaded.state;
   set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
   render();
-  $("mapAtlas").addEventListener("click",()=>{});
+  $("moreSystems").addEventListener("click",toggleMobileSheet);
+  $("closeMobileSheet").addEventListener("click",closeMobileSheet);
+  $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMobileSheet()});
   document.addEventListener("click",e=>{
    const nav=e.target.closest("button[data-view]");
    if(nav){changeView(nav.dataset.view);return}
