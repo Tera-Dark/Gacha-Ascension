@@ -5,6 +5,8 @@ import {showReveal} from "./reveal.mjs";
 import {unlockedPack} from "./modules.mjs";
 import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from "./equipment.mjs";
 import {RULES} from "./combat-depth.mjs";
+import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./artifacts.mjs";
+import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -12,7 +14,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1";
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -31,16 +33,16 @@ function toggleMobileSheet(){
 }
 function changeView(target){
  closeMobileSheet();closeLandscapeNav();
- if(!["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"].includes(target))return;
+ if(!["explore","cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"].includes(target))return;
  view=target;
  for(const el of document.querySelectorAll("[data-view-panel]"))el.classList.toggle("is-active",el.dataset.viewPanel===target);
  for(const el of document.querySelectorAll("button[data-view]")){
   const active=el.dataset.view===target;el.classList.toggle("is-active",active);
   if(active)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current");
  }
- const names={explore:"地图探索",cultivate:"境界突破",gacha:"机缘抽卡",technique:"功法",cave:"洞府经营",pet:"御兽灵契",fate:"轮回天命",atlas:"世界图鉴",settings:"存档设置"};
+ const names={explore:"地图探索",cultivate:"境界突破",gacha:"机缘抽卡",technique:"功法",cave:"洞府经营",pet:"御兽灵契",items:"道具行囊",fate:"轮回天命",atlas:"世界图鉴",settings:"存档设置"};
  set("screenTitle",names[target]);
- $("moreSystems").classList.toggle("is-active",["technique","cave","pet","atlas","settings"].includes(target));
+ $("moreSystems").classList.toggle("is-active",["technique","cave","pet","items","atlas","settings"].includes(target));
  const panel=document.querySelector('[data-view-panel="'+target+'"]');if(panel)panel.scrollTop=0;
  render();
 }
@@ -235,7 +237,7 @@ function renderExplore(){
  set("wbWave",r.bossCleared?"可持续刷怪":p.finalGuardian?"地图Boss · 3波":"关卡守卫 · 2波");
  set("wbEnemyTraits",foe.traits.join(" · "));
  $("enemySprite").querySelector("span").textContent=["🐺","🦉","🌿","👻"][r.mapIndex]||"妖";
- renderGear();renderMapDrawer();
+ renderGear();renderArtifacts();renderMapDrawer();
  if(!battleBusy){
   const e=enemyPreview(s,c,"mob");
   set("enemyLabel",e.name);set("enemyStats","攻击 "+fmt(e.attack)+" · 防御 "+fmt(e.defense));
@@ -332,7 +334,7 @@ function renderAtlas(){
  $("mapAtlasFuture").innerHTML=c.allMaps.slice(c.playableMaps).map(card).join("");
 }
 function renderDetailPanels(){
- const keys=["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"];
+ const keys=["explore","cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"];
  const opened=keys.filter(key=>$(key)?.open);
  if(!opened.length)return;
  const model=detailModel(s,c,lastCombatAnalysis);
@@ -353,7 +355,7 @@ function render(){
  renderToken++;renderTop();renderExplore();renderCultivate();renderPacks();
  renderInventory("techniqueList","technique","technique");
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
- renderFate();renderAtlas();renderDetailPanels();
+ renderItems();renderFate();renderAtlas();renderDetailPanels();
 }
 async function drawPack(packId,count){
  if(revealBusy)return;
@@ -374,6 +376,11 @@ function afterBattle(result){
  if(!result)return;
  set("combatReport",result.won?(result.type==="mob"?"本关小怪":"挑战")+"胜利 · "+result.combat.turns+"回合":"挑战失败 · 仍在当前关刷小怪");
  set("rewardLabel","◆ +"+fmt(result.stones)+" / 修为 +"+fmt(result.qi));
+ const boxDrops=(result.boxes||[]).map(x=>x.name).join("、");
+ set("combatLootResult",result.lostGear?"☠ 战败遗失装备："+result.lostGear.name+"（已从持有量扣除）":
+   boxDrops?"🎁 本次额外获得："+boxDrops+" · 前往道具行囊开箱":
+   result.won?"本场仅获得灵石与修为；装备箱/药草箱为独立概率掉落":"挑战失败，未获得奖励");
+ if(result.lostGear)toast("战败：遗失了 "+result.lostGear.name,true);
  animateCombat(result);
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
  else if(!result.won&&result.type!=="mob")toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
