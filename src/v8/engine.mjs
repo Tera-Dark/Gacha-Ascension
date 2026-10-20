@@ -8,6 +8,10 @@ const nat=n=>Number.isSafeInteger(n)&&n>=0;
 export function loadCatalog(world,slice){
  if(world?.maps?.length!==24||world?.cultivation?.length!==20||slice?.version!=="0.8-playable-slice-1")throw Error("版本化地图/卡池配置缺失");
  if(slice.playableMaps!==4||slice.packs.length!==7||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
+ if(!Array.isArray(slice.farmTargets)||slice.farmTargets.length!==3||
+  new Set(slice.farmTargets.map(x=>x.id)).size!==3||
+  slice.farmTargets.some(x=>!["balanced","stones","cultivation"].includes(x.id)||
+    ["hpFactor","attackFactor","stoneFactor","qiFactor"].some(k=>!finite(x[k])||x[k]<=0)))throw Error("刷怪目标配置错误");
  const ids=new Set(),cards={};
  for(const p of slice.packs)for(const c of p.cards){
   if(ids.has(c.id))throw Error("重复卡牌 "+c.id);ids.add(c.id);cards[c.id]={...c,pack:p.id};
@@ -22,7 +26,7 @@ export function createSave(seed=20261020){
   run:createRun()};
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
- stones:110,cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
+ stones:110,farmFocus:"balanced",cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
  victories:0,mobKills:0,guardianWins:0,bossWins:0,losses:0,
  totalEarned:0,totalSpent:0,lastBattle:null};}
 export function validateSave(s,c){
@@ -31,6 +35,7 @@ export function validateSave(s,c){
  if(!nat(r.mapIndex)||r.mapIndex>=c.playableMaps||!nat(r.checkpoint)||r.checkpoint>=c.checkpointsPerMap)throw Error("地图位置损坏");
  if(!nat(r.realmIndex)||r.realmIndex>4||!nat(r.stones)||!nat(r.qi)||!nat(r.insight)||!nat(m.fate)||!nat(m.reincarnations)||!nat(m.bestMap))throw Error("资源数据损坏");
  if(!r.cards||!r.draws||!r.pills||!m.relics||!m.ultras||!nat(r.victories)||!nat(r.totalEarned)||!nat(r.totalSpent)||!nat(r.losses))throw Error("存档字段错误");
+ if(r.farmFocus!==undefined&&!c.farmTargets.some(x=>x.id===r.farmFocus))throw Error("刷怪目标异常");
  if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
@@ -77,18 +82,22 @@ export function breakthroughRequirements(s,c){
   hasQi:s.run.qi>=qi,hasInsight:s.run.insight>=insight,hasPill:!needsPill||!!s.run.pills.D004,
   canBreak:i<4&&!needMapMilestone&&s.run.qi>=qi&&s.run.insight>=insight&&(!needsPill||(s.run.bossCleared&&s.run.pills.D004>0))};
 }
+export function farmTarget(s,c){
+ return c.farmTargets.find(x=>x.id===(s.run.farmFocus||"balanced"))||c.farmTargets[0];
+}
 function enemy(s,c,kind){
  const {mapIndex,checkpoint}=s.run,k=checkpoint,m=mapIndex,b=c.balance;
  const boss=kind==="boss",guard=kind==="guardian";
  const mh=Math.pow(b.mapHpFactor,m)*Math.pow(b.checkpointHpFactor,k);
  const ma=Math.pow(b.mapAttackFactor,m)*Math.pow(b.checkpointAtkFactor,k);
  const md=Math.pow(b.mapDefenseFactor,m)*Math.pow(b.checkpointDefenseFactor,k);
- const hp=Math.round(b.mobHp*mh*(boss?b.bossHp:guard?b.guardianHp:1));
- const atk=Math.round(b.mobAttack*ma*(boss?b.bossAttack:guard?b.guardianAttack:1));
+ const target=kind==="mob"?farmTarget(s,c):null;
+ const hp=Math.round(b.mobHp*mh*(boss?b.bossHp:guard?b.guardianHp:target.hpFactor));
+ const atk=Math.round(b.mobAttack*ma*(boss?b.bossAttack:guard?b.guardianAttack:target.attackFactor));
  const def=Math.round(b.mobDefense*md*(boss?1.8:guard?1.35:1));
  const map=c.maps[m];
  const tags=m===1?["evasion"]:m===2?["regen"]:m===3?["counter"]:["thick_hide"];
- return {hp,attack:atk,defense:def,name:boss?map.boss.name:guard?map.name+"守卫":map.name+"妖兽",
+ return {hp,attack:atk,defense:def,name:boss?map.boss.name:guard?map.name+"守卫":map.name+"·"+target.name,
   traits:boss?tags:["mob"],type:kind};
 }
 export function enemyPreview(s,c,kind="mob"){return enemy(s,c,kind)}
@@ -186,6 +195,11 @@ function battle(s,c,kind){
   const rewardFactor=Math.pow(b.mapRewardFactor,m)*Math.pow(b.checkpointRewardFactor,k);
   let stones=Math.max(1,Math.round(b.stonesPerKill*rewardFactor*(1+economic.stonePct/100)*(kind==="mob"?1:kind==="guardian"?1.8:4)));
   let qi=Math.max(1,Math.round(b.qiPerKill*Math.pow(1.67,m)*Math.pow(1.07,k)*(1+economic.qiPct/100)*(kind==="mob"?1:kind==="guardian"?1.6:3)));
+  if(kind==="mob"){
+   const target=farmTarget(s,c);
+   stones=Math.max(1,Math.round(stones*target.stoneFactor));
+   qi=Math.max(1,Math.round(qi*target.qiFactor));
+  }
   if(s.run.pet&&c.cards[s.run.pet]?.style==="qi")qi=Math.round(qi*(1+pet(s,c).power/100));
   r.stones+=stones;r.qi+=qi;r.totalEarned+=stones;
   if(kind==="mob"){r.mobKills++}
@@ -258,6 +272,10 @@ export function dispatch(current,c,cmd){
   r.pet=id;result={kind:"equip",slot:"pet",id};break}
  case "REINCARNATE":result=reincarnate(s,c);break;
  case "OPEN_RELIC":result=openRelic(s,c);break;
+ case "SET_FARM_FOCUS":{
+  if(!c.farmTargets.some(x=>x.id===cmd.id))throw Error("不支持的刷怪目标");
+  r.farmFocus=cmd.id;result={kind:"farmFocus",id:cmd.id};break;
+ }
  default:throw Error("未定义的玩法指令 "+cmd.type);
  }
  s.seq=cmd.seq;
