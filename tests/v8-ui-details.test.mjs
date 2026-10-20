@@ -49,7 +49,7 @@ test("numeric breakdowns are read-only and derive from actual card and realm sta
  assert.ok(detail.cultivate.some(section=>section.rows.some(x=>x.label==="现有修为 / 消耗"&&x.value==="0 / 100")));
  assert.ok(detail.gacha.length>=8);
  const all=detail.fate.flatMap(x=>x.rows);
- assert.equal(all.find(x=>x.label==="鸿蒙独立追加概率")?.value,"0.01%");
+ assert.equal(all.find(x=>x.label==="鸿蒙异宝独立追加概率")?.value,"0.0001%");
 });
 test("card bonuses, cave yields, pet power and stored counters update with same detail selector",()=>{
  let s=createSave(24);
