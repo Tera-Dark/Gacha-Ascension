@@ -381,3 +381,14 @@
  .wb-monster-stage{min-height:180px}
 }
 @media(prefers-reduced-motion:reduce){.wb-attack-fill,.wb-monster-icon.impact,.wb-monster-icon.defeated{animation:none!important}}
+
+/* Map/area selectors inside landscape navigation drawer */
+.wb-drawer-map{padding:10px 8px;display:grid;gap:6px}
+.wb-drawer-map-list,.wb-drawer-stage-list{display:grid;gap:5px}
+.wb-drawer-stage-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wb-map-choice,.wb-drawer-stage{padding:9px;border:1px solid #405f53;background:#1b3530;border-radius:8px;color:#dfd7b9;text-align:left;min-height:44px;font-size:11px}
+.wb-map-choice strong{display:block}.wb-map-choice small{display:block;font-size:10px;color:#8db3a1;margin-top:2px}
+.wb-map-choice.current,.wb-drawer-stage.active{border-color:#d9b87a;background:#384936;color:#f6e2b3}
+.wb-drawer-stage.cleared{background:#294b3b;border-color:#658f66}
+.wb-map-choice:disabled{opacity:.4}
+.wb-drawer-note{color:#9caf9f;font-size:10px;line-height:1.6}
