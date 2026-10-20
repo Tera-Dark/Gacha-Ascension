@@ -103,14 +103,9 @@ export function simulateEncounter(input,startSeed){
   Math.round(hero.hp*cap(pet.power/200,0,.50)):0;
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
   enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0,activeWave=waves[0];
- const head=[],tail=[],waveMarkers=[];
- let eventSeq=0;
- const log=event=>{
-  const tracked={...event,seq:eventSeq++};
-  if(tracked.actor==="wave")waveMarkers.push(tracked);
-  if(head.length<11)head.push(tracked);
-  else{tail.push(tracked);if(tail.length>11)tail.shift()}
- };
+ const logs=[];
+ let eventSeq=0,elapsed=0;
+ const log=event=>logs.push({...event,seq:eventSeq++,timeMs:Math.ceil(elapsed+(event.at||0))});
  const random=()=>{const p=rand(rng);rng=p.seed;return p.value};
  for(let idx=0;idx<waves.length;idx++){
   const foe=waves[idx],ratings=unitRatings(hero,foe,foe.special);
@@ -119,7 +114,7 @@ export function simulateEncounter(input,startSeed){
   const dr=mitigation(hero.defense,tech.style==="guard"?tech.power:0);
   let enemyHp=foe.hp,heroAt=heroInterval,enemyAt=enemyInterval;
   let heroAttacks=0,enemyAttacks=0,lastActionAt=0;
-  log({actor:"wave",stage:idx+1,total:waves.length,name:foe.name,max:foe.hp,hp:foe.hp,style:foe.style});
+  log({actor:"wave",at:0,stage:idx+1,total:waves.length,name:foe.name,max:foe.hp,hp:foe.hp,style:foe.style});
   for(let steps=0;steps<RULES.maxActionsPerWave&&enemyHp>0&&heroHp>0;steps++){
    lastActionAt=Math.min(heroAt,enemyAt);
    if(heroAt<=enemyAt){
@@ -137,7 +132,7 @@ export function simulateEncounter(input,startSeed){
      amount=Math.max(1,Math.round(raw));
      enemyHp=Math.max(0,enemyHp-amount);heroDealt+=amount;
     }else misses++;
-    log({actor:hit?"hero":"miss",owner:"hero",stage:idx+1,turn:heroAttacks,
+    log({actor:hit?"hero":"miss",owner:"hero",at:lastActionAt,stage:idx+1,turn:heroAttacks,
      amount,hp:enemyHp,max:foe.hp});
     heroAt+=heroInterval;
     if(enemyHp<=0)break;
@@ -148,7 +143,7 @@ export function simulateEncounter(input,startSeed){
       const extra=Math.max(1,Math.round(hero.attack*cap(pet.power/100,0,15)*petArmor*.82*
        (tech.style==="spirit"?1+cap(tech.power/100,0,5):1)));
       enemyHp=Math.max(0,enemyHp-extra);petDealt+=extra;
-      log({actor:"pet",stage:idx+1,turn:heroAttacks,amount:extra,hp:enemyHp,max:foe.hp});
+      log({actor:"pet",at:lastActionAt,stage:idx+1,turn:heroAttacks,amount:extra,hp:enemyHp,max:foe.hp});
      }
     }
     if(enemyHp<=0)break;
@@ -156,7 +151,7 @@ export function simulateEncounter(input,startSeed){
      // 18% of the unmitigated successful sword hit is reflected by the boss.
      const counter=Math.round(amount*.12);
      if(counter){heroHp=Math.max(0,heroHp-counter);
-      log({actor:"counter",stage:idx+1,amount:counter,hp:heroHp,max:hero.hp})}
+      log({actor:"counter",at:lastActionAt,stage:idx+1,amount:counter,hp:heroHp,max:hero.hp})}
      if(heroHp<=0)break;
     }
    }else{
@@ -172,19 +167,21 @@ export function simulateEncounter(input,startSeed){
      absorb=Math.min(shield,amount);shield-=absorb;blocked+=absorb;amount-=absorb;
      heroHp=Math.max(0,heroHp-amount);
     }else misses++;
-    log({actor:hit?"enemy":"miss",owner:"enemy",stage:idx+1,turn:enemyAttacks,
+    log({actor:hit?"enemy":"miss",owner:"enemy",at:lastActionAt,stage:idx+1,turn:enemyAttacks,
      amount,blocked:absorb,hp:heroHp,max:hero.hp});
     enemyAt+=enemyInterval;
     if(heroHp<=0)break;
     if(foe.special==="regeneration"&&enemyAttacks%2===0){
       const recovered=Math.min(foe.hp-enemyHp,Math.max(1,Math.round(foe.hp*.035)));
       enemyHp+=recovered;
-      if(recovered)log({actor:"regen",stage:idx+1,amount:recovered,hp:enemyHp,max:foe.hp});
+      if(recovered)log({actor:"regen",at:lastActionAt,stage:idx+1,amount:recovered,hp:enemyHp,max:foe.hp});
     }
    }
   }
   enemyRemaining=enemyHp;
-  timeMs+=Math.ceil(Math.max(lastActionAt,heroInterval));
+  const waveTime=Math.ceil(Math.max(lastActionAt,heroInterval));
+  elapsed+=waveTime;
+  timeMs+=waveTime;
   if(enemyHp>0||heroHp<=0)break;
   completedWaves++;
  }
@@ -193,6 +190,5 @@ export function simulateEncounter(input,startSeed){
   turns,completedWaves,totalWaves:waves.length,heroDealt,petDealt,blocked,misses,maxEnemyHit,
   heroRemaining:heroHp,enemyRemaining,hero,enemy:activeWave,waves,
   timeMs,nextSeed:rng,
-  logs:[...new Map([...head,...tail,...waveMarkers].map(x=>[x.seq,x])).values()]
-   .sort((a,b)=>a.seq-b.seq)};
+  logs};
 }
