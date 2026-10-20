@@ -1,4 +1,5 @@
 import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS,combatStyle} from "./combat-depth.mjs";
+import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -22,7 +23,7 @@ export function loadCatalog(world,slice){
 export function createSave(seed=20261020){
  if(!nat(seed)||seed===0||seed>0xffffffff)throw Error("随机种子错误");
  return {schemaVersion:SCHEMA,seed,seq:0,receipts:{},receiptOrder:[],
-  meta:{fate:0,reincarnations:0,bestMap:1,bestCheckpoint:1,relics:{},ultras:{},pity:0},
+  meta:{fate:0,reincarnations:0,bestMap:1,bestCheckpoint:1,relics:{},ultras:{},apex:{},pity:0,pityXian:0,totalFateChests:0},
   run:createRun()};
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
@@ -40,12 +41,14 @@ export function validateSave(s,c){
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
  for(const [id,count] of Object.entries(m.relics))if(!c.relics.some(x=>x.id===id)||!nat(count))throw Error("遗物记录损坏");
+ if(m.apex&&Object.keys(m.apex).some(id=>!c.apex.some(x=>x.id===id)))throw Error("未知太古异宝");
+ if(m.pityXian!==undefined&&!nat(m.pityXian))throw Error("仙阶保底进度损坏");
  if(Object.keys(m.ultras).some(id=>!c.ultras.some(x=>x.id===id)))throw Error("未知鸿蒙遗物");
  return s;
 }
 function roll(s){let x=s.seed>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;s.seed=(x>>>0)||0x9e3779b9;return s.seed/4294967296}
 function relicCount(s,key){return s.meta.relics[key]||0}
-function metaPct(s,c,stat){return c.relics.reduce((a,r)=>a+(r.stat===stat?relicCount(s,r.id)*r.value:0),0)}
+function metaPct(s,c,stat){return permanentEffect(s,c,stat)}
 function cardCount(s,id){return s.run.cards[id]||0}
 function sumEffect(s,c,key){return Object.values(c.cards).reduce((a,card)=>a+(card.effect===key?cardCount(s,card.id)*card.value:0),0)}
 function cave(s,c,style){return Object.values(c.cards).reduce((n,x)=>n+(x.effect==="cave"&&x.style===style?cardCount(s,x.id)*x.value:0),0)}
@@ -56,15 +59,15 @@ export function heroStats(s,c){
  const realm=c.realms[r.realmIndex];
  const realmFactor=Math.pow(c.realm.breakStatSmall,r.realmIndex)*(r.realmIndex>=4?c.realm.breakStatMajor:1);
  const all=sumEffect(s,c,"allPct");
- const attack=Math.max(1,Math.round(applyPct(29*realmFactor,all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))));
- const hp=Math.max(1,Math.round(applyPct(260*realmFactor,all+sumEffect(s,c,"hpPct")+metaPct(s,c,"hpPct"))));
+ const attack=Math.max(1,Math.round(applyPct(29*realmFactor+metaPct(s,c,"flatAttack"),all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))));
+ const hp=Math.max(1,Math.round(applyPct(260*realmFactor+metaPct(s,c,"flatHp"),all+sumEffect(s,c,"hpPct")+metaPct(s,c,"hpPct"))));
  const defense=Math.max(1,Math.round(applyPct(12*realmFactor,all+sumEffect(s,c,"defPct"))));
  return {name:realm.name,attack,hp,defense,realmFactor};
 }
 export function yields(s,c){
  const caveMult=hasUltra(s,"U003")?3:1;
- const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")*caveMult+metaPct(s,c,"stonePct"),0,600);
- const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")*caveMult+metaPct(s,c,"qiPct"),0,600);
+ const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")*caveMult,0,600)+metaPct(s,c,"stonePct");
+ const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")*caveMult,0,600)+metaPct(s,c,"qiPct");
  const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed"),0,60);
  return {stonePct,qiPct,speedPct,petPct:cave(s,c,"pet")+metaPct(s,c,"petPct")};
 }
@@ -110,7 +113,7 @@ function technique(s,c){
 function pet(s,c){
  const id=s.run.pet,card=id?c.cards[id]:null;
  if(!card)return {style:"none",power:0};
- const base=card.value*cardCount(s,id)*(1+yields(s,c).petPct/100);
+ const base=card.value*cardCount(s,id)*(1+yields(s,c).petPct/100)*(ownedApex(s,"A002")?1.8:1);
  return {style:card.style,power:base*(hasUltra(s,"U002")?4:1)};
 }
 /** Preview is a seeded *sample* disconnected from the actual next battle RNG.
@@ -119,7 +122,7 @@ function pet(s,c){
 export function combatSnapshot(s,c,kind){
  const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c),p=pet(s,c),index=s.run.mapIndex;
  return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
-  kind,mapIndex:index,heroSpeedPct:yields(s,c).speedPct,
+  kind,mapIndex:index,heroSpeedPct:yields(s,c).speedPct,apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,
   waves:encounterWaves(f,kind,index)};
 }
 export function combatAssessment(s,c,kind,samples=24){
@@ -201,6 +204,9 @@ function battle(s,c,kind){
    qi=Math.max(1,Math.round(qi*target.qiFactor));
   }
   if(s.run.pet&&c.cards[s.run.pet]?.style==="qi")qi=Math.round(qi*(1+pet(s,c).power/100));
+  if(ownedApex(s,"A004"))stones=Math.max(1,Math.round(stones*1.5));
+  if(ownedApex(s,"A003"))qi=Math.max(1,Math.round(qi*1.5));
+  if(!Number.isSafeInteger(stones)||!Number.isSafeInteger(qi)||!Number.isSafeInteger(r.stones+stones)||!Number.isSafeInteger(r.qi+qi))throw Error("资源即将超出安全整数范围；待升级大数模块");
   r.stones+=stones;r.qi+=qi;r.totalEarned+=stones;
   if(kind==="mob"){r.mobKills++}
   else if(kind==="guardian"){r.guardianWins++;r.checkpoint++;
@@ -239,24 +245,7 @@ function reincarnate(s,c){
  s.meta.fate+=earned;s.meta.reincarnations++;
  s.run=createRun();return {kind:"reincarnate",earned,fate:s.meta.fate,round:s.meta.reincarnations};
 }
-function openRelic(s,c){
- if(s.meta.fate<c.fate.price)throw Error("因果不足，需要完成本世并选择轮回");
- const candidates=c.relics.filter(x=>relicCount(s,x.id)<x.max);
- if(!candidates.length)throw Error("测试常规遗物已全部收集满");
- s.meta.fate-=c.fate.price;
- let weight=0,r=roll(s)*100,tier="huang";
- for(const [name,pct] of Object.entries(c.fate.rarities)){weight+=pct;if(r<weight){tier=name;break}}
- let available=candidates.filter(x=>x.rarity===tier);if(!available.length)available=candidates;
- const relic=available[Math.floor(roll(s)*available.length)];
- s.meta.relics[relic.id]=relicCount(s,relic.id)+1;
- let ultra=null;
- const ultraPool=c.ultras.filter(x=>!s.meta.ultras[x.id]);
- if(ultraPool.length&&roll(s)<c.fate.ultraChance){
-  ultra=ultraPool[Math.floor(roll(s)*ultraPool.length)];
-  s.meta.ultras[ultra.id]=true;
- }
- return {kind:"relic",relic,stacks:s.meta.relics[relic.id],ultra};
-}
+function openRelic(s,c){return pullFate(s,c,()=>roll(s))}
 export function dispatch(current,c,cmd){
  if(!cmd||cmd.seq!==current.seq+1||typeof cmd.type!=="string")throw Error("交易序号异常");
  const s=deep(current),r=s.run;let result;
