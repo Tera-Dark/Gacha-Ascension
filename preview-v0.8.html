@@ -42,14 +42,7 @@
 <div class="fighter"><div class="fighter-heading"><span id="enemyLabel">山野妖兽</span><b id="enemyHP">65 / 65</b></div><div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div><div class="sprite enemy-sprite" id="enemySprite"><span>妖</span></div><div class="fighter-stats" id="enemyStats">攻13 · 防4</div></div>
 <div class="damage-layer" id="damageLayer"></div>
 </div>
-<details class="v8-disclosure" id="explore"><summary><span><strong>战斗属性详细数据</strong><small>主角三围 · 敌人属性 · 命中与减伤 · 伤害来源</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-combat-insight" id="combatInsights" aria-live="polite">
- <div><span>当前功法流派</span><strong id="combatStyles">等待解析</strong></div>
- <div><span>主角命中 / 敌方命中</span><strong id="hitRates">—</strong></div>
- <div><span>承伤减免 / 敌方威胁</span><strong id="survivalRisk">—</strong></div>
- <div><span>守关战斗波次</span><strong id="waveSummary">—</strong></div>
-</div>
-<div class="v8-combat-judgement" id="combatAdvice">守卫战斗风险由模拟估算，不会预知真实随机结果。</div>
-<div class="v8-detail-content" id="detail-explore"></div></details>
+
 <div class="activity-interval"><div class="interval-caption"><span id="fightMode">小怪收益随地图指数增长</span><span id="fightTimer">下一场战斗</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
 <div class="battle-feedback"><span class="result-bullet" id="combatReport">每张地图均有小怪、关卡守卫和最终Boss</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
 <div class="battle-controls v8-battle-actions">
@@ -68,6 +61,14 @@
  <span id="farmFocusTip">当前小怪只产基础资源，不掉卡牌</span>
 </div>
 <div class="checkpoint-wrap"><div class="checkpoint-title"><b>地图关卡进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
+<details class="v8-disclosure" id="explore"><summary><span><strong>战斗属性详细数据</strong><small>主角三围 · 敌人属性 · 命中与减伤 · 伤害来源</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-combat-insight" id="combatInsights" aria-live="polite">
+ <div><span>当前功法流派</span><strong id="combatStyles">等待解析</strong></div>
+ <div><span>主角命中 / 敌方命中</span><strong id="hitRates">—</strong></div>
+ <div><span>承伤减免 / 敌方威胁</span><strong id="survivalRisk">—</strong></div>
+ <div><span>守关战斗波次</span><strong id="waveSummary">—</strong></div>
+</div>
+<div class="v8-combat-judgement" id="combatAdvice">守卫战斗风险由模拟估算，不会预知真实随机结果。</div>
+<div class="v8-detail-content" id="detail-explore"></div></details>
 </div>
 <div class="lower-panels">
 <div class="compact-card"><div class="compact-heading"><h3>当前积累收益</h3><span>根据本关小怪数据</span></div><div class="v8-line"><span>普通小怪灵石</span><b id="mobStone">+19</b></div><div class="v8-line"><span>普通小怪修为</span><b id="mobQi">+12</b></div><div class="v8-line"><span>守卫挑战胜算（模拟）</span><b id="guardForecast">模拟中</b></div>
@@ -90,7 +91,8 @@
 <div class="v8-panel"><div class="section-kicker">SAMSARA / FATE</div><h3>轮回天命</h3><p>击败第四张地图最终Boss以后可自愿轮回。轮回清空当前世修炼、卡牌和地图，保留因果与已抽到的永久遗物。首四图切片已具备真正的跨世记录。</p><div class="v8-resource"><div><small>轮回次数</small><strong id="reincarnations">0</strong></div><div><small>持有因果</small><strong id="fatePoints">0</strong></div><div><small>最大地图</small><strong id="bestMap">第1图</strong></div></div><div class="v8-gate" id="reincarnationHint">完成雾隐剑冢后可以选择轮回。</div>
 <button class="action-btn primary-action v8-primary-wide" id="reincarnate">自愿轮回（本世进度清零）</button>
 </div>
-<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>切片采用10件常规遗物测试池，鸿蒙异宝保持独立0.01%附加判定、无保底。正式30件常规池会在完整版本合并；此处不冒充正式毕业图鉴。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div><div id="relicList" class="v8-inventory"></div><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
+<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>切片采用10件常规遗物测试池，鸿蒙异宝保持独立0.01%附加判定、无保底。正式30件常规池会在完整版本合并；此处不冒充正式毕业图鉴。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
+<details class="v8-disclosure v8-relic-inventory"><summary><span><strong>查看永久遗物图鉴</strong><small>全部常规遗物等级和鸿蒙拥有状态 · 默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="relicList" class="v8-inventory"></div></details><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
 </section>
 <section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><p>前四张可游玩、其余二十张已录入世界设定与Boss名称，后续接入同一套地图/境界模块即可扩展。</p><div id="mapAtlas" class="v8-atlas"></div>
 <details class="v8-disclosure v8-future-map"><summary><span><strong>查看未开放的20张地图</strong><small>地图规划数据，尚未实装关卡</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="mapAtlasFuture" class="v8-atlas"></div></details>
