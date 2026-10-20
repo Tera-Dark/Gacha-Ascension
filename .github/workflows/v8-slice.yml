@@ -8,6 +8,7 @@ on:
       - "preview-v0.8.html"
       - "v8.css"
       - "tests/v8*.test.mjs"
+      - "scripts/simulate-v8-combat.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
       - ".github/workflows/v8-slice.yml"
