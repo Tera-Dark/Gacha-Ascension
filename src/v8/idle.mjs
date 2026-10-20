@@ -45,9 +45,10 @@ export function claimIdle(s,c,now,makeBattle,getInterval){
  }
  active.carryMs=left;active.at=now;
  if(lastBattle)s.run.lastBattle={type:lastBattle.type,won:lastBattle.won,turns:lastBattle.combat.turns,
-  stones:lastBattle.stones,qi:lastBattle.qi,boxes:lastBattle.boxes||[],lostGear:lastBattle.lostGear||null,potionUses:lastBattle.potionUses};
+  stones:lastBattle.stones,qi:lastBattle.qi,boxes:lastBattle.boxes||[],lostGear:lastBattle.lostGear||null,potionUses:lastBattle.potionUses,
+   failureReason:lastBattle.failureReason||null};
  const summary={kind:"idleClaim",attempts:battles,wins,stones,qi,elapsedMs:limited,
-  gearBoxes,herbBoxes,lostGear,potionsUsed,
+  gearBoxes,herbBoxes,lostGear,potionsUsed,failureReason:lastBattle?.failureReason||null,
   capped:diff>cap,lastBattle,active:active.active};
  active.lastReport={...summary,lastBattle:undefined};
  return summary;
