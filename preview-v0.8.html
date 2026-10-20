@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#111c1a"/>
+<title>抽卡修仙传 v0.8 · 四图修炼试玩</title>
+<link rel="stylesheet" href="./m0-idle.css"/><link rel="stylesheet" href="./v8.css"/></head>
+<body><main class="game-shell">
+<header class="app-header"><div class="brand"><div class="brand-seal">仙</div><div><div class="brand-kicker">GACHA ASCENSION · v0.8 PLAYABLE PREVIEW</div><h1>抽卡修仙传</h1></div></div>
+<div class="top-shortcuts"><span class="chip">◆ <strong id="headerStones">110</strong> 灵石</span><span class="chip" id="headerRealm">炼气·初期</span><a href="./m0.html" class="top-link">返回旧版 ↗</a></div></header>
+<div class="app-frame">
+<nav class="system-sidebar" aria-label="玩法系统导航">
+<div class="sidebar-heading">当前活动</div>
+<button class="nav-item is-active" data-view="explore"><span class="nav-glyph">⚔</span><span>地图探索<small>打怪积累 / 守卫 / Boss</small></span></button>
+<button class="nav-item" data-view="cultivate"><span class="nav-glyph">☯</span><span>境界突破<small>五境四阶段 · 无数字等级</small></span></button>
+<button class="nav-item" data-view="gacha"><span class="nav-glyph">✦</span><span>机缘抽卡<small>所有能力的获取来源</small></span></button>
+<div class="sidebar-heading spaced">成长系统</div>
+<button class="nav-item" data-view="technique"><span class="nav-glyph">⚡</span><span>功法<small>装配主动战斗效果</small></span></button>
+<button class="nav-item" data-view="cave"><span class="nav-glyph">⌂</span><span>洞府<small>经营效率与抽卡投资</small></span></button>
+<button class="nav-item" data-view="pet"><span class="nav-glyph">♧</span><span>灵宠<small>独立攻击 / 护主</small></span></button>
+<div class="sidebar-heading spaced">长线追求</div>
+<button class="nav-item" data-view="fate"><span class="nav-glyph">✧</span><span>轮回天命<small>跨世遗物 / 因果</small></span></button>
+<button class="nav-item" data-view="atlas"><span class="nav-glyph">◈</span><span>世界图鉴<small>24张地图 · 20个境界</small></span></button>
+<button class="nav-item" data-view="settings"><span class="nav-glyph">⚙</span><span>存档设置<small>独立预览档 / 备份</small></span></button>
+<div class="sidebar-bottom">首四张地图可玩，后20张保留为规划。<br/>所有主要卡包暂时开放，待体验后再确定解锁顺序。</div>
+</nav>
+<div class="app-main">
+<div class="overview-strip">
+<div class="overview-item"><span>修炼境界</span><strong id="topRealm">炼气·初期</strong><small id="topNextRealm">下一阶段 炼气·中期</small></div>
+<div class="overview-item"><span>灵石存量</span><strong class="gold-value" id="topStone">110</strong><small id="topStoneRate">刷怪持续获得灵石</small></div>
+<div class="overview-item"><span>修为积累</span><strong id="topQi">0</strong><small id="topQiNeed">下次突破需100</small></div>
+<div class="overview-item"><span>地图进度</span><strong id="topMap">01 / 04</strong><small id="topStage">青云山麓 · 第1关</small></div>
+</div>
+<div class="work-area">
+<div class="work-column">
+<div class="view-header"><div><small>V0.8 / FIVE REALMS · TWENTY-FOUR MAPS</small><h2 id="screenTitle">地图探索</h2></div><span class="live-status" id="autoStatus">● 待命</span></div>
+<div class="views">
+<section class="view is-active" data-view-panel="explore">
+<div class="activity-card">
+<div class="activity-top"><div><span class="eyebrow" id="mapTag">第一卷 · 凡尘炼气</span><h3 id="mapName">青云山麓</h3><p id="mapFlavor">第1/8关 · 当前关卡小怪可持续刷取，不退回旧层</p></div><span class="enemy-tier" id="mapBoss">终章：灵角狼王</span></div>
+<div class="combat-theatre" id="combatTheatre">
+<div class="fighter"><div class="fighter-heading"><span id="heroLabel">修士·炼气初期</span><b id="heroHP">260 / 260</b></div><div class="track health-track"><div class="track-fill hero-health" id="heroBar"></div></div><div class="sprite hero-sprite" id="heroSprite"><span>仙</span></div><div class="fighter-stats" id="heroStats">攻29 · 防12</div></div>
+<div class="clash-center"><div class="clash-sigil" id="clashSigil">⚔</div><small id="combatStatus">准备战斗</small></div>
+<div class="fighter"><div class="fighter-heading"><span id="enemyLabel">山野妖兽</span><b id="enemyHP">65 / 65</b></div><div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div><div class="sprite enemy-sprite" id="enemySprite"><span>妖</span></div><div class="fighter-stats" id="enemyStats">攻13 · 防4</div></div>
+<div class="damage-layer" id="damageLayer"></div>
+</div>
+<div class="activity-interval"><div class="interval-caption"><span id="fightMode">小怪收益随地图指数增长</span><span id="fightTimer">下一场战斗</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
+<div class="battle-feedback"><span class="result-bullet" id="combatReport">每张地图均有小怪、关卡守卫和最终Boss</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
+<div class="battle-controls v8-battle-actions">
+<button class="action-btn primary-action" id="autoFarm">▶ 自动刷本关小怪</button>
+<button class="action-btn" id="killMob">击杀小怪</button>
+<button class="action-btn" id="challenge">挑战守卫</button>
+<button class="action-btn challenge-boss" id="challengeBoss">挑战地图Boss</button>
+<button class="action-btn quiet-action" id="autoPush">自动冲关：关</button>
+</div>
+<div class="checkpoint-wrap"><div class="checkpoint-title"><b>地图关卡进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
+</div>
+<div class="lower-panels">
+<div class="compact-card"><div class="compact-heading"><h3>当前积累收益</h3><span>根据本关小怪数据</span></div><div class="v8-line"><span>普通小怪灵石</span><b id="mobStone">+19</b></div><div class="v8-line"><span>普通小怪修为</span><b id="mobQi">+12</b></div><div class="v8-line"><span>守卫预计结果</span><b id="guardForecast">进行战斗预测</b></div></div>
+<div class="compact-card"><div class="compact-heading"><h3>修炼目标</h3><span>失败后不退层</span></div><p class="v8-tip" id="goalHint">刷当前关的小怪，抽战力和修为卡，满足条件后突破。</p><button class="text-action" data-view="gacha">前往机缘抽卡 →</button></div>
+</div>
+</section>
+<section class="view" data-view-panel="cultivate">
+<div class="v8-panel"><div class="section-kicker">DAO / CULTIVATION</div><h3 id="realmName">炼气 · 初期</h3><p>取消数值等级，每个境界都经过初期、中期、后期、圆满。战斗积累修为；抽修为造化获得悟道；跨大境界还要特定丹药与地图Boss资格。</p>
+<div class="v8-resource"><div><small>已积累修为</small><strong id="currentQi">0</strong></div><div><small>所需修为</small><strong id="neededQi">100</strong></div></div><div class="track xp-track"><div class="track-fill xp-fill" id="qiProgress" style="width:0%"></div></div>
+<div class="v8-resource"><div><small>当前悟道</small><strong id="currentInsight">0</strong></div><div><small>所需悟道</small><strong id="neededInsight">1</strong></div></div><div class="track xp-track"><div class="track-fill xp-fill" id="insightProgress" style="width:0%"></div></div>
+<div class="v8-gate" id="realmGate">小境界突破无需丹药。</div><button class="action-btn primary-action v8-primary-wide" id="breakthrough">尝试突破</button>
+</div><div class="v8-panel"><h3>完整修仙进境</h3><div class="realm-route" id="realmRoute"></div></div>
+</section>
+<section class="view" data-view-panel="gacha"><div class="view-intro">七类卡包均暂时开放以便验收。战力、修为、灵石、功法、洞府、灵宠、丹道全部通过抽卡取得。重复卡叠加，同一世持续生效。</div><div class="packs v8-packs" id="packList"></div><div class="compact-card"><h3>抽卡结果</h3><div id="drawResults" class="v8-draw-results">抽卡以后会显示新能力与实际成长变化。</div></div></section>
+<section class="view" data-view-panel="technique"><div class="v8-panel"><h3>主修功法</h3><p>不同功法真正改变战斗：剑气追击、减伤、灵宠协同和三回合爆发。最多装配一门，免费切换；同名功法重复抽中会提高强度。</p><div id="techniqueList" class="v8-inventory"></div></div></section>
+<section class="view" data-view-panel="cave"><div class="v8-panel"><h3>洞府经营</h3><p>抽到的建筑会自动投入运营。灵田增加每场灵石，聚灵阵增加修为，行云台缩短战斗间隔，蕴兽台增强灵宠；不能花灵石直接点升级。</p><div id="caveList" class="v8-inventory"></div></div></section>
+<section class="view" data-view-panel="pet"><div class="v8-panel"><h3>御兽契约</h3><p>最多出战一只灵宠。青狐持续输出、玄龟护主、雷隼破甲、灵鹿助修；能力通过实际逐回合战斗结算。</p><div id="petList" class="v8-inventory"></div></div></section>
+<section class="view" data-view-panel="fate">
+<div class="v8-panel"><div class="section-kicker">SAMSARA / FATE</div><h3>轮回天命</h3><p>击败第四张地图最终Boss以后可自愿轮回。轮回清空当前世修炼、卡牌和地图，保留因果与已抽到的永久遗物。首四图切片已具备真正的跨世记录。</p><div class="v8-resource"><div><small>轮回次数</small><strong id="reincarnations">0</strong></div><div><small>持有因果</small><strong id="fatePoints">0</strong></div><div><small>最大地图</small><strong id="bestMap">第1图</strong></div></div><div class="v8-gate" id="reincarnationHint">完成雾隐剑冢后可以选择轮回。</div>
+<button class="action-btn primary-action v8-primary-wide" id="reincarnate">自愿轮回（本世进度清零）</button>
+</div>
+<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>切片采用10件常规遗物测试池，鸿蒙异宝保持独立0.01%附加判定、无保底。正式30件常规池会在完整版本合并；此处不冒充正式毕业图鉴。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div><div id="relicList" class="v8-inventory"></div></div>
+</section>
+<section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><p>前四张可游玩、其余二十张已录入世界设定与Boss名称，后续接入同一套地图/境界模块即可扩展。</p><div id="mapAtlas" class="v8-atlas"></div></div></section>
+<section class="view" data-view-panel="settings"><div class="v8-panel"><h3>独立预览存档</h3><p>v0.8 使用全新存档命名空间，旧版 v0.7.1 / M0.1 / v0.1 的记录不会被覆盖。可导出JSON，重开前自动备份。</p>
+<button class="action-btn" id="exportSave">导出当前存档</button> <button class="action-btn danger-btn" id="resetSave">备份并重开</button><div class="v8-gate" id="saveStatus">等待加载中……</div><a href="./m0.html">返回旧版 M0.2</a></div></section>
+</div>
+</div>
+<aside class="detail-rail"><div class="rail-card character-card"><div class="rail-heading"><h3>修士战力</h3><span>由境界与抽卡组成</span></div><div class="portrait-avatar">仙</div>
+<div class="stat-pair"><span>攻击</span><strong id="sideAtk">29</strong></div><div class="stat-pair"><span>气血</span><strong id="sideHp">260</strong></div><div class="stat-pair"><span>防御</span><strong id="sideDef">12</strong></div><div class="rail-divider"></div>
+<div class="stat-pair"><span>主修功法</span><strong id="sideTech">尚未习得</strong></div><div class="stat-pair"><span>出战灵宠</span><strong id="sidePet">暂无</strong></div><div class="stat-pair"><span>灵石效率</span><strong id="sideStone">+0%</strong></div><div class="stat-pair"><span>修为效率</span><strong id="sideQi">+0%</strong></div></div>
+<div class="rail-card rail-goal"><div class="rail-heading"><h3>当前任务</h3><span>随时积累</span></div><p id="rightGoal">本关小怪可以反复刷取。</p><button class="rail-cta" data-view="gacha">前往抽卡 →</button></div></aside>
+</div></div></div>
+<nav class="mobile-tabs" aria-label="游戏功能"><button class="is-active" data-view="explore"><span>⚔</span>地图</button><button data-view="cultivate"><span>☯</span>修炼</button><button data-view="gacha"><span>✦</span>抽卡</button><button data-view="technique"><span>✧</span>功法</button><button data-view="pet"><span>♧</span>灵宠</button><button data-view="fate"><span>◈</span>轮回</button></nav>
+<div class="v8-toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="./src/v8/ui.mjs"></script>
+</main></body></html>
