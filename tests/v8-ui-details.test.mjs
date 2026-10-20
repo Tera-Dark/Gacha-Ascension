@@ -47,7 +47,7 @@ test("numeric breakdowns are read-only and derive from actual card and realm sta
  const save=createSave(112233),copy=structuredClone(save);
  const detail=detailModel(save,c,null);
  assert.deepEqual(save,copy);
- assert.deepEqual(Object.keys(detail),["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"]);
+ assert.deepEqual(Object.keys(detail),["explore","cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"]);
  assert.ok(detail.explore.some(section=>section.rows.some(x=>x.label==="攻击"&&x.value==="29")));
  assert.ok(detail.cultivate.some(section=>section.rows.some(x=>x.label==="现有修为 / 消耗"&&x.value==="0 / 100")));
  assert.ok(detail.gacha.length>=8);
