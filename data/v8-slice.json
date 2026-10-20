@@ -37,9 +37,10 @@
       "technique": 0,
       "cave": 0,
       "pet": 0,
-      "elixir": 0
+      "elixir": 0,
+      "equipment": 3
     },
-    "comment": "All six feature packs enabled for testing. Final unlock milestones are not frozen."
+    "comment": "Previews keep seven original packs open; equipment unlocks at global checkpoint 3 for gradual discovery."
   },
   "packs": [
     {
@@ -326,6 +327,244 @@
           "effect": "pill",
           "value": 1,
           "description": "炼气圆满突破筑基所需"
+        }
+      ]
+    },
+    {
+      "id": "equipment",
+      "name": "器物秘匣",
+      "icon": "⚒",
+      "cost": 56,
+      "description": "所有装备来自卡包；双武器和双饰品可分开穿戴。",
+      "cards": [
+        {
+          "id": "E001",
+          "name": "青锋短剑",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "weapon",
+          "stats": {
+            "attack": 8
+          },
+          "value": 1,
+          "description": "稳固攻击"
+        },
+        {
+          "id": "E002",
+          "name": "玄铁长刀",
+          "rarity": "xuan",
+          "effect": "equipment",
+          "equipmentSlot": "weapon",
+          "stats": {
+            "attack": 22,
+            "defense": 2
+          },
+          "value": 1,
+          "description": "攻击与护身"
+        },
+        {
+          "id": "E003",
+          "name": "霜魄灵刃",
+          "rarity": "di",
+          "effect": "equipment",
+          "equipmentSlot": "weapon",
+          "stats": {
+            "attack": 46,
+            "speedPct": 5
+          },
+          "value": 1,
+          "description": "斩击轻捷"
+        },
+        {
+          "id": "E004",
+          "name": "凝神玉冠",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "crown",
+          "stats": {
+            "hp": 40,
+            "defense": 3
+          },
+          "value": 1,
+          "description": "内息凝稳"
+        },
+        {
+          "id": "E005",
+          "name": "星璇法冠",
+          "rarity": "di",
+          "effect": "equipment",
+          "equipmentSlot": "crown",
+          "stats": {
+            "hp": 145,
+            "defense": 12
+          },
+          "value": 1,
+          "description": "气脉防护"
+        },
+        {
+          "id": "E006",
+          "name": "竹纹斗笠",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "hat",
+          "stats": {
+            "defense": 5
+          },
+          "value": 1,
+          "description": "凡尘护首"
+        },
+        {
+          "id": "E007",
+          "name": "流云纱帽",
+          "rarity": "xuan",
+          "effect": "equipment",
+          "equipmentSlot": "hat",
+          "stats": {
+            "hp": 66,
+            "speedPct": 3
+          },
+          "value": 1,
+          "description": "轻灵护首"
+        },
+        {
+          "id": "E008",
+          "name": "青布法衣",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "clothing",
+          "stats": {
+            "hp": 90,
+            "defense": 5
+          },
+          "value": 1,
+          "description": "初入仙途"
+        },
+        {
+          "id": "E009",
+          "name": "灵蚕法袍",
+          "rarity": "di",
+          "effect": "equipment",
+          "equipmentSlot": "clothing",
+          "stats": {
+            "hp": 210,
+            "defense": 19
+          },
+          "value": 1,
+          "description": "灵气内蕴"
+        },
+        {
+          "id": "E010",
+          "name": "登云步履",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "boots",
+          "stats": {
+            "defense": 4,
+            "speedPct": 2
+          },
+          "value": 1,
+          "description": "脚踏灵风"
+        },
+        {
+          "id": "E011",
+          "name": "踏雪仙履",
+          "rarity": "xuan",
+          "effect": "equipment",
+          "equipmentSlot": "boots",
+          "stats": {
+            "hp": 75,
+            "speedPct": 5
+          },
+          "value": 1,
+          "description": "行动如风"
+        },
+        {
+          "id": "E012",
+          "name": "青玉指环",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "accessory",
+          "stats": {
+            "attack": 5
+          },
+          "value": 1,
+          "description": "随身小物"
+        },
+        {
+          "id": "E013",
+          "name": "聚气耳坠",
+          "rarity": "xuan",
+          "effect": "equipment",
+          "equipmentSlot": "accessory",
+          "stats": {
+            "attack": 13,
+            "hp": 35
+          },
+          "value": 1,
+          "description": "灵力流转"
+        },
+        {
+          "id": "E014",
+          "name": "皓月灵佩",
+          "rarity": "tian",
+          "effect": "equipment",
+          "equipmentSlot": "accessory",
+          "stats": {
+            "attack": 68,
+            "hp": 140
+          },
+          "value": 1,
+          "description": "罕见灵佩"
+        },
+        {
+          "id": "E015",
+          "name": "静心护符",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "amulet",
+          "stats": {
+            "hp": 80
+          },
+          "value": 1,
+          "description": "镇定神识"
+        },
+        {
+          "id": "E016",
+          "name": "玄武古符",
+          "rarity": "di",
+          "effect": "equipment",
+          "equipmentSlot": "amulet",
+          "stats": {
+            "defense": 24,
+            "hp": 110
+          },
+          "value": 1,
+          "description": "坚守御护"
+        },
+        {
+          "id": "E017",
+          "name": "革制灵带",
+          "rarity": "huang",
+          "effect": "equipment",
+          "equipmentSlot": "belt",
+          "stats": {
+            "defense": 4
+          },
+          "value": 1,
+          "description": "储气束腰"
+        },
+        {
+          "id": "E018",
+          "name": "须弥法带",
+          "rarity": "xuan",
+          "effect": "equipment",
+          "equipmentSlot": "belt",
+          "stats": {
+            "attack": 12,
+            "defense": 8
+          },
+          "value": 1,
+          "description": "法脉相连"
         }
       ]
     }
