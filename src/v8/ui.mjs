@@ -773,22 +773,14 @@ function schedule(){
   if(!summary){stopAuto();return}
   if(summary.lastBattle)afterBattle(summary.lastBattle,{replay:false});
   if(!summary.active){auto=false;reportIdle(summary);renderTop();return}
-  if(autoPush&&!s.run.bossCleared){
+  if(autoPush&&!s.run.bossCleared&&!s.run.pendingBattle){
    const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
-   const risk=combatAssessment(s,c,target,24);
-   if(risk.safeToAuto){
-    const challenge=doCommand("BATTLE",{enemyType:target});
-    if(challenge){
-     // A new mob fight must not overwrite the ongoing guardian/Boss replay.
-     afterBattle(challenge,{onComplete:()=>{
-      if(!auto)return;
-      const recovered=doCommand("CLAIM_IDLE");
-      if(!recovered){stopAuto();return}
-      if(recovered.lastBattle)afterBattle(recovered.lastBattle,{replay:false});
-      if(!recovered.active){auto=false;reportIdle(recovered);renderTop();return}
-      schedule();
-     }});
-     if(!challenge.won){autoPush=false;toast("守关失败，自动冲关关闭，继续刷本关小怪。",true)}
+   if(!(target==="guardian"&&pendingRealmGate(s,c))){
+    const risk=combatAssessment(s,c,target,24);
+    if(risk.safeToAuto){
+     // Stop the idle transaction before preparing a real-time Boss/guardian
+     // encounter. The last idle fractional interval is safely banked.
+     startManualBattle(target,true);
      return;
     }
    }
@@ -951,20 +943,9 @@ async function init(){
    if(applied)toast("功法与灵宠已联合装配，战斗增益即时生效");
   });
   $("autoFarm").addEventListener("click",startAuto);
-  $("killMob").addEventListener("click",()=>{
-   if(auto||battleBusy){toast("当前战斗尚未结束，请勿叠加新的攻击。");return}
-   afterBattle(doCommand("BATTLE",{enemyType:"mob"}));
-  });
-  $("challenge").addEventListener("click",()=>{
-   if(battleBusy&&!auto){toast("先完成当前战斗，再挑战守卫。");return}
-   if(auto)stopAuto();
-   afterBattle(doCommand("BATTLE",{enemyType:"guardian"}));
-  });
-  $("challengeBoss").addEventListener("click",()=>{
-   if(battleBusy&&!auto){toast("先完成当前战斗，再挑战Boss。");return}
-   if(auto)stopAuto();
-   afterBattle(doCommand("BATTLE",{enemyType:"boss"}));
-  });
+  $("killMob").addEventListener("click",()=>startManualBattle("mob"));
+  $("challenge").addEventListener("click",()=>startManualBattle("guardian"));
+  $("challengeBoss").addEventListener("click",()=>startManualBattle("boss"));
   $("autoPush").addEventListener("click",()=>{autoPush=!autoPush;render();toast("自动冲关已"+(autoPush?"开启，战斗风险评估通过才进行挑战。":"关闭。"))});
   $("farmFocus").addEventListener("change",event=>{
    const result=doCommand("SET_FARM_FOCUS",{id:event.target.value});
@@ -995,6 +976,12 @@ async function init(){
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
    stopAuto();playToken++;s=backupAndReset(c);try{localStorage.removeItem(NOVICE_SKIP_KEY)}catch{}set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
   document.addEventListener("visibilitychange",()=>{
+   if(document.hidden&&s.run.pendingBattle){
+    if(manualTimer!==null)clearTimeout(manualTimer);
+    manualTimer=null;clearLiveTimeline();++playToken;battleBusy=false;
+    return;
+   }
+   if(!document.hidden&&s.run.pendingBattle){scheduleManual();return}
    if(document.hidden&&auto){
     if(timer!==null)clearTimeout(timer);timer=null;
     clearLiveTimeline();++playToken;battleBusy=false;return;
@@ -1005,7 +992,11 @@ async function init(){
     if(auto)schedule();else renderTop();
    }
   });
-  if(s.run.idle?.active){
+  if(s.run.pendingBattle){
+   // A crashed or refreshed tab retains the pending encounter, without
+   // granting rewards or changing its RNG seed before the last hit.
+   scheduleManual();
+  }else if(s.run.idle?.active){
    auto=true;
    const resumed=doCommand("CLAIM_IDLE");
    reportIdle(resumed);
