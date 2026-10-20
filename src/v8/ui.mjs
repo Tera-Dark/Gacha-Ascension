@@ -345,7 +345,8 @@ function animateCombat(result,onComplete=null){
    setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
   }
   if(!auto){$("heroAttackBar").style.animationPlayState="paused";$("enemyAttackBar").style.animationPlayState="paused"}
-  render();
+  // Only re-render the new map after successful guardian/Boss progression.
+  if(result.won&&result.type!=="mob")render();
   onComplete?.();
  },duration+100);
 }
