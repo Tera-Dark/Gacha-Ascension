@@ -70,6 +70,24 @@ test("battle in progress survives serializing, loading and resuming with no extr
  assert.equal(readGame(c,storage).state.run.pendingBattle,undefined);
  assert.equal(SCHEMA,8);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
 });
+test("three-wave map Boss uses the complete timeline and only changes map on final settlement",()=>{
+ const s=createSave(2026);s.run.checkpoint=c.checkpointsPerMap-1;
+ const planned=fight(s,c,"boss",{seed:s.seed});
+ assert.equal(planned.waves.length,3);
+ const prepared=act(s,"PREPARE_BATTLE",start,{enemyType:"boss"});
+ assert.equal(prepared.state.run.mapIndex,0);
+ assert.equal(prepared.state.run.checkpoint,c.checkpointsPerMap-1);
+ assert.equal(prepared.state.run.bossWins,0);
+ const lastLog=planned.logs.at(-1);
+ assert.ok(lastLog.timeMs<=planned.timeMs);
+ assert.throws(()=>act(prepared.state,"FINISH_BATTLE",start+planned.timeMs-1),/还未完成/);
+ const settled=act(prepared.state,"FINISH_BATTLE",start+planned.timeMs+1);
+ assert.equal(settled.result.combat.totalWaves,3);
+ assert.equal(settled.result.won,planned.won);
+ assert.equal(settled.state.run.mapIndex,planned.won?1:0);
+ assert.equal(settled.state.run.bossWins,Number(planned.won));
+ validateSave(settled.state,c);
+});
 test("invalid/bypassed battle operations do not silently settle during a pending encounter",()=>{
  const begin=act(createSave(71),"PREPARE_BATTLE",start,{enemyType:"mob"}).state;
  assert.throws(()=>act(begin,"CLAIM_IDLE",start+1000),/战斗尚在进行/);
