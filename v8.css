@@ -61,3 +61,9 @@
 .v8-combat-insight strong{font-size:11px;color:#e9c889;line-height:1.45}
 .v8-combat-judgement{border-top:1px solid #334c44;padding-top:7px;margin-top:7px;color:#a8c4ad;font-size:10px;line-height:1.7}
 @media(max-width:560px){.v8-combat-insight{grid-template-columns:1fr 1fr}.v8-combat-insight strong{font-size:10px}}
+
+/* Same-checkpoint farming target choice; stays on combat panel. */
+.farm-focus-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-top:1px solid #38564f;padding-top:8px;color:#b4cbbb;font-size:11px}
+.farm-focus-bar select{font:inherit;color:#f0d39d;background:#213b35;border:1px solid #789279;border-radius:7px;padding:6px 8px;min-height:34px;max-width:150px}
+.farm-focus-bar span{color:#91ab9e;font-size:10px;flex:1;min-width:125px}
+@media(max-width:560px){.farm-focus-bar{gap:5px}.farm-focus-bar select{min-height:32px}.farm-focus-bar span{font-size:9px}}
