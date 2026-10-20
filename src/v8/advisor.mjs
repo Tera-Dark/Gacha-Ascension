@@ -57,6 +57,8 @@ export function nextStep(s,c,forecast=null){
  // Do not advertise an unwinnable, engine-blocked guardian challenge.
  if(gate){
   if(req.canBreak)return {title:"突破至"+gate.realm,description:"上一图Boss已击败，先突破至"+gate.realm+"才能推进"+gate.map+"的守卫。",view:"cultivate",action:"前往突破"};
+  if(!req.hasInsight&&r.stones<packCost(s,c,"cultivation"))
+   return {title:"先攒悟道抽卡灵石",description:"即将突破至"+gate.realm+"，修为造化单抽还差"+(packCost(s,c,"cultivation")-r.stones)+"灵石。先刷当前小怪，再去抽悟道。",view:"explore",action:"前往自动刷怪"};
   if(!req.hasInsight)return pick("cultivation","突破前补悟道","已抵达"+gate.map+"，进入下一关守卫需要"+gate.realm+"。悟道还差"+(req.insight-r.insight)+"点；修为造化每抽至少获得1点悟道。","抽修为造化");
   if(!req.hasQi)return {title:"突破前补修为",description:"已抵达"+gate.map+"，先刷小怪积累"+(req.qi-r.qi)+"修为，便可突破至"+gate.realm+"并挑战守卫。",view:"explore",action:"前往自动刷怪"};
   return {title:"境界突破在即",description:"已到达下一图的境界门槛，去修炼页面检查突破要求。",view:"cultivate",action:"前往突破"};
@@ -64,7 +66,11 @@ export function nextStep(s,c,forecast=null){
  if(req.canBreak&&r.realmIndex<4)return {title:"突破条件已齐",description:"境界条件已满足。先突破可获得新的基础属性，再继续探索。",view:"cultivate",action:"前往突破"};
  if(r.bossCleared){
   if(r.realmIndex>=4)return {title:"本世圆满",description:"四图和筑基境界均已达成，可选择轮回取得永久天命。筑基完成比提前轮回多获得10因果。",view:"fate",action:"查看轮回"};
+  if(req.needsPill&&!req.hasPill&&r.stones<packCost(s,c,"elixir"))
+   return {title:"积累筑基丹灵石",description:"筑基丹尚未到手，丹道单抽还差"+(packCost(s,c,"elixir")-r.stones)+"灵石；可继续刷最终地图的小怪筹备。",view:"explore",action:"前往自动刷怪"};
   if(req.needsPill&&!req.hasPill)return pick("elixir","补齐筑基丹","还缺筑基丹。丹道宝匣最多还需 "+Math.max(1,c.realmPillPity-r.pillPity)+" 抽保底。","抽丹道宝匣");
+  if(!req.hasInsight&&r.stones<packCost(s,c,"cultivation"))
+   return {title:"积累悟道抽卡灵石",description:"突破还缺"+(req.insight-r.insight)+"点悟道，修为造化单抽还差"+(packCost(s,c,"cultivation")-r.stones)+"灵石。",view:"explore",action:"前往自动刷怪"};
   if(!req.hasInsight)return pick("cultivation","补足悟道","距突破还缺 "+(req.insight-r.insight)+" 点悟道；每次修为造化至少获得1点。","抽修为造化");
   if(!req.hasQi)return {title:"积累突破修为",description:"突破还需 "+(req.qi-r.qi)+" 修为。切换修为优先的小怪刷取。",view:"explore",action:"前往自动刷怪"};
   return {title:"选择下一世",description:"四图已通关，可选择继续积累或轮回。",view:"fate",action:"查看轮回"};
