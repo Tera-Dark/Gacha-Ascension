@@ -432,3 +432,9 @@
 }
 @media(max-width:540px) and (orientation:portrait){.wb-item-inventory{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.wb-player .health-track .track-fill,.wb-enemy .health-track .track-fill{transition:none!important}}
+
+/* 9th gacha: suspended artifact halo, cosmetic only */
+.v8-reveal-stage[data-pack="artifact"]{--accent:#bdabef}
+.v8-reveal-stage[data-pack="artifact"][data-phase="charge"] .v8-reveal-sigil{animation:wb-artifact-sigil 1.8s ease-in-out infinite}
+@keyframes wb-artifact-sigil{0%,100%{transform:rotate(0) scale(.93);filter:drop-shadow(0 0 8px #a6a0e888)}50%{transform:rotate(180deg) scale(1.16);filter:drop-shadow(0 0 24px #c6adfa)}}
+@media(prefers-reduced-motion:reduce){.v8-reveal-stage[data-pack="artifact"] .v8-reveal-sigil{animation:none!important}}
