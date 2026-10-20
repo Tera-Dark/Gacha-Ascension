@@ -5,6 +5,7 @@ import {validateContentContract,unlockedPack} from "./modules.mjs";
 import {EQUIPMENT_SLOTS,validateEquipmentCards,verifyEquipment,equipmentStats,equipItem} from "./equipment.mjs";
 import {ARTIFACT_SLOTS,validateArtifacts,verifyArtifacts,equipArtifact,artifactBonuses} from "./artifacts.mjs";
 import {inventory,validateInventory,rollBoxDrop,openBox,brew,prepareItem,unlockAutoPotion,setAutoPotion} from "./treasure.mjs";
+import {activeSynergy} from "./synergy.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -139,7 +140,7 @@ export function combatSnapshot(s,c,kind){
  f.attack=Math.max(1,Math.round(f.attack*(1-a.curse/100)));
  const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
   available:s.run.consumables?.MED001||0,prepared:prepared.MED001||0};
- return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
+ return {hero:h,enemy:f,tech:t,pet:p,synergy:activeSynergy(s),heroUltra:hasUltra(s,"U001"),
   kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c).speedPct+a.blessing),
   apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
   waves:encounterWaves(f,kind,index)};
@@ -317,6 +318,13 @@ export function dispatch(current,c,cmd){
  case "EQUIP_TECH":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="technique"||!r.cards[id]))throw Error("功法未拥有");
   r.technique=id;result={kind:"equip",slot:"technique",id};break}
+ case "EQUIP_LOADOUT":{
+  const tech=cmd.technique??null,petId=cmd.pet??null;
+  if(tech!==null&&(c.cards[tech]?.effect!=="technique"||!r.cards[tech]))throw Error("功法未拥有");
+  if(petId!==null&&(c.cards[petId]?.effect!=="pet"||!r.cards[petId]))throw Error("灵宠未拥有");
+  r.technique=tech;r.pet=petId;
+  result={kind:"loadout",technique:tech,pet:petId};break;
+ }
  case "EQUIP_ITEM":result=equipItem(s,c,cmd.slot,cmd.id);break;
  case "EQUIP_ARTIFACT":result=equipArtifact(s,c,cmd.slot,cmd.id);break;
  case "OPEN_BOX":result=openBox(s,c,cmd.id,()=>roll(s));break;

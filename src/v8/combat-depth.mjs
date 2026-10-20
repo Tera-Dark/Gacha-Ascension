@@ -94,13 +94,14 @@ export function assessEncounter(snapshot,samples=24){
 }
 export function simulateEncounter(input,startSeed){
  const {hero,enemy,tech,pet,heroUltra=false,apexDamageMultiplier=1,kind,mapIndex,
-  heroSpeedPct=0,healing=null}=input;
+  heroSpeedPct=0,healing=null,synergy=null}=input;
  if(!Number.isSafeInteger(startSeed)||startSeed<1||startSeed>0xffffffff)throw Error("Invalid combat seed");
  const waves=input.waves||encounterWaves(enemy,kind,mapIndex);
  const heroStyle=combatStyle(tech),heroInterval=RULES.heroIntervalMs/(1+cap(heroSpeedPct,0,60)/100);
  const enemyInterval=RULES.enemyIntervalMs/(1+mapIndex*.025);
  let rng=startSeed,heroHp=hero.hp,shield=pet.style==="ward"?
   Math.round(hero.hp*cap(pet.power/200,0,.50)):0;
+ shield+=Math.round(hero.hp*cap(synergy?.shieldHp||0,0,.15));
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
   enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0,activeWave=waves[0];
  const logs=[];
@@ -140,6 +141,8 @@ export function simulateEncounter(input,startSeed){
      let raw=hero.attack*rolled*armor*matchup.damage;
      if(tech.style==="sword")raw*=1+cap(tech.power/100,0,5);
      if(tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(tech.power/100,0,5);
+      if(synergy?.strike)raw*=1+cap(synergy.strike,0,.15);
+      if(synergy?.burst&&tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(synergy.burst,0,.25);
      if(heroUltra)raw*=2.5;
      raw*=apexDamageMultiplier;
      amount=Math.max(1,Math.round(raw));
@@ -154,7 +157,8 @@ export function simulateEncounter(input,startSeed){
      if(petHit){
       const petArmor=100/(100+foe.defense*(pet.style==="pierce"?.45:1));
       const extra=Math.max(1,Math.round(hero.attack*cap(pet.power/100,0,15)*petArmor*.82*
-       (tech.style==="spirit"?1+cap(tech.power/100,0,5):1)));
+       (tech.style==="spirit"?1+cap(tech.power/100,0,5):1)*
+        (1+cap(synergy?.petDamage||0,0,.20))));
       enemyHp=Math.max(0,enemyHp-extra);petDealt+=extra;
       log({actor:"pet",at:lastActionAt,stage:idx+1,turn:heroAttacks,amount:extra,hp:enemyHp,max:foe.hp});
      }
