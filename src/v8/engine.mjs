@@ -134,11 +134,11 @@ function pet(s,c){
 export function combatSnapshot(s,c,kind){
  const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c),p=pet(s,c),index=s.run.mapIndex;
  const a=artifactBonuses(s,c),prepared=s.run.prepared||{},auto=s.meta.autoPotion;
- h.attack=Math.max(1,Math.round(h.attack*(1+(a.strike+(prepared.P003?15:0))/100)));
- h.defense=Math.max(0,Math.round(h.defense*(1+(a.ward+(prepared.P002?15:0))/100)));
+ h.attack=Math.max(1,Math.round(h.attack*(1+(a.strike+(prepared.MED003?15:0))/100)));
+ h.defense=Math.max(0,Math.round(h.defense*(1+(a.ward+(prepared.MED002?15:0))/100)));
  f.attack=Math.max(1,Math.round(f.attack*(1-a.curse/100)));
  const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
-  available:s.run.consumables?.P001||0,prepared:prepared.P001||0};
+  available:s.run.consumables?.P001||0,prepared:prepared.MED001||0};
  return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
   kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c).speedPct+a.blessing),
   apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
@@ -221,10 +221,10 @@ function battle(s,c,kind){
  const result=fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
  s.seed=result.nextSeed;
  const items=inventory(s);
- items.consumables.P001=Math.max(0,(items.consumables.P001||0)-(result.usedAuto||0));
- items.prepared.P001=Math.max(0,(items.prepared.P001||0)-(result.usedPrepared||0));
+ items.consumables.MED001=Math.max(0,(items.consumables.MED001||0)-(result.usedAuto||0));
+ items.prepared.MED001=Math.max(0,(items.prepared.MED001||0)-(result.usedPrepared||0));
  // Non-healing combat consumables are spent once at encounter start.
- for(const id of ["P002","P003"])if(items.prepared[id])items.prepared[id]--;
+ for(const id of ["MED002","MED003"])if(items.prepared[id])items.prepared[id]--;
  const potionUses={auto:result.usedAuto||0,prepared:result.usedPrepared||0};
  if(result.won){
   r.victories++;
