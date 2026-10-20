@@ -59,7 +59,7 @@ test("card bonuses, cave yields, pet power and stored counters update with same 
  assert.ok(heroStats(s,c).attack>heroStats(createSave(24),c).attack);
  const caveStone=now.cave.flatMap(x=>x.rows).find(x=>x.label==="洞府灵石贡献");
  assert.equal(caveStone.value,"50%");
- const havePet=now.pet.flatMap(x=>x.rows).find(x=>x.label==="当前出战灵宠");
+ const havePet=now.pet.flatMap(x=>x.rows).find(x=>x.label==="出战灵宠");
  assert.equal(havePet.value,"青狐");
  assert.ok(now.cultivate.flatMap(x=>x.rows).find(x=>x.label==="现有修为 / 消耗").value.startsWith("120"));
  assert.notDeepEqual(now.explore,base.explore);
