@@ -1,31 +1,27 @@
-name: Validate game design codex
+name: Legacy v0.5 catalog integrity
 on:
   push:
     paths:
       - "data/codex/**"
-      - "docs/**"
-      - "scripts/validate-codex.mjs"
-      - "scripts/validate-codex-v0.5.mjs"
       - "scripts/sync-codex-v0.5.mjs"
+      - "scripts/validate-codex-v0.5.mjs"
       - ".github/workflows/validate-codex.yml"
   pull_request:
     paths:
       - "data/codex/**"
-      - "docs/**"
-      - "scripts/validate-codex.mjs"
-      - ".github/workflows/validate-codex.yml"
+      - "scripts/sync-codex-v0.5.mjs"
+      - "scripts/validate-codex-v0.5.mjs"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
-  validate:
+  validate-legacy:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Verify codex data
-        run: node scripts/validate-codex.mjs && node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs
+          node-version: '22'
+      - name: Verify historical codex data needed by M0
+        run: npm run check:content
