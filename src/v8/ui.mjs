@@ -462,9 +462,15 @@ function reportIdle(recovered){
  if(!recovered||recovered.attempts<1)return;
  set("combatReport","安全挂机已结算："+recovered.wins+"胜 / "+recovered.attempts+"战");
  set("rewardLabel","◆ +"+fmt(recovered.stones)+" / 修为 +"+fmt(recovered.qi));
+ const found=[];
+ if(recovered.gearBoxes)found.push("装备箱×"+recovered.gearBoxes);
+ if(recovered.herbBoxes)found.push("药草箱×"+recovered.herbBoxes);
+ if(recovered.potionsUsed)found.push("服药×"+recovered.potionsUsed);
+ if(recovered.lostGear)found.push("☠ 遗失："+recovered.lostGear.name);
+ if(found.length)set("combatLootResult","安全挂机记录："+found.join(" · "));
  if(recovered.attempts>1)toast("离线/后台安全刷怪 "+recovered.wins+"场，灵石 +"+fmt(recovered.stones)+"、修为 +"+fmt(recovered.qi));
  if(recovered.capped)toast("超过离线上限的时间未计入收益（首世15分钟，轮回后2小时）");
- if(!recovered.active){auto=false;toast("小怪挑战失败，安全挂机已暂停，进度没有倒退。",true)}
+ if(!recovered.active){auto=false;toast(recovered.lostGear?"挂机战败 · 遗失 "+recovered.lostGear.name:"小怪挑战失败，安全挂机已暂停，进度没有倒退。",true)}
 }
 function schedule(){
  if(timer!==null)clearTimeout(timer);timer=null;
