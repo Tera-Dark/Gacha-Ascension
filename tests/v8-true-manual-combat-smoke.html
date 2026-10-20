@@ -12,6 +12,7 @@ frame.addEventListener("load",async()=>{
   for(let i=0;i<100&&!d.querySelector('#packList [data-draw="battle"]');i++)await delay(30);
   check(!!d.querySelector('#packList [data-draw="battle"]'),"UI did not initialize");
   if(phase===0){
+   out.dataset.phase="manual-start";out.textContent="Phase: initial manual battle";
    d.getElementById("killMob").click();await delay(70);
    const pending=read();
    check(!!pending?.run.pendingBattle,"manual small mob must PREPARE, not finish instantly");
@@ -20,10 +21,12 @@ frame.addEventListener("load",async()=>{
    const hit=predicted.logs.find(x=>x.actor==="hero"&&x.amount>0&&x.timeMs<predicted.timeMs-200);
    check(!!hit,"no intermediate damaging strike for real-time validation");
    check(d.getElementById("enemyHP").textContent!==hit.hp+" / "+hit.max,"damage shown before timed strike");
+   out.dataset.phase="await-first-hit";out.textContent="Phase: waiting for manual first hit at "+hit.timeMs;
    await delay(hit.timeMs+160);
    check(d.getElementById("enemyHP").textContent===hit.hp+" / "+hit.max,
     "manual HP failed to change on strike: "+d.getElementById("enemyHP").textContent+" vs "+hit.hp+" / "+hit.max);
    check(!!read().run.pendingBattle&&read().run.lastBattle===null,"save settled before elapsed fight time");
+   out.dataset.phase="await-first-finish";out.textContent="Phase: waiting for mob finish "+predicted.timeMs;
    await delay(Math.max(0,predicted.timeMs-hit.timeMs)+240);
    check(!read().run.pendingBattle&&!!read().run.lastBattle,"manual fight did not finish at real clock");
    check(d.getElementById("enemyHP").textContent.startsWith(predicted.enemyRemaining+" /"),"final HP diverges from actual outcome");
@@ -32,15 +35,18 @@ frame.addEventListener("load",async()=>{
    check(!!guardian.start&&prepared.run.checkpoint===0,"guardian progressed immediately on clicking");
    check(guardian.combat.waves.length===2,"guardian must have two timed waves");
    check(prepared.run.lastBattle.type==="mob","guardian must not overwrite battle receipt before hit");
-   phase=1;w.location.reload();
+   phase=1;out.dataset.phase="guardian-reload";out.textContent="Phase: reloading guardian "+guardian.combat.timeMs;
+   w.location.reload();
    return;
   }
+  out.dataset.phase="guardian-resumed";out.textContent="Phase: guardian reloaded";
   const pending=read();
   check(pending.run.pendingBattle?.kind==="guardian","refresh lost running multiwave guardian battle");
   const elapsed=Date.now()-guardian.start;
   check(elapsed<guardian.combat.timeMs,"guardian unexpectedly ended before resume check");
   check(pending.run.checkpoint===0,"guardian advanced without completing both waves");
   const pendingUntil=guardian.start+guardian.combat.timeMs;
+  out.dataset.phase="guardian-final";out.textContent="Phase: waiting for guardian end; remaining="+(pendingUntil-Date.now());
   await delay(Math.max(0,pendingUntil-Date.now())+300);
   const done=read();
   check(!done.run.pendingBattle,"reloaded battle was not committed");
