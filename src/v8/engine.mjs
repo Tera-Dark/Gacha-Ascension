@@ -258,7 +258,8 @@ function battle(s,c,kind){
  r.losses++;
  let lostGear=null;
  const slots=Object.entries(r.equipment||{}).filter(([,id])=>!!id);
- if(slots.length&&roll(s)<.5){
+ // An action-limit stalemate is not death: no 50% equipment-loss roll.
+ if(result.reason==="defeat"&&slots.length&&roll(s)<.5){
   const [slot,id]=slots[Math.floor(roll(s)*slots.length)];
   lostGear={slot,id,name:c.cards[id].name};
   delete r.equipment[slot];
@@ -267,7 +268,7 @@ function battle(s,c,kind){
  }
  return {kind:"battle",type:kind,won:false,combat:result,stones:0,qi:0,mapBefore:m,checkpointBefore:k,
   mapAfter:r.mapIndex,checkpointAfter:r.checkpoint,bossCleared:r.bossCleared,
-  lostGear,potionUses,boxes:[]};
+  lostGear,potionUses,boxes:[],failureReason:result.reason};
 }
 function breakthrough(s,c){
  const r=s.run,needs=breakthroughRequirements(s,c);
@@ -347,7 +348,7 @@ export function dispatch(current,c,cmd){
  default:throw Error("未定义的玩法指令 "+cmd.type);
  }
  s.seq=cmd.seq;
- if(result.kind==="battle"){s.run.lastBattle={type:result.type,won:result.won,turns:result.combat.turns,stones:result.stones,qi:result.qi,boxes:result.boxes,lostGear:result.lostGear||null,potionUses:result.potionUses}}
+ if(result.kind==="battle"){s.run.lastBattle={type:result.type,won:result.won,turns:result.combat.turns,stones:result.stones,qi:result.qi,boxes:result.boxes,lostGear:result.lostGear||null,potionUses:result.potionUses,failureReason:result.failureReason||null}}
  validateSave(s,c);
  return {state:s,result};
 }

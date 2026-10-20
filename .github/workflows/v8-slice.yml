@@ -15,6 +15,7 @@ on:
       - "tests/v8-mobile-smoke.html"
       - "tests/v8-landscape-smoke.html"
       - "tests/v8-live-combat-smoke.html"
+      - "tests/v8-logic-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
@@ -67,6 +68,15 @@ jobs:
           if ! grep -q 'data-result="PASS"' /tmp/v8-live-combat.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-live-combat.html || true
             cat /tmp/v8-live-combat-errors.log
+            exit 1
+          fi
+      - name: Verify malformed save recovery and non-overlapping combat actions
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=12000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-logic-smoke.html >/tmp/v8-logic-smoke.html 2>/tmp/v8-logic-smoke-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-logic-smoke.html; then
+            grep -o 'FAIL:[^<]*' /tmp/v8-logic-smoke.html || true
+            cat /tmp/v8-logic-smoke-errors.log
             exit 1
           fi
       - name: Validate actual landscape touch layout and equipment drawer in Chromium
