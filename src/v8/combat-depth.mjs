@@ -94,7 +94,7 @@ export function assessEncounter(snapshot,samples=24){
 }
 export function simulateEncounter(input,startSeed){
  const {hero,enemy,tech,pet,heroUltra=false,apexDamageMultiplier=1,kind,mapIndex,
-  heroSpeedPct=0}=input;
+  heroSpeedPct=0,healing=null}=input;
  if(!Number.isSafeInteger(startSeed)||startSeed<1||startSeed>0xffffffff)throw Error("Invalid combat seed");
  const waves=input.waves||encounterWaves(enemy,kind,mapIndex);
  const heroStyle=combatStyle(tech),heroInterval=RULES.heroIntervalMs/(1+cap(heroSpeedPct,0,60)/100);
@@ -104,7 +104,10 @@ export function simulateEncounter(input,startSeed){
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
   enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0,activeWave=waves[0];
  const logs=[];
- let eventSeq=0,elapsed=0;
+ let eventSeq=0,elapsed=0,usedAuto=0,usedPrepared=0;
+ const healAvailable=healing?.auto?Math.min(30,healing.available||0):0;
+ const preparedAvailable=Math.min(3,healing?.prepared||0);
+ const threshold=healing?.threshold??.35;
  const log=event=>logs.push({...event,seq:eventSeq++,timeMs:Math.ceil(elapsed+(event.at||0))});
  const random=()=>{const p=rand(rng);rng=p.seed;return p.value};
  for(let idx=0;idx<waves.length;idx++){
@@ -114,6 +117,16 @@ export function simulateEncounter(input,startSeed){
   const dr=mitigation(hero.defense,tech.style==="guard"?tech.power:0);
   let enemyHp=foe.hp,heroAt=heroInterval,enemyAt=enemyInterval;
   let heroAttacks=0,enemyAttacks=0,lastActionAt=0;
+  const emergencyHeal=()=>{
+   if(heroHp<=0||heroHp/hero.hp>threshold||heroHp===hero.hp)return;
+   let source;
+   if(usedPrepared<preparedAvailable){usedPrepared++;source="prepared"}
+   else if(usedAuto<healAvailable){usedAuto++;source="auto"}
+   else return;
+   const restored=Math.min(hero.hp-heroHp,Math.max(1,Math.round(hero.hp*.35)));
+   heroHp+=restored;
+   log({actor:"potion",at:lastActionAt,owner:"hero",stage:idx+1,amount:restored,hp:heroHp,max:hero.hp,source});
+  };
   log({actor:"wave",at:0,stage:idx+1,total:waves.length,name:foe.name,max:foe.hp,hp:foe.hp,style:foe.style});
   for(let steps=0;steps<RULES.maxActionsPerWave&&enemyHp>0&&heroHp>0;steps++){
    lastActionAt=Math.min(heroAt,enemyAt);
@@ -153,6 +166,7 @@ export function simulateEncounter(input,startSeed){
      if(counter){heroHp=Math.max(0,heroHp-counter);
       log({actor:"counter",at:lastActionAt,stage:idx+1,amount:counter,hp:heroHp,max:hero.hp})}
      if(heroHp<=0)break;
+     emergencyHeal();
     }
    }else{
     enemyAttacks++;
@@ -171,6 +185,7 @@ export function simulateEncounter(input,startSeed){
      amount,blocked:absorb,hp:heroHp,max:hero.hp});
     enemyAt+=enemyInterval;
     if(heroHp<=0)break;
+    emergencyHeal();
     if(foe.special==="regeneration"&&enemyAttacks%2===0){
       const recovered=Math.min(foe.hp-enemyHp,Math.max(1,Math.round(foe.hp*.035)));
       enemyHp+=recovered;
@@ -189,6 +204,6 @@ export function simulateEncounter(input,startSeed){
  return {won,reason:won?"victory":heroHp<=0?"defeat":"timeout",
   turns,completedWaves,totalWaves:waves.length,heroDealt,petDealt,blocked,misses,maxEnemyHit,
   heroRemaining:heroHp,enemyRemaining,hero,enemy:activeWave,waves,
-  timeMs,nextSeed:rng,
+  timeMs,nextSeed:rng,usedAuto,usedPrepared,
   logs};
 }
