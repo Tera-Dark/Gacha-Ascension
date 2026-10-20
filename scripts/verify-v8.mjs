@@ -21,9 +21,9 @@ assert.match(css,/v8-battle-actions/);
 const world=JSON.parse(read("data/realms-maps.v0.8.proposal.json"));
 const config=JSON.parse(read("data/v8-slice.json"));
 assert.equal(world.maps.length,24);assert.equal(world.cultivation.length,20);
-assert.equal(config.playableMaps,4);assert.equal(config.packs.length,8);
+assert.equal(config.playableMaps,4);assert.equal(config.packs.length,9);
 for(const map of world.maps.slice(0,4))assert.ok(map.boss?.id&&map.boss.name);
-console.log("V0.8 preview static page verified: "+ids.length+" IDs, 9 fully navigable panels, 8 active gacha packs, 4 of 24 maps playable.");
+console.log("V0.8 preview static page verified: "+ids.length+" IDs, 9 fully navigable panels, 9 active gacha packs, 4 of 24 maps playable.");
 
 
 // Keep the canonical entry and documentation links from drifting back to obsolete versions.
