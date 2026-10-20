@@ -221,7 +221,7 @@ function damagePop(event){
  const toHero=event.actor==="enemy"||event.actor==="counter"||event.actor==="potion"||
   (isMiss&&event.owner==="enemy");
  el.className="damage-pop "+(isHeal?"heal-dmg":toHero?"hero-dmg":"enemy-dmg");
- el.textContent=isMiss?"闪避":(isHeal?"+":"−")+fmt(event.amount||0);
+ el.textContent=isMiss?"闪避":event.actor==="enemy"&&event.blocked>0&&event.amount===0?"格挡 "+fmt(event.blocked):(isHeal?"+":"−")+fmt(event.amount||0);
  el.style.left=(toHero? "21%":"68%");
  layer.append(el);setTimeout(()=>el.remove(),800);
  if(isMiss||isHeal)return;
@@ -254,6 +254,7 @@ function showHitEvent(event,combat,withEffects=true){
   event.actor==="regen"?"敌方恢复":
   event.actor==="pet"?"灵宠协战":
   event.actor==="counter"?"敌方反震":
+  event.actor==="enemy"&&event.blocked>0&&event.amount===0?"护盾完全格挡":
   toHero?"敌方命中 · 气血减少":"我方命中 · 敌方气血减少");
 }
 function clearLiveTimeline(){
@@ -304,6 +305,16 @@ function animateCombat(result,onComplete=null){
  const first=combat.waves?.[0]||combat.enemy;
  snapshot("enemyHP","enemyBar",first.hp,first.hp);
  set("enemyLabel",first.name);
+ // During a settled guardian/Boss replay, show the source map until the replay ends.
+ if(result.type!=="mob"){
+  const previous=c.maps[result.mapBefore];
+  if(previous){
+   set("mapName",previous.name);
+   set("mapFlavor","战斗回放 · 第"+(result.checkpointBefore+1)+"/"+c.checkpointsPerMap+"关 · "+previous.mechanicDescription);
+   set("mapBoss","本场Boss："+previous.boss.name);
+   set("checkpointCount","正在回放已结算的战斗");
+  }
+ }
  set("combatStatus",combat.synergy?"✦ 共鸣生效："+combat.synergy.name:"逐次交锋 · 每次攻击独立扣血");
  $("heroAttackBar").style.animationPlayState="running";
  $("enemyAttackBar").style.animationPlayState="running";
@@ -334,6 +345,7 @@ function animateCombat(result,onComplete=null){
    setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
   }
   if(!auto){$("heroAttackBar").style.animationPlayState="paused";$("enemyAttackBar").style.animationPlayState="paused"}
+  render();
   onComplete?.();
  },duration+100);
 }
