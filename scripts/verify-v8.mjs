@@ -1,7 +1,7 @@
 import {readFileSync,existsSync} from "node:fs";
 import assert from "node:assert/strict";
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
-const html=read("preview-v0.8.html"),js=read("src/v8/ui.mjs"),engine=read("src/v8/engine.mjs"),css=read("v8.css");
+const html=read("preview-v0.8.html"),js=read("src/v8/ui.mjs"),engine=read("src/v8/engine.mjs"),css=read("assets/css/preview.css");
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),idSet=new Set(ids);
 assert.equal(ids.length,idSet.size,"Duplicate id in playable v0.8 page");
 for(const id of [...js.matchAll(/\$\("([^"]+)"\)/g),...js.matchAll(/\bset\("([^"]+)"/g)].map(m=>m[1]))

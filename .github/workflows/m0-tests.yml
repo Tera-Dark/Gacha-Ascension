@@ -4,7 +4,7 @@ on:
     paths:
       - "src/m0/**"
       - "m0.html"
-      - "m0.css"
+      - "assets/css/workbench.css"
       - "tests/**"
       - "package.json"
       - "scripts/verify-m0-pages.mjs"
@@ -17,7 +17,7 @@ on:
     paths:
       - "src/m0/**"
       - "m0.html"
-      - "m0.css"
+      - "assets/css/workbench.css"
       - "tests/**"
       - "package.json"
       - "scripts/verify-m0-pages.mjs"

@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - "m0.html"
-      - "m0-idle.css"
+      - "assets/css/workbench.css"
       - "src/m0/ui.mjs"
       - "src/m0/presentation.mjs"
       - ".github/workflows/m0-ui-smoke.yml"

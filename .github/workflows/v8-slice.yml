@@ -10,7 +10,7 @@ on:
       - "README.md"
       - "AGENTS.md"
       - "codex.html"
-      - "v8.css"
+      - "assets/css/preview.css"
       - "tests/v8*.test.mjs"
       - "tests/v8-mobile-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
