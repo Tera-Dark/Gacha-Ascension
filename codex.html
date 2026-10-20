@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102019"><title>抽卡修仙传 · 设计总图鉴</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102019"><title>抽卡修仙传 · 历史 v0.5 图鉴（非现行）</title>
 <style>
 :root{--bg:#101a15;--box:#1b2d22;--line:#3b5340;--ink:#f0f0e6;--muted:#a0b4a1;--gold:#e0bc7a}*{box-sizing:border-box}
 body{font:14px system-ui,"Microsoft YaHei",sans-serif;background:radial-gradient(ellipse at 80% 0,#2f593f55,transparent 45%),var(--bg);color:var(--ink);margin:0}
@@ -23,8 +23,8 @@ label{color:var(--muted);font-size:12px;display:flex;flex-direction:column;gap:6
 @media(max-width:520px){h1{font-size:22px}.cards{grid-template-columns:1fr}.filters label:first-child{grid-column:1/-1}main{padding:20px 12px 40px}}
 </style></head><body><main>
 <div class="eyebrow">GACHA ASCENSION · DESIGN CODEX V0.5</div><h1>抽卡修仙传 · 总图鉴</h1><p>137 项设计内容的统一索引：新增四件无保底鸿蒙异宝及逐层开放的14项系统功能，可按类别、品质、系统与编号筛选。</p>
-<nav><a href="index.html">旧版游戏</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/GDD-v0.5.md">总体设计</a><a href="https://github.com/Tera-Dark/Gacha-Ascension/blob/main/docs/CODEX.md">Markdown 图鉴</a><a href="data/codex/catalog.v0.5.csv">全目录 CSV</a></nav>
-<div class="notice">注意：当前仅为设计提案与数值预览，并非在线 MVP 已实装功能。鸿蒙额外判定 0.01%/箱，且无保底；所有数值尚待模拟校准。</div>
+<nav><a href="index.html">旧版游戏</a><a href="./README.md">总体设计</a><a href="./docs/GDD-v0.9-FOUNDATION.md">Markdown 图鉴</a><a href="data/codex/catalog.v0.5.csv">全目录 CSV</a></nav>
+<div class="notice">⚠ 本页是已过期的 v0.5 历史规划图鉴，并非当前游戏数据！下文的鸿蒙0.01%是旧版本记录。现行 v0.9 鸿蒙为百万分之一、太古为十万分之一；请以最新试玩和 data/v8-slice.json 为准。</div>
 <div class="summary" id="stats"><div><b>—</b><small>条目总数</small></div><div><b>—</b><small>永久遗物</small></div><div><b>—</b><small>功能卡片</small></div><div><b>—</b><small>关卡样例</small></div></div>
 <div class="filters"><label>搜索名称 / ID / 属性<input id="search" placeholder="TM-025、玄龟、功法、灵石"></label>
 <label>类型<select id="type"><option value="">全部类型</option><option value="relic">永久遗物（含鸿蒙）</option><option value="unlock">关卡解锁里程碑</option><option value="prototype">功能卡牌</option><option value="enemy">敌人</option><option value="stage">关卡</option><option value="zone">地图境域</option><option value="realm">境界</option><option value="pack">卡包</option></select></label>
