@@ -30,7 +30,7 @@ export function claimIdle(s,c,now,makeBattle,getInterval){
  const diff=Math.max(0,now-active.at);
  const cap=s.meta.reincarnations>0?MAX_REBORN_MS:MAX_FIRST_LIFE_MS;
  const limited=Math.min(diff,cap);
- let left=limited+(active.carryMs||0),battles=0,wins=0,stones=0,qi=0,lastBattle=null;
+ let left=limited+(active.carryMs||0),battles=0,wins=0,stones=0,qi=0,lastBattle=null,gearBoxes=0,herbBoxes=0,lostGear=null,potionsUsed=0;
  // Timestamp advance and remaining fractional interval share one atomic transaction.
  for(let n=0;n<10000;n++){
   const interval=getInterval(s,c);
@@ -38,11 +38,16 @@ export function claimIdle(s,c,now,makeBattle,getInterval){
   left-=interval;
   const result=makeBattle(s,c,"mob");
   battles++;lastBattle=result;
-  if(!result.won){active.active=false;left=0;break}
+  for(const box of result.boxes||[]){if(box.id==="gear")gearBoxes++;if(box.id==="herb")herbBoxes++}
+  potionsUsed+=(result.potionUses?.auto||0)+(result.potionUses?.prepared||0);
+  if(!result.won){active.active=false;left=0;lostGear=result.lostGear||null;break}
   wins++;stones+=result.stones;qi+=result.qi;
  }
  active.carryMs=left;active.at=now;
+ if(lastBattle)s.run.lastBattle={type:lastBattle.type,won:lastBattle.won,turns:lastBattle.combat.turns,
+  stones:lastBattle.stones,qi:lastBattle.qi,boxes:lastBattle.boxes||[],lostGear:lastBattle.lostGear||null,potionUses:lastBattle.potionUses};
  const summary={kind:"idleClaim",attempts:battles,wins,stones,qi,elapsedMs:limited,
+  gearBoxes,herbBoxes,lostGear,potionsUsed,
   capped:diff>cap,lastBattle,active:active.active};
  active.lastReport={...summary,lastBattle:undefined};
  return summary;
