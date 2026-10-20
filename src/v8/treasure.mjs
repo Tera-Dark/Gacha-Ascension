@@ -1,14 +1,14 @@
 /** Fixed-pool monster boxes & player consumables. No chest can award top-tier gacha equipment. */
 export const AUTO_POTION_COST=25;
 export const HERBS=Object.freeze([
- {id:"H001",name:"回春草",desc:"三份可炼回春丹",potion:"P001"},
- {id:"H002",name:"护脉叶",desc:"三份可炼护体散",potion:"P002"},
- {id:"H003",name:"剑意花",desc:"三份可炼剑意散",potion:"P003"}
+ {id:"H001",name:"回春草",desc:"三份可炼回春丹",potion:"MED001"},
+ {id:"H002",name:"护脉叶",desc:"三份可炼护体散",potion:"MED002"},
+ {id:"H003",name:"剑意花",desc:"三份可炼剑意散",potion:"MED003"}
 ]);
 export const ITEMS=Object.freeze([
- {id:"P001",name:"回春丹",desc:"濒危时恢复35%气血",healPct:35},
- {id:"P002",name:"护体散",desc:"下一场战斗防御提高15%",defensePct:15},
- {id:"P003",name:"剑意散",desc:"下一场战斗攻击提高15%",attackPct:15}
+ {id:"MED001",name:"回春丹",desc:"濒危时恢复35%气血",healPct:35},
+ {id:"MED002",name:"护体散",desc:"下一场战斗防御提高15%",defensePct:15},
+ {id:"MED003",name:"剑意散",desc:"下一场战斗攻击提高15%",attackPct:15}
 ]);
 export const BOXES=Object.freeze([
  {id:"gear",name:"装备箱",desc:"随机获得一件黄／玄阶基础装备"},
