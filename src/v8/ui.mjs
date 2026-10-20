@@ -759,6 +759,7 @@ async function init(){
   const loaded=readGame(c);
   if(loaded.status==="invalid"){offerInvalidSaveRecovery(loaded.raw,loaded.message);set("saveStatus",loaded.message);return}
   s=loaded.state;
+  try{$("quickReveal").checked=localStorage.getItem(QUICK_REVEAL_KEY)==="1"}catch{}
   set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
   render();
   for(const detail of document.querySelectorAll("details.v8-disclosure")){
@@ -771,11 +772,35 @@ async function init(){
   $("landscapeNavToggle").addEventListener("click",()=>document.body.classList.contains("wb-nav-open")?closeLandscapeNav():openLandscapeNav());
   $("openMapDrawer").addEventListener("click",openLandscapeNav);
   $("landscapeBackdrop").addEventListener("click",closeLandscapeNav);
-  $("openGearBag").addEventListener("click",()=>openGear("weapon1"));
+  $("openGearBag").addEventListener("click",()=>openGear(suggestedGearSlot||"weapon1"));
   $("closeEquipment").addEventListener("click",closeGear);
   let swipe=null;
   document.addEventListener("touchstart",event=>{const t=event.touches[0];swipe=t.clientX<24?{x:t.clientX,y:t.clientY}:null},{passive:true});
   document.addEventListener("touchend",event=>{if(!swipe)return;const t=event.changedTouches[0],dx=t.clientX-swipe.x,dy=Math.abs(t.clientY-swipe.y);if(dx>65&&dy<45)openLandscapeNav();swipe=null},{passive:true});
+  $("noviceAction").addEventListener("click",()=>{
+   const stage=noviceStep(s);if(!stage)return;
+   changeView(stage.view);
+   if(stage.packId){
+    const first=document.querySelector('[data-pack-id="'+stage.packId+'"] button[data-count="1"]');
+    first?.scrollIntoView({behavior:"auto",block:"center"});first?.focus({preventScroll:true});
+   }else if(stage.index===2){
+    if(!auto&&!battleBusy)startAuto();
+    $("autoFarm")?.scrollIntoView({behavior:"auto",block:"center"});
+   }else if(stage.target){
+    const button=$(stage.target);
+    button?.scrollIntoView({behavior:"auto",block:"center"});
+    button?.focus({preventScroll:true});
+   }
+  });
+  $("noviceSkip").addEventListener("click",()=>{
+   try{localStorage.setItem(NOVICE_SKIP_KEY,"1")}catch{}
+   render();
+   toast("已跳过入门指引，随时可按修行目标继续游戏。");
+  });
+  $("quickReveal").addEventListener("change",event=>{
+   try{localStorage.setItem(QUICK_REVEAL_KEY,event.target.checked?"1":"0")}catch{}
+   toast(event.target.checked?"普通重复机缘已启用快捷揭晓，首次和高品质仍保留仪式。":"已恢复完整的机缘揭晓演出。");
+  });
   $("closeMobileSheet").addEventListener("click",closeMobileSheet);
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
@@ -887,7 +912,10 @@ async function init(){
    if(result)toast("已将当前关小怪调整为："+farmTarget(s,c).name+"。进度保持不变。");
   });
   $("breakthrough").addEventListener("click",()=>{const r=doCommand("BREAKTHROUGH");if(r){toast("突破成功："+r.name+"！");changeView("cultivate")}});
-  $("reincarnate").addEventListener("click",()=>{if(!window.confirm("确认轮回？会清空本世地图、修为、灵石和全部当世卡牌，但保留天命与因果。"))return;
+  $("reincarnate").addEventListener("click",()=>{
+   const earned=55+Math.max(0,s.run.realmIndex-3)*10;
+   const alternative=s.run.realmIndex<4?"\n注意：先筑基再轮回能额外获得10因果，并凑足40因果遗物箱＋25因果自动服药。":"";
+   if(!window.confirm("确定轮回获得"+earned+"因果？当世地图、修为、灵石、装备和卡牌会全部清空；已拥有的永久遗物及因果保留。"+alternative))return;
    stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
   $("openRelic").addEventListener("click",async()=>{
    if(revealBusy)return;
@@ -906,7 +934,7 @@ async function init(){
   });
   $("exportSave").addEventListener("click",exportSave);
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
-   stopAuto();playToken++;s=backupAndReset(c);set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
+   stopAuto();playToken++;s=backupAndReset(c);try{localStorage.removeItem(NOVICE_SKIP_KEY)}catch{}set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
   document.addEventListener("visibilitychange",()=>{
    if(document.hidden&&auto){
     if(timer!==null)clearTimeout(timer);timer=null;
