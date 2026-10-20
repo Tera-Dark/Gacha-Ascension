@@ -1,0 +1,685 @@
+{
+  "schemaVersion": "proposal-0.8",
+  "status": "not-yet-implemented",
+  "authority": "docs/REALMS-AND-MAPS-v0.8.md",
+  "designConstraints": {
+    "heroNumericLevel": false,
+    "realmStageLabels": [
+      "初期",
+      "中期",
+      "后期",
+      "圆满"
+    ],
+    "resourceDropSources": [
+      "battle"
+    ],
+    "growthContentSources": [
+      "gacha"
+    ],
+    "farmPolicy": "farm_current_checkpoint_mobs_on_guardian_or_boss_failure",
+    "nextMapRequires": "defeat_current_map_boss",
+    "systemUnlocks": "configurable"
+  },
+  "exponentTuning": {
+    "qiCostBase": 100,
+    "qiCostPerTransition": 2.35,
+    "insightCostBase": 1,
+    "insightCostPerTransition": 1.26,
+    "monsterHpMap": 1.85,
+    "monsterAtkMap": 1.7,
+    "monsterDefenseMap": 1.72,
+    "stoneDropMap": 1.66,
+    "qiDropMap": 1.67
+  },
+  "cultivation": [
+    {
+      "index": 0,
+      "id": "CULT-00",
+      "majorId": "qi",
+      "majorName": "炼气",
+      "stageId": "early",
+      "stageName": "初期",
+      "name": "炼气·初期",
+      "nextQiCost": 100,
+      "nextInsightCost": 1,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 1,
+      "id": "CULT-01",
+      "majorId": "qi",
+      "majorName": "炼气",
+      "stageId": "middle",
+      "stageName": "中期",
+      "name": "炼气·中期",
+      "nextQiCost": 235,
+      "nextInsightCost": 2,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 2,
+      "id": "CULT-02",
+      "majorId": "qi",
+      "majorName": "炼气",
+      "stageId": "late",
+      "stageName": "后期",
+      "name": "炼气·后期",
+      "nextQiCost": 553,
+      "nextInsightCost": 2,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 3,
+      "id": "CULT-03",
+      "majorId": "qi",
+      "majorName": "炼气",
+      "stageId": "complete",
+      "stageName": "圆满",
+      "name": "炼气·圆满",
+      "nextQiCost": 1298,
+      "nextInsightCost": 3,
+      "majorBreakthrough": true,
+      "pillRequired": "筑基丹"
+    },
+    {
+      "index": 4,
+      "id": "CULT-04",
+      "majorId": "zhuji",
+      "majorName": "筑基",
+      "stageId": "early",
+      "stageName": "初期",
+      "name": "筑基·初期",
+      "nextQiCost": 3050,
+      "nextInsightCost": 3,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 5,
+      "id": "CULT-05",
+      "majorId": "zhuji",
+      "majorName": "筑基",
+      "stageId": "middle",
+      "stageName": "中期",
+      "name": "筑基·中期",
+      "nextQiCost": 7168,
+      "nextInsightCost": 4,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 6,
+      "id": "CULT-06",
+      "majorId": "zhuji",
+      "majorName": "筑基",
+      "stageId": "late",
+      "stageName": "后期",
+      "name": "筑基·后期",
+      "nextQiCost": 16843,
+      "nextInsightCost": 5,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 7,
+      "id": "CULT-07",
+      "majorId": "zhuji",
+      "majorName": "筑基",
+      "stageId": "complete",
+      "stageName": "圆满",
+      "name": "筑基·圆满",
+      "nextQiCost": 39580,
+      "nextInsightCost": 6,
+      "majorBreakthrough": true,
+      "pillRequired": "凝金丹"
+    },
+    {
+      "index": 8,
+      "id": "CULT-08",
+      "majorId": "jindan",
+      "majorName": "金丹",
+      "stageId": "early",
+      "stageName": "初期",
+      "name": "金丹·初期",
+      "nextQiCost": 93013,
+      "nextInsightCost": 7,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 9,
+      "id": "CULT-09",
+      "majorId": "jindan",
+      "majorName": "金丹",
+      "stageId": "middle",
+      "stageName": "中期",
+      "name": "金丹·中期",
+      "nextQiCost": 218581,
+      "nextInsightCost": 9,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 10,
+      "id": "CULT-10",
+      "majorId": "jindan",
+      "majorName": "金丹",
+      "stageId": "late",
+      "stageName": "后期",
+      "name": "金丹·后期",
+      "nextQiCost": 513664,
+      "nextInsightCost": 11,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 11,
+      "id": "CULT-11",
+      "majorId": "jindan",
+      "majorName": "金丹",
+      "stageId": "complete",
+      "stageName": "圆满",
+      "name": "金丹·圆满",
+      "nextQiCost": 1207109,
+      "nextInsightCost": 13,
+      "majorBreakthrough": true,
+      "pillRequired": "结婴丹"
+    },
+    {
+      "index": 12,
+      "id": "CULT-12",
+      "majorId": "yuanying",
+      "majorName": "元婴",
+      "stageId": "early",
+      "stageName": "初期",
+      "name": "元婴·初期",
+      "nextQiCost": 2836707,
+      "nextInsightCost": 17,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 13,
+      "id": "CULT-13",
+      "majorId": "yuanying",
+      "majorName": "元婴",
+      "stageId": "middle",
+      "stageName": "中期",
+      "name": "元婴·中期",
+      "nextQiCost": 6666260,
+      "nextInsightCost": 21,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 14,
+      "id": "CULT-14",
+      "majorId": "yuanying",
+      "majorName": "元婴",
+      "stageId": "late",
+      "stageName": "后期",
+      "name": "元婴·后期",
+      "nextQiCost": 15665710,
+      "nextInsightCost": 26,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 15,
+      "id": "CULT-15",
+      "majorId": "yuanying",
+      "majorName": "元婴",
+      "stageId": "complete",
+      "stageName": "圆满",
+      "name": "元婴·圆满",
+      "nextQiCost": 36814418,
+      "nextInsightCost": 33,
+      "majorBreakthrough": true,
+      "pillRequired": "化神丹"
+    },
+    {
+      "index": 16,
+      "id": "CULT-16",
+      "majorId": "huashen",
+      "majorName": "化神",
+      "stageId": "early",
+      "stageName": "初期",
+      "name": "化神·初期",
+      "nextQiCost": 86513882,
+      "nextInsightCost": 41,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 17,
+      "id": "CULT-17",
+      "majorId": "huashen",
+      "majorName": "化神",
+      "stageId": "middle",
+      "stageName": "中期",
+      "name": "化神·中期",
+      "nextQiCost": 203307622,
+      "nextInsightCost": 51,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 18,
+      "id": "CULT-18",
+      "majorId": "huashen",
+      "majorName": "化神",
+      "stageId": "late",
+      "stageName": "后期",
+      "name": "化神·后期",
+      "nextQiCost": 477772910,
+      "nextInsightCost": 65,
+      "majorBreakthrough": false,
+      "pillRequired": null
+    },
+    {
+      "index": 19,
+      "id": "CULT-19",
+      "majorId": "huashen",
+      "majorName": "化神",
+      "stageId": "complete",
+      "stageName": "圆满",
+      "name": "化神·圆满",
+      "nextQiCost": 1122766338,
+      "nextInsightCost": 81,
+      "majorBreakthrough": true,
+      "pillRequired": "渡劫道丹"
+    }
+  ],
+  "maps": [
+    {
+      "id": "MAP-01",
+      "slug": "qingshan",
+      "index": 1,
+      "name": "青云山麓",
+      "realmId": "qi",
+      "suggestedStageId": "early",
+      "mechanicDescription": "林野妖兽与厚血",
+      "boss": {
+        "id": "BOSS-01",
+        "name": "灵角狼王"
+      },
+      "checkpoints": 8,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-02",
+      "slug": "lingzhu",
+      "index": 2,
+      "name": "灵竹溪谷",
+      "realmId": "qi",
+      "suggestedStageId": "middle",
+      "mechanicDescription": "竹阵闪避与连续打击",
+      "boss": {
+        "id": "BOSS-02",
+        "name": "竹影妖姬"
+      },
+      "checkpoints": 8,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-03",
+      "slug": "wuteng",
+      "index": 3,
+      "name": "乌藤鬼林",
+      "realmId": "qi",
+      "suggestedStageId": "late",
+      "mechanicDescription": "寄生回复与消耗战",
+      "boss": {
+        "id": "BOSS-03",
+        "name": "藤心树魈"
+      },
+      "checkpoints": 8,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-04",
+      "slug": "jianzhong",
+      "index": 4,
+      "name": "雾隐剑冢",
+      "realmId": "qi",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "古剑反击与境界考验",
+      "boss": {
+        "id": "BOSS-04",
+        "name": "剑冢残魂"
+      },
+      "checkpoints": 8,
+      "gateMajorAtEnd": true
+    },
+    {
+      "id": "MAP-05",
+      "slug": "chisha",
+      "index": 5,
+      "name": "赤砂荒岭",
+      "realmId": "zhuji",
+      "suggestedStageId": "early",
+      "mechanicDescription": "沙暴侵蚀与持续伤害",
+      "boss": {
+        "id": "BOSS-05",
+        "name": "赤甲沙蝎王"
+      },
+      "checkpoints": 10,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-06",
+      "slug": "liuhuo",
+      "index": 6,
+      "name": "流火矿窟",
+      "realmId": "zhuji",
+      "suggestedStageId": "middle",
+      "mechanicDescription": "地火灼烧与抗性",
+      "boss": {
+        "id": "BOSS-06",
+        "name": "地火玄蜥"
+      },
+      "checkpoints": 10,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-07",
+      "slug": "xuantie",
+      "index": 7,
+      "name": "玄铁天坑",
+      "realmId": "zhuji",
+      "suggestedStageId": "late",
+      "mechanicDescription": "高防御与护甲破坏",
+      "boss": {
+        "id": "BOSS-07",
+        "name": "玄磁战傀"
+      },
+      "checkpoints": 10,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-08",
+      "slug": "fenxin",
+      "index": 8,
+      "name": "焚心古城",
+      "realmId": "zhuji",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "业火叠层与心魔干扰",
+      "boss": {
+        "id": "BOSS-08",
+        "name": "焚心炎君"
+      },
+      "checkpoints": 10,
+      "gateMajorAtEnd": true
+    },
+    {
+      "id": "MAP-09",
+      "slug": "cangming",
+      "index": 9,
+      "name": "沧溟古泽",
+      "realmId": "jindan",
+      "suggestedStageId": "early",
+      "mechanicDescription": "沼泽减速与持续战斗",
+      "boss": {
+        "id": "BOSS-09",
+        "name": "沼灵巨鳄"
+      },
+      "checkpoints": 12,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-10",
+      "slug": "bichao",
+      "index": 10,
+      "name": "碧潮沉宫",
+      "realmId": "jindan",
+      "suggestedStageId": "middle",
+      "mechanicDescription": "水幕护盾与破盾节奏",
+      "boss": {
+        "id": "BOSS-10",
+        "name": "潮音鲛主"
+      },
+      "checkpoints": 12,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-11",
+      "slug": "wangu",
+      "index": 11,
+      "name": "万蛊毒林",
+      "realmId": "jindan",
+      "suggestedStageId": "late",
+      "mechanicDescription": "毒伤与净化",
+      "boss": {
+        "id": "BOSS-11",
+        "name": "万蛊虫母"
+      },
+      "checkpoints": 12,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-12",
+      "slug": "youyue",
+      "index": 12,
+      "name": "幽月寒潭",
+      "realmId": "jindan",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "冰封与控制抗性",
+      "boss": {
+        "id": "BOSS-12",
+        "name": "月魄玄龟"
+      },
+      "checkpoints": 12,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-13",
+      "slug": "longmian",
+      "index": 13,
+      "name": "龙眠渊海",
+      "realmId": "jindan",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "蛟龙多阶段与水影召唤",
+      "boss": {
+        "id": "BOSS-13",
+        "name": "沧渊蛟王"
+      },
+      "checkpoints": 12,
+      "gateMajorAtEnd": true
+    },
+    {
+      "id": "MAP-14",
+      "slug": "jiuxiao",
+      "index": 14,
+      "name": "九霄雷泽",
+      "realmId": "yuanying",
+      "suggestedStageId": "early",
+      "mechanicDescription": "雷击连锁与抗性",
+      "boss": {
+        "id": "BOSS-14",
+        "name": "雷狱天兽"
+      },
+      "checkpoints": 14,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-15",
+      "slug": "yunshang",
+      "index": 15,
+      "name": "云上天阙",
+      "realmId": "yuanying",
+      "suggestedStageId": "middle",
+      "mechanicDescription": "天罡防护与削防",
+      "boss": {
+        "id": "BOSS-15",
+        "name": "云阙战将"
+      },
+      "checkpoints": 14,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-16",
+      "slug": "yunxing",
+      "index": 16,
+      "name": "陨星荒原",
+      "realmId": "yuanying",
+      "suggestedStageId": "late",
+      "mechanicDescription": "定时陨星爆发",
+      "boss": {
+        "id": "BOSS-16",
+        "name": "陨星巨傀"
+      },
+      "checkpoints": 14,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-17",
+      "slug": "niming",
+      "index": 17,
+      "name": "逆命幻海",
+      "realmId": "yuanying",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "心魔幻影与技能复制",
+      "boss": {
+        "id": "BOSS-17",
+        "name": "幻海道君"
+      },
+      "checkpoints": 14,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-18",
+      "slug": "guixu",
+      "index": 18,
+      "name": "归墟禁地",
+      "realmId": "yuanying",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "法相分身与破绽",
+      "boss": {
+        "id": "BOSS-18",
+        "name": "归墟法相"
+      },
+      "checkpoints": 14,
+      "gateMajorAtEnd": true
+    },
+    {
+      "id": "MAP-19",
+      "slug": "taixu",
+      "index": 19,
+      "name": "太虚天门",
+      "realmId": "huashen",
+      "suggestedStageId": "early",
+      "mechanicDescription": "空间错位与防御穿透",
+      "boss": {
+        "id": "BOSS-19",
+        "name": "太虚守门人"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-20",
+      "slug": "qiankun",
+      "index": 20,
+      "name": "乾坤裂隙",
+      "realmId": "huashen",
+      "suggestedStageId": "middle",
+      "mechanicDescription": "伤害转移与攻守切换",
+      "boss": {
+        "id": "BOSS-20",
+        "name": "裂界魔尊"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-21",
+      "slug": "xinghe",
+      "index": 21,
+      "name": "星河葬场",
+      "realmId": "huashen",
+      "suggestedStageId": "late",
+      "mechanicDescription": "蓄力星陨与阶段爆发",
+      "boss": {
+        "id": "BOSS-21",
+        "name": "星骸古皇"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-22",
+      "slug": "wuxiang",
+      "index": 22,
+      "name": "无相法域",
+      "realmId": "huashen",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "法则轮转与属性克制",
+      "boss": {
+        "id": "BOSS-22",
+        "name": "无相道君"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-23",
+      "slug": "daoxu",
+      "index": 23,
+      "name": "天外道墟",
+      "realmId": "huashen",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "灵气逆流与封印技能",
+      "boss": {
+        "id": "BOSS-23",
+        "name": "界外天魔"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": false
+    },
+    {
+      "id": "MAP-24",
+      "slug": "feisheng",
+      "index": 24,
+      "name": "飞升劫台",
+      "realmId": "huashen",
+      "suggestedStageId": "complete",
+      "mechanicDescription": "九重雷劫与终章渡劫",
+      "boss": {
+        "id": "BOSS-24",
+        "name": "九劫天尊"
+      },
+      "checkpoints": 16,
+      "gateMajorAtEnd": true
+    }
+  ],
+  "realmGates": [
+    {
+      "afterMap": 4,
+      "requiredPill": "筑基丹",
+      "nextRealm": "zhuji"
+    },
+    {
+      "afterMap": 8,
+      "requiredPill": "凝金丹",
+      "nextRealm": "jindan"
+    },
+    {
+      "afterMap": 13,
+      "requiredPill": "结婴丹",
+      "nextRealm": "yuanying"
+    },
+    {
+      "afterMap": 18,
+      "requiredPill": "化神丹",
+      "nextRealm": "huashen"
+    },
+    {
+      "afterMap": 24,
+      "requiredPill": "渡劫道丹",
+      "nextRealm": "ascension"
+    }
+  ]
+}
