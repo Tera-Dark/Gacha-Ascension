@@ -1,0 +1,83 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {loadCatalog,createSave,dispatch,combatSnapshot,SCHEMA,SAVE_KEY} from "../src/v8/engine.mjs";
+import {simulateEncounter} from "../src/v8/combat-depth.mjs";
+import {PAIR_SYNERGIES,activeSynergy} from "../src/v8/synergy.mjs";
+import {recommendLoadout,nextStep} from "../src/v8/advisor.mjs";
+const j=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
+const c=loadCatalog(j("realms-maps.v0.8.proposal.json"),j("v8-slice.json"));
+const cmd=(s,type,data={})=>dispatch(s,c,{seq:s.seq+1,type,...data});
+function longFight(tech,pet,synergy){
+ const source=combatSnapshot(createSave(978),"guardian" in c?c:c,"guardian");
+ source.hero={attack:60,hp:50000,defense:25};
+ source.enemy={attack:2,hp:10000000,defense:30};
+ source.waves=[{...source.enemy,name:"测试靶",stage:1,style:"blade",special:"none"}];
+ source.tech=tech;source.pet=pet;source.synergy=synergy;
+ source.heroUltra=false;source.apexDamageMultiplier=1;
+ return simulateEncounter(source,12345);
+}
+test("four pair rules have unique, real effects and do not require a schema bump",()=>{
+ assert.equal(PAIR_SYNERGIES.length,4);
+ assert.equal(new Set(PAIR_SYNERGIES.map(x=>x.id)).size,4);
+ assert.equal(SCHEMA,8);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
+ let s=createSave(10001);
+ assert.equal(activeSynergy(s),null);
+ s.run.technique="T001";s.run.pet="P001";
+ assert.equal(activeSynergy(s),null,"unowned ids must never activate buffs");
+ s.run.cards.T001=1;s.run.cards.P001=1;
+ assert.equal(activeSynergy(s).id,"fox-blade");
+ assert.equal(combatSnapshot(s,c,"guardian").synergy?.name,"狐影随剑");
+});
+test("synergy actually changes strike, shield, pet damage and burst outcomes",()=>{
+ const pairs=Object.fromEntries(PAIR_SYNERGIES.map(p=>[p.id,p]));
+ const sword={style:"sword",power:40},none={style:"none",power:0};
+ const before=longFight(sword,none,null),fox=longFight(sword,none,pairs["fox-blade"]);
+ assert.ok(fox.heroDealt>before.heroDealt,"fox must improve real attack damage");
+ const spirit={style:"spirit",power:40},hawk={style:"pierce",power:35};
+ const spiritBase=longFight(spirit,hawk,null),spiritPair=longFight(spirit,hawk,pairs["hawk-spirit"]);
+ assert.ok(spiritPair.petDealt>spiritBase.petDealt,"hawk must improve pet damage");
+ const burst={style:"burst",power:60};
+ const baseBurst=longFight(burst,none,null),pairedBurst=longFight(burst,none,pairs["deer-burst"]);
+ assert.ok(pairedBurst.heroDealt>baseBurst.heroDealt,"burst bonus must land every third attack");
+ const heal=longFight({style:"guard",power:1},{style:"ward",power:10},null);
+ const shield=longFight({style:"guard",power:1},{style:"ward",power:10},pairs["turtle-guard"]);
+ assert.ok(shield.blocked>=heal.blocked,"turtle synergy must never reduce absorbed damage");
+});
+test("one atomic loadout swap checks both inventories and keeps state on failure",()=>{
+ let s=createSave(1203);s.run.cards.T002=1;s.run.cards.P002=1;
+ const original=structuredClone(s);
+ assert.throws(()=>cmd(s,"EQUIP_LOADOUT",{technique:"T001",pet:"P002"}),/功法未拥有/);
+ assert.throws(()=>cmd(s,"EQUIP_LOADOUT",{technique:"T002",pet:"P003"}),/灵宠未拥有/);
+ assert.deepEqual(s,original);
+ const result=cmd(s,"EQUIP_LOADOUT",{technique:"T002",pet:"P002"});
+ assert.equal(result.state.run.technique,"T002");
+ assert.equal(result.state.run.pet,"P002");
+ assert.equal(result.state.seq,1);
+ assert.equal(result.result.kind,"loadout");
+ assert.equal(combatSnapshot(result.state,c,"guardian").synergy.id,"turtle-guard");
+});
+test("advice only compares owned builds with repeatable independent RNG",()=>{
+ const s=createSave(45761);
+ s.run.cards.T001=3;s.run.cards.T002=2;s.run.cards.P001=2;s.run.cards.P002=2;
+ s.run.technique="T001";s.run.pet="P001";
+ const before=structuredClone(s);
+ const advice=recommendLoadout(s,c,"guardian",12);
+ assert.equal(advice.combinations,9);
+ assert.deepEqual(advice,recommendLoadout(s,c,"guardian",12));
+ assert.deepEqual(s,before,"analysis may not spend currency, mutate inventory or advance the live RNG");
+ assert.ok(advice.current.score.rate>=0&&advice.current.score.rate<=1);
+ assert.ok(advice.best.score.rate>=advice.current.score.rate);
+ assert.ok([null,"T001","T002"].includes(advice.best.technique));
+ assert.ok([null,"P001","P002"].includes(advice.best.pet));
+ assert.throws(()=>recommendLoadout(s,c,"guardian",1),/推演参数/);
+});
+test("goal advice gives a useful first action and a distinct post-clear objective",()=>{
+ const s=createSave(1728);
+ const initial=nextStep(s,c,{winRate:0});
+ assert.equal(initial.view,"gacha");
+ assert.match(initial.description,/功法/);
+ s.run.bossCleared=true;s.run.realmIndex=4;
+ const end=nextStep(s,c,{winRate:0});
+ assert.equal(end.view,"fate");assert.match(end.description,/轮回/);
+});
