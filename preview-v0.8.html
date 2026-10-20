@@ -5,9 +5,10 @@
 <link rel="stylesheet" href="./assets/css/workbench.css"/><link rel="stylesheet" href="./assets/css/preview.css"/></head>
 <body><main class="game-shell">
 <header class="app-header"><div class="brand"><div class="brand-seal">仙</div><div><div class="brand-kicker">GACHA ASCENSION · v0.8.2 COMBAT PREVIEW</div><h1>抽卡修仙传</h1></div></div>
+<button id="landscapeNavToggle" class="landscape-nav-toggle" type="button" aria-controls="landscapeNav" aria-expanded="false" aria-label="展开系统导航">☰ 系统</button>
 <div class="top-shortcuts"><span class="chip">◆ <strong id="headerStones">110</strong> 灵石</span><span class="chip" id="headerRealm">炼气·初期</span><a href="./m0.html" class="top-link">返回旧版 ↗</a></div></header>
 <div class="app-frame">
-<nav class="system-sidebar" aria-label="玩法系统导航">
+<nav class="system-sidebar" id="landscapeNav" aria-label="玩法系统导航">
 <div class="sidebar-heading">当前活动</div>
 <button class="nav-item is-active" data-view="explore"><span class="nav-glyph">⚔</span><span>地图探索<small>打怪积累 / 守卫 / Boss</small></span></button>
 <button class="nav-item" data-view="cultivate"><span class="nav-glyph">☯</span><span>境界突破<small>五境四阶段 · 无数字等级</small></span></button>
@@ -34,46 +35,70 @@
 <div class="view-header"><div><small>V0.8 / FIVE REALMS · TWENTY-FOUR MAPS</small><h2 id="screenTitle">地图探索</h2></div><span class="live-status" id="autoStatus">● 待命</span></div>
 <div class="views">
 <section class="view is-active" data-view-panel="explore">
-<div class="activity-card">
-<div class="activity-top"><div><span class="eyebrow" id="mapTag">第一卷 · 凡尘炼气</span><h3 id="mapName">青云山麓</h3><p id="mapFlavor">第1/8关 · 当前关卡小怪可持续刷取，不退回旧层</p></div><span class="enemy-tier" id="mapBoss">终章：灵角狼王</span></div>
-<div class="combat-theatre" id="combatTheatre">
-<div class="fighter"><div class="fighter-heading"><span id="heroLabel">修士·炼气初期</span><b id="heroHP">260 / 260</b></div><div class="track health-track"><div class="track-fill hero-health" id="heroBar"></div></div><div class="sprite hero-sprite" id="heroSprite"><span>仙</span></div><div class="fighter-stats" id="heroStats">攻29 · 防12</div></div>
-<div class="clash-center"><div class="clash-sigil" id="clashSigil">⚔</div><small id="combatStatus">准备战斗</small></div>
-<div class="fighter"><div class="fighter-heading"><span id="enemyLabel">山野妖兽</span><b id="enemyHP">65 / 65</b></div><div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div><div class="sprite enemy-sprite" id="enemySprite"><span>妖</span></div><div class="fighter-stats" id="enemyStats">攻13 · 防4</div></div>
-<div class="damage-layer" id="damageLayer"></div>
-</div>
-
-<div class="activity-interval"><div class="interval-caption"><span id="fightMode">小怪收益随地图指数增长</span><span id="fightTimer">下一场战斗</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
-<div class="battle-feedback"><span class="result-bullet" id="combatReport">每张地图均有小怪、关卡守卫和最终Boss</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
-<div class="battle-controls v8-battle-actions">
-<button class="action-btn primary-action" id="autoFarm">▶ 自动刷本关小怪</button>
-<button class="action-btn" id="killMob">击杀小怪</button>
-<button class="action-btn" id="challenge">挑战守卫</button>
-<button class="action-btn challenge-boss" id="challengeBoss">挑战地图Boss</button>
-<button class="action-btn quiet-action" id="autoPush">自动冲关：关</button>
-</div>
-<div class="farm-focus-bar">
- <label for="farmFocus">当前关刷怪：</label>
- <select id="farmFocus" aria-label="同一关卡选择不同小怪积累目标">
- <option value="balanced">均衡积累</option>
- <option value="stones">灵石优先</option>
- <option value="cultivation">修为优先</option></select>
- <span id="farmFocusTip">当前小怪只产基础资源，不掉卡牌</span>
-</div>
-<div class="checkpoint-wrap"><div class="checkpoint-title"><b>地图关卡进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
-<details class="v8-disclosure" id="explore"><summary><span><strong>战斗属性详细数据</strong><small>主角三围 · 敌人属性 · 命中与减伤 · 伤害来源</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-combat-insight" id="combatInsights" aria-live="polite">
- <div><span>当前功法流派</span><strong id="combatStyles">等待解析</strong></div>
- <div><span>主角命中 / 敌方命中</span><strong id="hitRates">—</strong></div>
- <div><span>承伤减免 / 敌方威胁</span><strong id="survivalRisk">—</strong></div>
- <div><span>守关战斗波次</span><strong id="waveSummary">—</strong></div>
-</div>
-<div class="v8-combat-judgement" id="combatAdvice">守卫战斗风险由模拟估算，不会预知真实随机结果。</div>
-<div class="v8-detail-content" id="detail-explore"></div></details>
-</div>
-<div class="lower-panels">
-<div class="compact-card"><div class="compact-heading"><h3>当前积累收益</h3><span>根据本关小怪数据</span></div><div class="v8-line"><span>普通小怪灵石</span><b id="mobStone">+19</b></div><div class="v8-line"><span>普通小怪修为</span><b id="mobQi">+12</b></div><div class="v8-line"><span>守卫挑战胜算（模拟）</span><b id="guardForecast">模拟中</b></div>
-</div>
-<div class="compact-card"><div class="compact-heading"><h3>修炼目标</h3><span>失败后不退层</span></div><p class="v8-tip" id="goalHint">刷当前关的小怪，抽战力和修为卡，满足条件后突破。</p><button class="text-action" data-view="gacha">前往机缘抽卡 →</button></div>
+<div class="battle-workbench">
+ <section class="wb-player wb-pane" aria-label="修士战斗配置">
+  <div class="wb-heading"><span class="eyebrow">修士 · 当前战斗配置</span><strong id="heroLabel">炼气·初期</strong></div>
+  <div class="wb-health-head"><b>气血 <span id="heroHP">260 / 260</span></b><small id="heroAttackSpeed">每次攻击 2.45秒</small></div>
+  <div class="track health-track"><div class="track-fill hero-health" id="heroBar"></div></div>
+  <div class="track wb-attack-track" aria-label="修士出手进度"><div class="wb-attack-fill" id="heroAttackBar"></div></div>
+  <div class="wb-portrait">
+   <div class="sprite hero-sprite" id="heroSprite"><span>仙</span></div>
+   <div><h3>本世修士</h3><p id="heroStats">攻击29 · 防御12</p><div class="wb-stats-mini" id="playerStatsCompact">命中 · 减伤 · 攻速</div></div>
+  </div>
+  <div class="wb-subheading"><strong>法器与装备</strong><button id="openGearBag" type="button" class="wb-text-link">打开背包 ›</button></div>
+  <div class="wb-gear-grid" id="equipmentGrid" aria-label="十个装备槽位"></div>
+  <div class="wb-quicklines">
+   <div><span>主修功法</span><strong id="wbTechnique">尚未习得</strong></div>
+   <div><span>出战灵宠</span><strong id="wbPet">暂无</strong></div>
+  </div>
+  <details class="v8-disclosure" id="explore"><summary><span><strong>完整战斗参数</strong><small>属性来源 · 命中与减伤 · 装备增益</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary>
+   <div class="v8-combat-insight" id="combatInsights" aria-live="polite">
+    <div><span>双方流派</span><strong id="combatStyles">等待解析</strong></div>
+    <div><span>双方命中率</span><strong id="hitRates">—</strong></div>
+    <div><span>减伤与最大威胁</span><strong id="survivalRisk">—</strong></div>
+    <div><span>连续守关波次</span><strong id="waveSummary">—</strong></div>
+   </div>
+   <div class="v8-combat-judgement" id="combatAdvice">守关结果由独立模拟估计。</div>
+   <div class="v8-detail-content" id="detail-explore"></div>
+  </details>
+ </section>
+ <section class="wb-enemy wb-pane" aria-label="怪物与地图战斗">
+  <div class="wb-heading"><div><span class="eyebrow" id="mapTag">第一卷 · 炼气</span><strong id="mapName">青云山麓</strong></div><button id="openMapDrawer" class="wb-text-link" type="button">地图与选关 ☰</button></div>
+  <div class="wb-map-flavor"><span id="mapFlavor">第1关</span><span id="mapBoss">Boss</span></div>
+  <div class="wb-health-head"><b id="enemyLabel">山野妖兽</b><b id="enemyHP">65 / 65</b></div>
+  <div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div>
+  <div class="track wb-attack-track enemy-attack-track" aria-label="敌人出手进度"><div class="wb-attack-fill enemy-attack-fill" id="enemyAttackBar"></div></div>
+  <div class="wb-enemy-rate"><span id="enemyAttackSpeed">每次攻击 2.65秒</span><span id="wbWave">小怪 · 单波</span></div>
+  <div class="wb-monster-stage" id="combatTheatre">
+    <div class="sprite enemy-sprite wb-monster-icon" id="enemySprite"><span>妖</span></div>
+    <div class="clash-sigil" id="clashSigil">⚔</div>
+    <div class="damage-layer" id="damageLayer"></div>
+    <div class="wb-fight-status" id="combatStatus">准备战斗</div>
+  </div>
+  <div class="wb-enemy-summary">
+    <span id="enemyStats">攻击 13 · 防御 4</span>
+    <span id="wbEnemyTraits">普通妖兽</span>
+  </div>
+  <div class="wb-cards-row">
+    <div class="wb-compact"><span>灵石 / 战</span><strong id="mobStone">+19</strong></div>
+    <div class="wb-compact"><span>修为 / 战</span><strong id="mobQi">+12</strong></div>
+    <div class="wb-compact"><span>守卫胜率</span><strong id="guardForecast">模拟中</strong></div>
+  </div>
+  <div class="wb-farm-row"><label for="farmFocus">刷怪目标</label>
+   <select id="farmFocus" aria-label="刷怪目标"><option value="balanced">均衡小怪</option><option value="stones">灵石优先</option><option value="cultivation">修为优先</option></select>
+   <small id="farmFocusTip">只掉基础资源</small></div>
+  <div class="battle-controls v8-battle-actions">
+   <button class="action-btn primary-action" id="autoFarm">▶ 自动刷怪</button>
+   <button class="action-btn" id="killMob">击杀小怪</button>
+   <button class="action-btn" id="challenge">挑战守卫</button>
+   <button class="action-btn challenge-boss" id="challengeBoss">挑战地图Boss</button>
+   <button class="action-btn quiet-action" id="autoPush">自动冲关：关</button>
+  </div>
+  <div class="activity-interval"><div class="interval-caption"><span id="fightMode">当前关持续积累</span><span id="fightTimer">下一场战斗</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
+  <div class="battle-feedback"><span class="result-bullet" id="combatReport">守卫失败不退关</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
+  <details class="v8-disclosure wb-drop-panel"><summary><span><strong>本关奖励与挑战详情</strong><small>守卫波次 · 首通资格 · 刷怪策略</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="wb-drop-info"><p id="goalHint">继续积累灵石和修为，抽卡培养。</p><button class="text-action" data-view="gacha">前往抽卡 →</button></div></details>
+  <div class="checkpoint-wrap"><div class="checkpoint-title"><b>关卡推进</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
+ </section>
 </div>
 </section>
 <section class="view" data-view-panel="cultivate">
@@ -128,6 +153,13 @@
 <button data-view="settings">⚙ <span>存档设置</span></button>
 </div>
 </div>
+<div class="wb-drawer-backdrop" id="landscapeBackdrop" hidden></div>
+<aside class="wb-equipment-dialog" id="equipmentDrawer" role="dialog" aria-modal="true" aria-label="装备背包" hidden>
+  <div class="wb-equipment-head"><h3 id="equipmentDrawerTitle">选择装备</h3><button id="closeEquipment" type="button" aria-label="关闭装备背包">✕</button></div>
+  <div id="equipmentChoices" class="wb-equipment-choices"></div>
+  <p class="wb-equipment-compare" id="equipmentCompare">点击已持有装备装配，属性会立刻进入战斗计算。</p>
+</aside>
+<div class="wb-orientation-note" id="orientationNote" aria-live="polite"><span>↻</span><strong>建议横屏游玩</strong><small>旋转手机后可同时查看修士与敌人；竖屏仍可滚动操作。</small></div>
 <div class="v8-reveal" id="revealOverlay" role="dialog" aria-modal="true" aria-labelledby="revealTitle" hidden>
  <div class="v8-reveal-stage" id="revealStage" data-phase="charge" data-pack="battle">
   <div class="v8-reveal-head"><span id="revealSubtitle">命运正在流转</span><button id="skipReveal" type="button">跳过动画</button></div>
