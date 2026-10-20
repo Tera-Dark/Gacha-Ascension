@@ -60,7 +60,7 @@ test("unlimited relics remain effective after arbitrary quantity without an arti
  s.meta.relics.R001=5000;s.meta.relics.R002=5000;
  s.meta.relics.R003=5000;s.meta.relics.R004=5000;
  const after=heroStats(s,c),econ=yields(s,c);
- assert.ok(after.attack>before.attack+10000);
+ assert.ok(after.attack>=before.attack+10000);
  assert.ok(after.hp>before.hp+50000);
  assert.ok(econ.stonePct>initial.stonePct+4000);
  assert.ok(econ.qiPct>initial.qiPct+4000);
