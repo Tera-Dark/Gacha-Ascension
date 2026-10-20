@@ -7,6 +7,8 @@ import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from 
 import {RULES} from "./combat-depth.mjs";
 import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./artifacts.mjs";
 import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
+import {PAIR_SYNERGIES,activeSynergy} from "./synergy.mjs";
+import {recommendLoadout,nextStep} from "./advisor.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -14,7 +16,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -50,7 +52,7 @@ function doCommand(type,more={}){
  if(!s||!c)return null;
  try{
   const out=dispatch(s,c,{type,seq:s.seq+1,now:Date.now(),...more});
-  writeGame(out.state,c);s=out.state;render();
+  writeGame(out.state,c);s=out.state;buildAdvice=null;render();
   return out.result;
  }catch(error){toast(error.message,true);return null}
 }
@@ -277,6 +279,31 @@ function renderTop(){
  const label=$("autoFarm");label.textContent=auto?"Ⅱ 停止自动刷怪":"▶ 自动刷本关小怪";
  set("autoPush","自动冲关："+(autoPush?"开":"关"));
 }
+function renderBuildAdvice(){
+ const pair=activeSynergy(s),r=s.run;
+ set("synergyLabel",pair?"✦ "+pair.name:"尚无双修共鸣");
+ set("synergyHint",pair?pair.description:
+  "指定功法和灵宠同时出战可触发："+PAIR_SYNERGIES.map(x=>x.name).join(" / "));
+ const target=r.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
+ $("analyzeBuild").disabled=r.bossCleared||battleBusy;
+ const apply=$("equipSuggestedBuild");
+ apply.hidden=true;apply.disabled=true;
+ if(r.bossCleared){set("buildAdvice","四图已经通关，当前无需守关推演。");return}
+ if(!buildAdvice||buildAdvice.kind!==target){
+  set("buildAdvice","对已持有的功法和灵宠用相同的16组种子模拟守关；不消耗资源，也不会读取下一场实际战斗结果。");
+  return;
+ }
+ const {current,best,improved,caution,combinations}=buildAdvice;
+ const techName=best.technique?c.cards[best.technique].name:"无功法";
+ const petName=best.pet?c.cards[best.pet].name:"无灵宠";
+ const summary="已比对"+combinations+"套 · 当前 "+Math.round(current.score.rate*100)+
+  "% → 推荐 "+Math.round(best.score.rate*100)+"%（16次模拟）。";
+ if(improved){
+  set("buildAdvice",summary+" 推荐："+techName+" + "+petName+"。"+(caution||""));
+  apply.hidden=false;apply.disabled=battleBusy;
+  apply.textContent="一键装配推荐构筑";
+ }else set("buildAdvice",summary+" 当前配置在样本中已是较优选择。"+(caution||""));
+}
 function renderExplore(){
  const p=progress(s,c),r=s.run,h=heroStats(s,c),inc=incomePreview();
  set("mapTag","第"+(r.mapIndex+1)+"图 · "+majors[r.mapIndex<4?0:r.mapIndex] );
@@ -330,6 +357,11 @@ function renderExplore(){
    "当前构筑适合连续挑战"+(p.finalGuardian?"地图Boss":"守卫")+"。自动冲关将按风险判断执行。":
    "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
+ const step=nextStep(s,c,lastCombatAnalysis);
+ set("nextGoalTitle",step.title);set("nextGoalDesc",step.description);
+ set("rightGoal",step.description);
+ $("goalAction").dataset.view=step.view;set("goalAction",step.action+" →");
+ renderBuildAdvice();
  if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
   set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));
   const loss=r.lastBattle.lostGear,loot=r.lastBattle.boxes||[];
@@ -607,6 +639,20 @@ async function init(){
   $("autoPotionThreshold").addEventListener("change",event=>{
    if(!s.meta.autoPotion?.unlocked)return;
    doCommand("SET_AUTO_POTION",{enabled:s.meta.autoPotion.enabled,threshold:Number(event.target.value)});
+  });
+  $("analyzeBuild").addEventListener("click",()=>{
+   if(battleBusy||s.run.bossCleared)return;
+   const kind=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
+   buildAdvice=recommendLoadout(s,c,kind);
+   renderBuildAdvice();
+   toast("已模拟对比 "+buildAdvice.combinations+" 套已持有构筑");
+  });
+  $("equipSuggestedBuild").addEventListener("click",()=>{
+   if(!buildAdvice?.improved||battleBusy)return;
+   const chosen=buildAdvice.best;
+   if(auto)stopAuto();
+   const applied=doCommand("EQUIP_LOADOUT",{technique:chosen.technique,pet:chosen.pet});
+   if(applied)toast("功法与灵宠已联合装配，战斗增益即时生效");
   });
   $("autoFarm").addEventListener("click",startAuto);
   $("killMob").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"mob"})));
