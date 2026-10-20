@@ -260,7 +260,14 @@ export function dispatch(current,c,cmd){
   claimIdle(s,c,cmd.now,idleCombat,interval);
  switch(cmd.type){
  case "DRAW":result=draw(s,c,cmd);break;
- case "BATTLE":result=battle(s,c,cmd.enemyType);break;
+ case "BATTLE":{
+  if(cmd.enemyType==="mob"&&Number.isSafeInteger(cmd.now)){
+   if(r.idle?.active)throw Error("当前正在自动挂机，无需手动重复结算小怪");
+   if(cmd.now<(r.nextManualMobAt||0))throw Error("普通小怪尚未刷新，请等待下一次战斗");
+   r.nextManualMobAt=cmd.now+battleIntervalMs(s,c,yields);
+  }
+  result=battle(s,c,cmd.enemyType);break;
+ }
  case "BREAKTHROUGH":result=breakthrough(s,c);break;
  case "EQUIP_TECH":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="technique"||!r.cards[id]))throw Error("功法未拥有");
