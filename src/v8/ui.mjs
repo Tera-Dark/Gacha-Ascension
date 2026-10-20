@@ -114,7 +114,7 @@ function renderExplore(){
   '<div class="checkpoint-node '+(i<r.checkpoint?"passed":i===r.checkpoint?"current":"")+'">'+(i===c.checkpointsPerMap-1?"B":i+1)+'</div>').join("");
  $("challenge").disabled=p.finalGuardian||r.bossCleared;
  $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared;
- $("killMob").disabled=r.bossCleared;
+ $("killMob").disabled=false;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
  if(!battleBusy){
   const e=enemyPreview(s,c,"mob");
@@ -144,6 +144,7 @@ function renderCultivate(){
  if(!req.hasQi)needs.push("修为还差"+fmt(req.qi-r.qi));
  if(!req.hasInsight)needs.push("悟道还差"+fmt(req.insight-r.insight)+"（抽修为造化必得）");
  if(req.needsPill&&!req.hasPill)needs.push("需要筑基丹（丹道8抽内保底）");
+ if(req.needMapMilestone)needs.push("先击败当前地图Boss，才能突破至下一小境界");
  if(req.needBoss)needs.push("需要先击败雾隐剑冢最终Boss");
  if(r.realmIndex>=4)needs.push("已达到切片境界上限：筑基·初期");
  set("realmGate",needs.length?needs.join("；"):("条件齐备，可以突破至"+c.realms[r.realmIndex+1]?.name));
@@ -226,8 +227,8 @@ function schedule(){
   if(!auto||document.hidden)return;
   const result=doCommand("BATTLE",{enemyType:"mob"});
   afterBattle(result);
-  if(!result||s.run.bossCleared){stopAuto();return}
-  if(autoPush){
+  if(!result){stopAuto();return}
+  if(autoPush&&!s.run.bossCleared){
    const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian",predict=fight(s,c,target);
    if(predict.won){
     const advance=doCommand("BATTLE",{enemyType:target});afterBattle(advance);
@@ -239,7 +240,7 @@ function schedule(){
 }
 function startAuto(){
  if(auto){stopAuto();return}
- if(s.run.bossCleared){toast("四图已经通关，可以轮回开启下一世。");return}
+ if(s.run.bossCleared)toast("已通关四图：继续刷最后一关小怪，积累突破丹药或因果准备。");
  auto=true;renderTop();schedule();toast("已开始当前关卡小怪自动刷取");
 }
 function exportSave(){
