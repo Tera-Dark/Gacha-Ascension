@@ -50,15 +50,15 @@ export function heroStats(s,c){
  const realm=c.realms[r.realmIndex];
  const realmFactor=Math.pow(c.realm.breakStatSmall,r.realmIndex)*(r.realmIndex>=4?c.realm.breakStatMajor:1);
  const all=sumEffect(s,c,"allPct");
- const mult=hasUltra(s,"U001")?2.5:1;
- const attack=Math.max(1,Math.round(applyPct(29*realmFactor,all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))*mult));
+ const attack=Math.max(1,Math.round(applyPct(29*realmFactor,all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))));
  const hp=Math.max(1,Math.round(applyPct(260*realmFactor,all+sumEffect(s,c,"hpPct")+metaPct(s,c,"hpPct"))));
  const defense=Math.max(1,Math.round(applyPct(12*realmFactor,all+sumEffect(s,c,"defPct"))));
  return {name:realm.name,attack,hp,defense,realmFactor};
 }
 export function yields(s,c){
- const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")+metaPct(s,c,"stonePct"),0,600);
- const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")+metaPct(s,c,"qiPct"),0,600);
+ const caveMult=hasUltra(s,"U003")?3:1;
+ const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")*caveMult+metaPct(s,c,"stonePct"),0,600);
+ const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")*caveMult+metaPct(s,c,"qiPct"),0,600);
  const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed"),0,60);
  return {stonePct,qiPct,speedPct,petPct:cave(s,c,"pet")+metaPct(s,c,"petPct")};
 }
@@ -113,6 +113,7 @@ export function fight(s,c,kind){
   turns=turn;
   let d=strike(hero.attack,foe.defense)*(1+(tech.style==="sword"?tech.power/100:0));
   if(tech.style==="burst"&&turn%3===0)d*=1+tech.power/100;
+  if(hasUltra(s,"U001"))d*=2.5; // Applies only to the cultivator strike, not to pet actions.
   d=Math.max(1,Math.round(d));
   eh=Math.max(0,eh-d);heroDealt+=d;add({actor:"hero",turn,amount:d,hp:eh,max:foe.hp});
   if(eh<=0)break;
@@ -191,7 +192,6 @@ function battle(s,c,kind){
   const rewardFactor=Math.pow(b.mapRewardFactor,m)*Math.pow(b.checkpointRewardFactor,k);
   let stones=Math.max(1,Math.round(b.stonesPerKill*rewardFactor*(1+economic.stonePct/100)*(kind==="mob"?1:kind==="guardian"?1.8:4)));
   let qi=Math.max(1,Math.round(b.qiPerKill*Math.pow(1.67,m)*Math.pow(1.07,k)*(1+economic.qiPct/100)*(kind==="mob"?1:kind==="guardian"?1.6:3)));
-  if(hasUltra(s,"U003")){stones+=Math.round(stones*cave(s,c,"stone")*.02);}
   if(s.run.pet&&c.cards[s.run.pet]?.style==="qi")qi=Math.round(qi*(1+pet(s,c).power/100));
   r.stones+=stones;r.qi+=qi;r.totalEarned+=stones;
   if(kind==="mob"){r.mobKills++}
