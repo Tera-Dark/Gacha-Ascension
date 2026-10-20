@@ -454,3 +454,11 @@
 .wb-next-goal button{flex:0 0 auto;max-width:40%}
 @media(max-width:650px){.wb-next-goal{flex-direction:column;align-items:stretch}.wb-next-goal button{max-width:none;width:100%}}
 @media(prefers-reduced-motion:reduce){.wb-advisor *,.wb-next-goal *{animation:none!important;transition:none!important}}
+
+/* Corrupted saves remain untouched until the player chooses a safe recovery. */
+.v8-save-recovery{position:fixed;z-index:100;left:50%;top:max(20px,env(safe-area-inset-top));transform:translateX(-50%);width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;padding:18px;background:#20332f;border:1px solid #d7ad79;border-radius:12px;box-shadow:0 18px 80px #000d;color:#f3e4be}
+.v8-save-recovery>strong{display:block;font-size:17px}
+.v8-save-recovery p{font-size:13px;color:#d2d9ca;line-height:1.7;margin:10px 0 16px;overflow-wrap:anywhere}
+.v8-save-recovery>div{display:flex;flex-wrap:wrap;gap:8px}
+.v8-save-recovery button{min-height:44px;border:1px solid #bea272;color:#f3e4be;background:#385449;padding:8px 13px;border-radius:8px;cursor:pointer}
+.v8-save-recovery button:focus-visible{outline:3px solid #e4c786;outline-offset:3px}
