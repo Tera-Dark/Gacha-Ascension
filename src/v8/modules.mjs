@@ -6,7 +6,7 @@
  */
 export const EFFECT_KEYS=Object.freeze([
  "attackPct","hpPct","defPct","allPct","stonePct","qiPct","speedPct",
- "insight","technique","cave","pet","pill","qiInstant","equipment"
+ "insight","technique","cave","pet","pill","qiInstant","equipment","artifact"
 ]);
 export const MODULES=Object.freeze([
  {id:"battle",name:"战力",scope:"run",source:"gacha",status:"live",panel:"gacha"},
@@ -17,6 +17,7 @@ export const MODULES=Object.freeze([
  {id:"pet",name:"灵宠",scope:"run",source:"gacha",status:"live",panel:"pet"},
  {id:"elixir",name:"丹道",scope:"run",source:"gacha",status:"live",panel:"gacha"},
  {id:"equipment",name:"器物秘匣",scope:"run",source:"gacha",status:"live",panel:"explore"},
+ {id:"artifact",name:"法器天机",scope:"run",source:"gacha",status:"live",panel:"explore"},
  {id:"fate",name:"轮回天命",scope:"meta",source:"reincarnation",status:"live",panel:"fate"},
  {id:"explore",name:"地图战斗",scope:"run",source:"combat",status:"live",panel:"explore"},
  {id:"idle",name:"离线刷怪",scope:"run",source:"combat",status:"live",panel:"explore"},
@@ -45,6 +46,6 @@ export function unlockedPack(s,c,id){
  if(!Number.isSafeInteger(threshold)||threshold<0)return false;
  const furthest=Math.max(s.meta.bestCheckpoint||1,
   s.run.mapIndex*c.checkpointsPerMap+s.run.checkpoint+1);
- return furthest>=threshold;
+ return furthest>=threshold&&(id!=="artifact"||s.run.realmIndex>=4);
 }
 export function unimplementedModules(){return MODULES.filter(m=>m.status==="planned")}
