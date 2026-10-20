@@ -4,7 +4,14 @@
  */
 export const MAX_FIRST_LIFE_MS=15*60*1000;
 export const MAX_REBORN_MS=2*60*60*1000;
-export function battleIntervalMs(s,c,yields){
+export function battleIntervalMs(s,c,yields,peekNextCombat){
+ // Online and offline use exactly the same seeded mob-fight duration.
+ // The callback is a pure preview and may NOT advance the save RNG.
+ if(peekNextCombat){
+  const preview=peekNextCombat(s,c);
+  if(!Number.isFinite(preview.timeMs)||preview.timeMs<=0)throw Error("无效的战斗模拟耗时");
+  return Math.max(900,Math.ceil(preview.timeMs));
+ }
  const speed=yields(s,c).speedPct;
  return Math.max(900,Math.round(1550*(1-speed/100)));
 }
