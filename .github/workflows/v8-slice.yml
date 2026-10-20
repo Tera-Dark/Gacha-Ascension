@@ -13,6 +13,7 @@ on:
       - "assets/css/preview.css"
       - "tests/v8*.test.mjs"
       - "tests/v8-mobile-smoke.html"
+      - "tests/v8-landscape-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
@@ -58,6 +59,17 @@ jobs:
             cat /tmp/v8-mobile-errors.log
             exit 1
           fi
+      - name: Validate actual landscape touch layout and equipment drawer in Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size=844,390 --dump-dom http://127.0.0.1:4173/tests/v8-landscape-smoke.html >/tmp/v8-landscape-functional.html 2>/tmp/v8-landscape-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-landscape-functional.html; then
+            grep -o 'FAIL:[^<]*' /tmp/v8-landscape-functional.html || true
+            cat /tmp/v8-landscape-errors.log
+            exit 1
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --window-size=844,390 --screenshot=/tmp/v8-landscape.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
+          test -s /tmp/v8-landscape.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -65,4 +77,5 @@ jobs:
           path: |
             /tmp/v8-desktop.png
             /tmp/v8-phone.png
+            /tmp/v8-landscape.png
           if-no-files-found: ignore
