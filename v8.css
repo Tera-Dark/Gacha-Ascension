@@ -237,3 +237,23 @@
 @keyframes v8-card-enter{from{transform:translateY(20px) scale(.88);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 @media(max-width:560px){.v8-reveal{padding:10px}.v8-reveal-stage{max-height:89dvh}.v8-reveal-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.v8-reveal-card{min-height:84px;padding:7px}.v8-reveal-card strong{font-size:12px}.v8-reveal-card span{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.v8-reveal *{animation:none!important;transition:none!important}}
+
+
+/* Each card-pack ritual has its own motion grammar; no image assets required. */
+.v8-reveal-stage[data-pack="battle"][data-phase="charge"] .v8-reveal-sigil{animation:v8-battle-strike .57s cubic-bezier(.2,.9,.2,1) infinite alternate}
+.v8-reveal-stage[data-pack="wealth"][data-phase="charge"] .v8-reveal-sigil{animation:v8-wealth-twirl .9s ease-in-out infinite}
+.v8-reveal-stage[data-pack="cultivation"][data-phase="charge"] .v8-reveal-sigil{animation:v8-cultivation-breathe 1.4s ease-in-out infinite alternate}
+.v8-reveal-stage[data-pack="technique"][data-phase="charge"] .v8-reveal-sigil{animation:v8-technique-glyph 1.3s steps(4,end) infinite}
+.v8-reveal-stage[data-pack="cave"][data-phase="charge"] .v8-reveal-sigil{animation:v8-cave-rise .9s ease-out infinite alternate}
+.v8-reveal-stage[data-pack="pet"][data-phase="charge"] .v8-reveal-sigil{animation:v8-pet-heartbeat 1s ease-in-out infinite}
+.v8-reveal-stage[data-pack="elixir"][data-phase="charge"] .v8-reveal-sigil{animation:v8-elixir-bubble 1.3s ease-in-out infinite}
+.v8-reveal-stage[data-pack="fate"][data-phase="charge"] .v8-reveal-sigil{animation:v8-fate-orbit 2.2s linear infinite}
+@keyframes v8-battle-strike{0%{transform:rotate(-20deg) translate(-12px,10px) scale(.9)}100%{transform:rotate(18deg) translate(10px,-12px) scale(1.18)}}
+@keyframes v8-wealth-twirl{0%,100%{transform:rotateY(0) scale(.94)}50%{transform:rotateY(180deg) scale(1.15)}}
+@keyframes v8-cultivation-breathe{from{transform:scale(.82);opacity:.55;filter:blur(3px)}to{transform:scale(1.2);opacity:1;filter:blur(0)}}
+@keyframes v8-technique-glyph{0%{transform:rotate(-8deg) scale(.85);opacity:.5}50%{transform:rotate(8deg) scale(1.12);opacity:1}100%{transform:rotate(-8deg) scale(.85)}}
+@keyframes v8-cave-rise{from{transform:translateY(9px) scale(.88)}to{transform:translateY(-8px) scale(1.11)}}
+@keyframes v8-pet-heartbeat{0%,100%{transform:scale(.95)}20%{transform:scale(1.17)}40%{transform:scale(.98)}60%{transform:scale(1.1)}}
+@keyframes v8-elixir-bubble{0%,100%{transform:translateY(8px) rotate(-10deg)}50%{transform:translateY(-12px) rotate(10deg)}}
+@keyframes v8-fate-orbit{from{transform:rotate(0deg) scale(1)}to{transform:rotate(360deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){.v8-reveal-stage[data-phase="charge"] .v8-reveal-sigil{animation:none!important}}
