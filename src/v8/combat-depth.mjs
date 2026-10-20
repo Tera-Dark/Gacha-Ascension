@@ -103,8 +103,14 @@ export function simulateEncounter(input,startSeed){
   Math.round(hero.hp*cap(pet.power/200,0,.50)):0;
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
   enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0;
- const head=[],tail=[],maxEvents=22;
- const log=event=>{if(head.length<11)head.push(event);else{tail.push(event);if(tail.length>11)tail.shift()}};
+ const head=[],tail=[],waveMarkers=[];
+ let eventSeq=0;
+ const log=event=>{
+  const tracked={...event,seq:eventSeq++};
+  if(tracked.actor==="wave")waveMarkers.push(tracked);
+  if(head.length<11)head.push(tracked);
+  else{tail.push(tracked);if(tail.length>11)tail.shift()}
+ };
  const random=()=>{const p=rand(rng);rng=p.seed;return p.value};
  for(let idx=0;idx<waves.length;idx++){
   const foe=waves[idx],ratings=unitRatings(hero,foe,foe.special);
@@ -183,5 +189,7 @@ export function simulateEncounter(input,startSeed){
  return {won,reason:won?"victory":heroHp<=0?"defeat":"timeout",
   turns,completedWaves,totalWaves:waves.length,heroDealt,petDealt,blocked,misses,maxEnemyHit,
   heroRemaining:heroHp,enemyRemaining,hero,enemy:waves.at(-1),waves,
-  timeMs,nextSeed:rng,logs:[...head,...tail]};
+  timeMs,nextSeed:rng,
+  logs:[...new Map([...head,...tail,...waveMarkers].map(x=>[x.seq,x])).values()]
+   .sort((a,b)=>a.seq-b.seq)};
 }
