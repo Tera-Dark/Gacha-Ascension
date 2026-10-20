@@ -168,7 +168,7 @@ export function detailModel(s,c,analysis=null){
   ],"轮回清空本世卡牌/洞府/境界/资源；跨世永久遗物和因果不会清除。"),
   section("遗物掉落概率与永久效果",[
    ...Object.entries(c.fate.rarities).map(([tier,w])=>row(rarityName[tier]+"阶常规遗物",pct(w))),
-   row("鸿蒙独立追加概率",pct(c.fate.ultraChance*100),"0.01%，无保底，不替代常规抽取"),
+   row("鸿蒙独立追加概率",(c.fate.ultraChance*100).toFixed(2)+"%","无保底，不替代常规抽取"),
    row("常规遗物种类","测试池 "+c.relics.length+"种"),
    row("已拥有常规遗物种类",ownedRelics.length),
    ...ownedRelics.map(x=>row(x.name+" ×"+s.meta.relics[x.id],pct(x.value*s.meta.relics[x.id]),passiveName[x.stat]||x.stat)),
