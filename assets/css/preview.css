@@ -438,3 +438,19 @@
 .v8-reveal-stage[data-pack="artifact"][data-phase="charge"] .v8-reveal-sigil{animation:wb-artifact-sigil 1.8s ease-in-out infinite}
 @keyframes wb-artifact-sigil{0%,100%{transform:rotate(0) scale(.93);filter:drop-shadow(0 0 8px #a6a0e888)}50%{transform:rotate(180deg) scale(1.16);filter:drop-shadow(0 0 24px #c6adfa)}}
 @media(prefers-reduced-motion:reduce){.v8-reveal-stage[data-pack="artifact"] .v8-reveal-sigil{animation:none!important}}
+
+/* Goal and loadout guidance: actionable but compact in landscape. */
+.wb-advisor,.wb-next-goal{border:1px solid #536b58;background:#182c29;border-radius:10px;padding:11px 12px;min-width:0}
+.wb-advisor-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.wb-advisor-head strong,.wb-next-goal strong{font-size:12px;color:#f3dca9}
+.wb-advisor-head span{font-size:11px;color:#9ecbb2}
+.wb-advisor-hint,.wb-advisor-result,.wb-next-goal p{font-size:11px;line-height:1.6;color:#adc5b8;margin:6px 0;overflow-wrap:anywhere}
+.wb-advisor-result{color:#e5d1a3}
+.wb-advisor-actions{display:flex;flex-wrap:wrap;gap:7px}
+.wb-advisor-actions button,.wb-next-goal button{min-height:40px;border:1px solid #7e9676;background:#28473a;color:#f3dfb5;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer}
+.wb-advisor-actions button:disabled{opacity:.45;cursor:default}
+.wb-next-goal{display:flex;justify-content:space-between;gap:12px;align-items:center;border-color:#776f50;background:#2a302a}
+.wb-next-goal p{margin-bottom:0}
+.wb-next-goal button{flex:0 0 auto;max-width:40%}
+@media(max-width:650px){.wb-next-goal{flex-direction:column;align-items:stretch}.wb-next-goal button{max-width:none;width:100%}}
+@media(prefers-reduced-motion:reduce){.wb-advisor *,.wb-next-goal *{animation:none!important;transition:none!important}}
