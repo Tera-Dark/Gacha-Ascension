@@ -2,7 +2,8 @@
  * Read-only detail selectors for the responsive UI.
  * No random calls, no mutations, no effects. Labels match the battle/economy engine.
  */
-import {SAVE_KEY,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequirements,packCost,farmTarget} from "./engine.mjs";
+import {SAVE_KEY,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequirements,packCost,farmTarget,fight} from "./engine.mjs";
+import {equipmentStats,EQUIPMENT_SLOTS} from "./equipment.mjs";
 import {STYLE_LABELS,combatStyle,RULES} from "./combat-depth.mjs";
 import {baseRates} from "./relic-pool.mjs";
 
@@ -47,6 +48,8 @@ export function detailModel(s,c,analysis=null){
  details.explore=[
   section("修士属性构成",[
    row("当前境界",h.name),row("基础攻 / 气血 / 防","29 / 260 / 12"),
+   row("本世已穿戴装备",Object.keys(r.equipment||{}).length+" / 10槽"),
+   row("装备基础属性",JSON.stringify(equipmentStats(s,c)),"仅攻击、气血、防御及攻速四项，两条词条以内"),
    row("境界属性倍率","×"+h.realmFactor.toFixed(3),"小境界 ×"+c.realm.breakStatSmall+"；筑基后另有跨境倍率"),
    row("攻击",fmt(h.attack),"普通攻击最终伤害的基准属性"),
    row("气血上限",fmt(h.hp),"连续守关波次之间不自动回满"),
@@ -72,7 +75,7 @@ export function detailModel(s,c,analysis=null){
    row("承伤减免",analysis?pct(analysis.damageReduction*100):"—","基础防御提供减伤，守势功法再补充，总上限68%"),
    row("敌方最高单击样本",analysis?fmt(analysis.maxThreatHit):"—"),
    row("修士攻击间隔",fmt(RULES.heroIntervalMs/(1+v.speedPct/100))+"毫秒","战斗模拟内部时间"),
-   row("自动刷怪间隔",fmt(Math.max(900,1550/(1+v.speedPct/100)))+"毫秒","本可玩切片UI挂机结算节奏；不是完整实时战斗总耗时"),
+   row("自动刷怪间隔",fmt(fight(s,c,"mob",{seed:s.seed}).timeMs)+"毫秒","当前种子下一场小怪战斗的完整模拟耗时；挂机在线与离线共用"),
    row("攻速缩短来源",pct(speedBonus)+"（卡牌）＋"+pct(caveSpeed)+"（洞府）"),
    row("战斗加速生效",pct(v.speedPct)+"（封顶60%）"),
    row("守卫胜率估计",analysis?pct(analysis.winRate*100)+"（"+analysis.wins+"/"+analysis.samples+"）":"尚未挑战")
