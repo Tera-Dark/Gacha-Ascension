@@ -79,6 +79,56 @@ function renderMapDrawer(){
    (i===7?"最终Boss":("关卡 "+(i+1)))+(active?" · 当前":"")+'</button>';
  }).join("");
 }
+
+function renderArtifacts(){
+ const equipped=artifactsOwned(s),bonus=artifactBonuses(s,c);
+ $("artifactGrid").innerHTML=ARTIFACT_SLOTS.map(slot=>{
+  const open=s.run.realmIndex>=slot.realmIndex,card=c.cards[equipped[slot.id]];
+  return '<button type="button" class="wb-artifact-slot'+(card?" active":"")+'" data-artifact-slot="'+slot.id+'"'+(open?"":" disabled")+
+   '><strong>✧ '+slot.name+'</strong><small>'+escapeHTML(open?card?.name||"空 · 点击穿戴":"境界未达成 · 待解锁")+'</small></button>';
+ }).join("");
+ set("artifactSlotsInfo","已开放 "+ARTIFACT_SLOTS.filter(x=>s.run.realmIndex>=x.realmIndex).length+"/4 · 攻击+"+bonus.strike+"% · 减敌攻"+bonus.curse+"%");
+}
+function drawArtifactBag(){
+ const slot=ARTIFACT_SLOTS.find(x=>x.id===selectedArtifactSlot);
+ if(!slot)return;
+ $("equipmentDrawerTitle").textContent=slot.name+" · 本命法器";
+ const equipped=artifactsOwned(s),used=Object.values(equipped);
+ const options=Object.values(c.cards).filter(x=>x.effect==="artifact");
+ $("equipmentChoices").innerHTML='<button class="wb-equipment-choice" data-select-artifact="none">卸下法器</button>'+
+  options.map(card=>{
+   const count=s.run.cards[card.id]||0,active=equipped[slot.id]===card.id;
+   const available=active||count>used.filter(id=>id===card.id).length;
+   return '<button type="button" class="wb-equipment-choice'+(active?" selected":"")+'" data-select-artifact="'+card.id+'"'+
+    (available?"":" disabled")+'><strong>'+escapeHTML(card.name)+(active?" · 已装备":"")+
+    '</strong><small>'+escapeHTML(ARTIFACT_EFFECTS[card.artifactKind])+' +'+card.artifactValue+'% · 持有'+count+'</small></button>';
+  }).join("");
+ $("equipmentCompare").textContent="独立于10个装备槽。筑基、金丹、元婴、化神依次新增1个法器槽；效果参与实际战斗。";
+}
+function openArtifact(slot){
+ selectedArtifactSlot=slot;
+ $("equipmentDrawer").hidden=false;
+ drawArtifactBag();
+ $("closeEquipment").focus();
+}
+function renderItems(){
+ const r=s.run,boxes=r.boxes||{},herbs=r.herbs||{},items=r.consumables||{},prepared=r.prepared||{};
+ $("boxInventory").innerHTML=BOXES.map(box=>'<div class="wb-inventory-item"><div><b>'+box.name+' ×'+(boxes[box.id]||0)+'</b><small>'+
+ escapeHTML(box.desc)+'</small></div><button data-open-box="'+box.id+'" '+((boxes[box.id]||0)?"":"disabled")+'>开启</button></div>').join("");
+ $("herbInventory").innerHTML=HERBS.map(herb=>'<div class="wb-inventory-item"><div><b>'+herb.name+' ×'+(herbs[herb.id]||0)+'</b><small>'+herb.desc+'</small></div>'+
+ '<button data-brew="'+herb.id+'" '+((herbs[herb.id]||0)>=3?"":"disabled")+'>炼1颗药</button></div>').join("");
+ $("consumableInventory").innerHTML=ITEMS.map(item=>'<div class="wb-inventory-item"><div><b>'+item.name+' ×'+(items[item.id]||0)+'</b><small>'+item.desc+' · 已备战'+(prepared[item.id]||0)+'</small></div>'+
+ '<button data-prepare-item="'+item.id+'" '+((items[item.id]||0)&&((prepared[item.id]||0)<3)?"":"disabled")+'>下场备战</button></div>').join("");
+ const a=s.meta.autoPotion;
+ set("autoPotionStatus",a?.unlocked?(a.enabled?"自动吃药运行中 · 气血≤"+Math.round(a.threshold*100)+"%触发":"已解锁，当前关闭"):"尚未解锁 · 消耗 "+AUTO_POTION_COST+" 因果可永久获得");
+ $("unlockAutoPotion").hidden=!!a?.unlocked;
+ $("unlockAutoPotion").disabled=!!a?.unlocked||s.meta.fate<AUTO_POTION_COST;
+ $("toggleAutoPotion").disabled=!a?.unlocked;
+ $("toggleAutoPotion").textContent=a?.enabled?"关闭自动吃药":"开启自动吃药";
+ $("autoPotionThreshold").disabled=!a?.unlocked;
+ $("autoPotionThreshold").value=String(a?.threshold??.35);
+}
+
 function renderGear(){
  const equipment=equippedMap(s);
  $("equipmentGrid").innerHTML=EQUIPMENT_SLOTS.map(slot=>{
@@ -90,6 +140,7 @@ function renderGear(){
  }).join("");
 }
 function openGear(slot){
+ selectedArtifactSlot=null;
  selectedGearSlot=slot;
  $("equipmentDrawer").hidden=false;
  drawGearBag();
@@ -99,6 +150,7 @@ function closeGear(){
  $("equipmentDrawer").hidden=true;
 }
 function drawGearBag(){
+ if(selectedArtifactSlot){drawArtifactBag();return}
  const slot=EQUIPMENT_SLOTS.find(x=>x.id===selectedGearSlot);
  if(!slot)return;
  $("equipmentDrawerTitle").textContent=slot.name+" · 装备选择";
