@@ -104,3 +104,17 @@ test("sparse high-rarity pools do not silently turn every missing rarity into co
  assert.ok(cost>0);
  assert.equal(catalog.packById.technique.cards.some(card=>card.rarity==="tian"),false);
 });
+
+test("all dungeon phase headers survive event truncation in long fights",()=>{
+ const s=createSave(177),snap=combatSnapshot(s,catalog,"boss");
+ snap.hero.hp=1000000;snap.hero.attack=35;
+ snap.enemy.hp=600;snap.enemy.attack=3;
+ snap.waves=encounterWaves(snap.enemy,"boss",0);
+ const result=simulateEncounter(snap,177);
+ assert.equal(result.totalWaves,3);
+ assert.equal(result.completedWaves,3);
+ assert.deepEqual(result.logs.filter(x=>x.actor==="wave").map(x=>x.stage),[1,2,3]);
+ const ids=result.logs.map(x=>x.seq);
+ assert.deepEqual([...ids].sort((a,b)=>a-b),ids);
+ assert.ok(result.logs.length<=25);
+});
