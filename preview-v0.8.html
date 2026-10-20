@@ -54,7 +54,14 @@
 <div class="checkpoint-wrap"><div class="checkpoint-title"><b>地图关卡进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
 </div>
 <div class="lower-panels">
-<div class="compact-card"><div class="compact-heading"><h3>当前积累收益</h3><span>根据本关小怪数据</span></div><div class="v8-line"><span>普通小怪灵石</span><b id="mobStone">+19</b></div><div class="v8-line"><span>普通小怪修为</span><b id="mobQi">+12</b></div><div class="v8-line"><span>守卫预计结果</span><b id="guardForecast">进行战斗预测</b></div></div>
+<div class="compact-card"><div class="compact-heading"><h3>当前积累收益</h3><span>根据本关小怪数据</span></div><div class="v8-line"><span>普通小怪灵石</span><b id="mobStone">+19</b></div><div class="v8-line"><span>普通小怪修为</span><b id="mobQi">+12</b></div><div class="v8-line"><span>守卫挑战胜算（模拟）</span><b id="guardForecast">模拟中</b></div>
+<div class="v8-combat-insight" id="combatInsights" aria-live="polite">
+ <div><span>当前功法流派</span><strong id="combatStyles">等待解析</strong></div>
+ <div><span>主角命中 / 敌方命中</span><strong id="hitRates">—</strong></div>
+ <div><span>承伤减免 / 敌方威胁</span><strong id="survivalRisk">—</strong></div>
+ <div><span>守关战斗波次</span><strong id="waveSummary">—</strong></div>
+</div>
+<div class="v8-combat-judgement" id="combatAdvice">守卫战斗风险由模拟估算，不会预知真实随机结果。</div></div>
 <div class="compact-card"><div class="compact-heading"><h3>修炼目标</h3><span>失败后不退层</span></div><p class="v8-tip" id="goalHint">刷当前关的小怪，抽战力和修为卡，满足条件后突破。</p><button class="text-action" data-view="gacha">前往机缘抽卡 →</button></div>
 </div>
 </section>
