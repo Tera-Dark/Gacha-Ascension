@@ -1,0 +1,23 @@
+name: v0.8 combat economy 300-seed full sweep
+on:
+  push:
+    paths:
+      - "src/v8/combat-depth.mjs"
+      - "src/v8/engine.mjs"
+      - "data/v8-slice.json"
+      - "scripts/simulate-v8-combat.mjs"
+      - ".github/workflows/v8-combat-balance.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run 300 real-seed playthroughs across combat, economy and tactical policies
+        run: npm run simulate:v8:full
