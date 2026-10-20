@@ -262,7 +262,7 @@ export function dispatch(current,c,cmd){
  if(!cmd||cmd.seq!==current.seq+1||typeof cmd.type!=="string")throw Error("交易序号异常");
  const s=deep(current),r=s.run;let result;
  const idleCombat=(st,cat)=>battle(st,cat,"mob");
- const interval=(st,cat)=>battleIntervalMs(st,cat,yields);
+ const interval=(st,cat)=>battleIntervalMs(st,cat,yields,(x,y)=>fight(x,y,"mob",{seed:x.seed}));
  // Resolve any past idle period before equipment, card or realm mutations.
  if(r.idle?.active&&Number.isSafeInteger(cmd.now)&&!["START_IDLE","CLAIM_IDLE","STOP_IDLE"].includes(cmd.type))
   claimIdle(s,c,cmd.now,idleCombat,interval);
@@ -272,7 +272,11 @@ export function dispatch(current,c,cmd){
   if(cmd.enemyType==="mob"&&Number.isSafeInteger(cmd.now)){
    if(r.idle?.active)throw Error("当前正在自动挂机，无需手动重复结算小怪");
    if(cmd.now<(r.nextManualMobAt||0))throw Error("普通小怪尚未刷新，请等待下一次战斗");
-   r.nextManualMobAt=cmd.now+battleIntervalMs(s,c,yields);
+   r.nextManualMobAt=cmd.now+interval(s,c);
+  }
+  if(cmd.enemyType!=="mob"&&Number.isSafeInteger(cmd.now)){
+   if(cmd.now<(r.nextChallengeAt||0))throw Error("挑战尚在冷却中，请等待战斗结束");
+   r.nextChallengeAt=cmd.now+Math.ceil(fight(s,c,cmd.enemyType,{seed:s.seed}).timeMs);
   }
   result=battle(s,c,cmd.enemyType);break;
  }
