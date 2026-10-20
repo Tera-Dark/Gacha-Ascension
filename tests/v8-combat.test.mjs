@@ -38,7 +38,7 @@ test("identical input+seed gives identical combat, actual battle advances only p
  assert.deepEqual(s,before,"pure combat mutated original save");
  const out=dispatch(s,catalog,{type:"BATTLE",enemyType:"mob",seq:1});
  assert.deepEqual(out.result.combat,replay);
- assert.equal(out.state.seed,replay.nextSeed);
+ assert.equal(out.state.seed,dispatch(s,catalog,{type:"BATTLE",enemyType:"mob",seq:1}).state.seed,"reward box rolls advance the same deterministic RNG");
  assert.equal(s.seed,before.seed);
  assert.notEqual(out.state.seed,s.seed);
 });
@@ -105,7 +105,7 @@ test("sparse high-rarity pools do not silently turn every missing rarity into co
  assert.equal(catalog.packById.technique.cards.some(card=>card.rarity==="tian"),false);
 });
 
-test("all dungeon phase headers survive event truncation in long fights",()=>{
+test("every dungeon action and every phase header survives in complete timed combat logs",()=>{
  const s=createSave(177),snap=combatSnapshot(s,catalog,"boss");
  snap.hero.hp=1000000;snap.hero.attack=35;
  snap.enemy.hp=600;snap.enemy.attack=3;
@@ -116,7 +116,9 @@ test("all dungeon phase headers survive event truncation in long fights",()=>{
  assert.deepEqual(result.logs.filter(x=>x.actor==="wave").map(x=>x.stage),[1,2,3]);
  const ids=result.logs.map(x=>x.seq);
  assert.deepEqual([...ids].sort((a,b)=>a-b),ids);
- assert.ok(result.logs.length<=25);
+ assert.ok(result.logs.length>25,"combat should no longer truncate its middle attacks");
+ assert.ok(result.logs.every(x=>Number.isFinite(x.timeMs)));
+ assert.ok(result.logs.every((x,i)=>i===0||x.timeMs>=result.logs[i-1].timeMs));
 });
 
 test("three monster farming targets trade stones against cultivation in the same checkpoint",()=>{
