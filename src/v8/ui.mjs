@@ -1,4 +1,4 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost} from "./engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
@@ -93,8 +93,9 @@ function animateCombat(result){
 }
 function incomePreview(){
  const map=s.run.mapIndex,k=s.run.checkpoint,b=c.balance,y=yields(s,c);
- const stones=Math.round(b.stonesPerKill*Math.pow(b.mapRewardFactor,map)*Math.pow(b.checkpointRewardFactor,k)*(1+y.stonePct/100));
- const qi=Math.round(b.qiPerKill*Math.pow(1.67,map)*Math.pow(1.07,k)*(1+y.qiPct/100));
+ const focus=farmTarget(s,c);
+ const stones=Math.max(1,Math.round(b.stonesPerKill*Math.pow(b.mapRewardFactor,map)*Math.pow(b.checkpointRewardFactor,k)*(1+y.stonePct/100)*focus.stoneFactor));
+ const qi=Math.max(1,Math.round(b.qiPerKill*Math.pow(1.67,map)*Math.pow(1.07,k)*(1+y.qiPct/100)*focus.qiFactor));
  return {stones,qi};
 }
 function renderTop(){
@@ -131,6 +132,8 @@ function renderExplore(){
  $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared;
  $("killMob").disabled=false;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
+ $("farmFocus").value=s.run.farmFocus||"balanced";
+ set("farmFocusTip",farmTarget(s,c).desc);
  if(!battleBusy){
   const e=enemyPreview(s,c,"mob");
   set("enemyLabel",e.name);set("enemyStats","攻击 "+fmt(e.attack)+" · 防御 "+fmt(e.defense));
@@ -298,7 +301,11 @@ async function init(){
   $("killMob").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"mob"})));
   $("challenge").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"guardian"})));
   $("challengeBoss").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"boss"})));
-  $("autoPush").addEventListener("click",()=>{autoPush=!autoPush;render();toast("自动冲关已"+(autoPush?"开启，战斗预测通过才进行挑战。":"关闭。"))});
+  $("autoPush").addEventListener("click",()=>{autoPush=!autoPush;render();toast("自动冲关已"+(autoPush?"开启，战斗风险评估通过才进行挑战。":"关闭。"))});
+  $("farmFocus").addEventListener("change",event=>{
+   const result=doCommand("SET_FARM_FOCUS",{id:event.target.value});
+   if(result)toast("已将当前关小怪调整为："+farmTarget(s,c).name+"。进度保持不变。");
+  });
   $("breakthrough").addEventListener("click",()=>{const r=doCommand("BREAKTHROUGH");if(r){toast("突破成功："+r.name+"！");changeView("cultivate")}});
   $("reincarnate").addEventListener("click",()=>{if(!window.confirm("确认轮回？会清空本世地图、修为、灵石和全部当世卡牌，但保留天命与因果。"))return;
    stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
