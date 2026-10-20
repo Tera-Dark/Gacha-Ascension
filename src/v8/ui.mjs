@@ -57,7 +57,12 @@ function animateCombat(result){
  snapshot("enemyHP","enemyBar",combat.enemy.hp,combat.enemy.hp);
  set("enemyLabel",combat.enemy.name);
  set("combatStatus","交锋中");
- const items=logs.length<=8?logs:[...logs.slice(0,4),...logs.slice(-4)];
+ const important=new Set();
+ for(let i=0;i<logs.length;i++)if(logs[i].actor==="wave")important.add(i);
+ for(const i of [0,1,2,logs.length-3,logs.length-2,logs.length-1])
+  if(i>=0&&i<logs.length)important.add(i);
+ for(let i=3;i<logs.length-3&&important.size<10;i+=3)important.add(i);
+ const items=[...important].sort((a,b)=>a-b).map(i=>logs[i]);
  const duration=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?30:780;
  items.forEach((event,index)=>{
   setTimeout(()=>{
