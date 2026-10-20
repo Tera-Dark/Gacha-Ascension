@@ -1,3 +1,4 @@
+import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS,combatStyle} from "./combat-depth.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -103,34 +104,26 @@ function pet(s,c){
  const base=card.value*cardCount(s,id)*(1+yields(s,c).petPct/100);
  return {style:card.style,power:base*(hasUltra(s,"U002")?4:1)};
 }
-function strike(atk,def,pierce=0){return Math.max(1,Math.round(atk*100/(100+Math.max(0,def)*(1-clamp(pierce,0,.75)))));}
-export function fight(s,c,kind){
- const hero=heroStats(s,c),foe=enemy(s,c,kind),tech=technique(s,c),animal=pet(s,c);
- let hh=hero.hp,eh=foe.hp,shield=animal.style==="ward"?Math.round(hero.hp*clamp(animal.power/200,0,.5)):0;
- let heroDealt=0,petDealt=0,blocked=0,turns=0;
- const logs=[],endLogs=[];const add=x=>{if(logs.length<9)logs.push(x);else{endLogs.push(x);if(endLogs.length>9)endLogs.shift()}};
- for(let turn=1;turn<=60;turn++){
-  turns=turn;
-  let d=strike(hero.attack,foe.defense)*(1+(tech.style==="sword"?tech.power/100:0));
-  if(tech.style==="burst"&&turn%3===0)d*=1+tech.power/100;
-  if(hasUltra(s,"U001"))d*=2.5; // Applies only to the cultivator strike, not to pet actions.
-  d=Math.max(1,Math.round(d));
-  eh=Math.max(0,eh-d);heroDealt+=d;add({actor:"hero",turn,amount:d,hp:eh,max:foe.hp});
-  if(eh<=0)break;
-  if(animal.style!=="none"&&animal.style!=="ward"){
-   const petDamage=Math.max(1,Math.round(strike(hero.attack*animal.power/100,foe.defense,animal.style==="pierce"?.45:0)*(1+(tech.style==="spirit"?tech.power/100:0))));
-   eh=Math.max(0,eh-petDamage);petDealt+=petDamage;add({actor:"pet",turn,amount:petDamage,hp:eh,max:foe.hp});
-   if(eh<=0)break;
-  }
-  const counterFactor=foe.traits.includes("counter")?1.15:1;
-  let suffered=Math.max(1,Math.round(strike(foe.attack,hero.defense)*counterFactor*(tech.style==="guard"?1/(1+tech.power/100):1)));
-  const absorb=Math.min(shield,suffered);blocked+=absorb;shield-=absorb;suffered-=absorb;
-  hh=Math.max(0,hh-suffered);add({actor:"enemy",turn,amount:suffered,blocked:absorb,hp:hh,max:hero.hp});
-  if(hh<=0)break;
-  if(foe.traits.includes("regen")){const q=Math.min(foe.hp-eh,Math.ceil(foe.hp*.035));eh+=q;if(q)add({actor:"regen",turn,amount:q,hp:eh,max:foe.hp})}
- }
- return {won:eh<=0,turns,heroDealt,petDealt,blocked,heroRemaining:hh,enemyRemaining:eh,
-  hero,enemy:foe,logs:[...logs,...endLogs]};
+/** Preview is a seeded *sample* disconnected from the actual next battle RNG.
+ * Live battle explicitly supplies state.seed and advances that seed once.
+ */
+export function combatSnapshot(s,c,kind){
+ const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c),p=pet(s,c),index=s.run.mapIndex;
+ return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
+  kind,mapIndex:index,heroSpeedPct:yields(s,c).speedPct,
+  waves:encounterWaves(f,kind,index)};
+}
+export function combatAssessment(s,c,kind,samples=24){
+ return assessEncounter(combatSnapshot(s,c,kind),samples);
+}
+export function combatLabels(s,c,kind){
+ const data=combatSnapshot(s,c,kind);
+ return {heroStyle:STYLE_LABELS[combatStyle(data.tech)],enemyStyle:STYLE_LABELS[MAP_STYLES[data.mapIndex]],
+  waveCount:data.waves.length,special:data.waves.at(-1).special};
+}
+export function fight(s,c,kind,options={}){
+ const snap=combatSnapshot(s,c,kind);
+ return simulateEncounter(snap,options.seed??0x10b0ca13);
 }
 export function packCost(s,c,packId){
  const pack=c.packById[packId];if(!pack)throw Error("未知卡包");
@@ -185,7 +178,8 @@ function battle(s,c,kind){
  const isLast=r.checkpoint===c.checkpointsPerMap-1;
  if(kind==="boss"&&!isLast)throw Error("需要先击败该图全部关卡守卫");
  if(kind==="guardian"&&isLast)throw Error("此关需要挑战地图Boss");
- const result=fight(s,c,kind),k=r.checkpoint,m=r.mapIndex;
+ const result=fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
+ s.seed=result.nextSeed;
  if(result.won){
   r.victories++;
   const economic=yields(s,c),b=c.balance;
