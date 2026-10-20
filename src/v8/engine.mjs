@@ -1,6 +1,7 @@
 import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS,combatStyle} from "./combat-depth.mjs";
 import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
 import {startIdle,claimIdle,stopIdle,battleIntervalMs} from "./idle.mjs";
+import {validateContentContract,unlockedPack} from "./modules.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -10,6 +11,7 @@ const nat=n=>Number.isSafeInteger(n)&&n>=0;
 export function loadCatalog(world,slice){
  if(world?.maps?.length!==24||world?.cultivation?.length!==20||slice?.version!=="0.8-playable-slice-1")throw Error("版本化地图/卡池配置缺失");
  if(slice.playableMaps!==4||slice.packs.length!==7||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
+ validateContentContract(slice);
  if(!Array.isArray(slice.farmTargets)||slice.farmTargets.length!==3||
   new Set(slice.farmTargets.map(x=>x.id)).size!==3||
   slice.farmTargets.some(x=>!["balanced","stones","cultivation"].includes(x.id)||
@@ -167,6 +169,7 @@ function gainCard(s,c,card){
 function draw(s,c,{packId,count}){
  const pack=c.packById[packId];
  if(!pack||!(count===1||count===10))throw Error("不支持的卡包/抽数");
+ if(!unlockedPack(s,c,packId))throw Error("该卡包尚未解锁，请继续探索里程碑");
  const price=packCost(s,c,packId)*count;
  if(s.run.stones<price)throw Error("灵石不足，先刷当前关小怪");
  s.run.stones-=price;s.run.totalSpent+=price;
