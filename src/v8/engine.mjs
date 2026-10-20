@@ -130,12 +130,21 @@ export function fight(s,c,kind){
  return {won:eh<=0,turns,heroDealt,petDealt,blocked,heroRemaining:hh,enemyRemaining:eh,
   hero,enemy:foe,logs:[...logs,...endLogs]};
 }
+export function packCost(s,c,packId){
+ const pack=c.packById[packId];if(!pack)throw Error("未知卡包");
+ return Math.max(1,Math.round(pack.cost*Math.pow(1.9,s.run.mapIndex)));
+}
 function weightedCard(s,c,pack){
  const weights=c.rarityWeights,order=Object.keys(weights);
  let r=roll(s)*100,tier=order.at(-1);
  for(const k of order){r-=weights[k];if(r<0){tier=k;break}}
  let pool=pack.cards.filter(x=>x.rarity===tier);
- if(!pool.length)pool=pack.cards;
+ if(!pool.length){const available=new Set(pack.cards.map(x=>x.rarity));
+  const total=Object.entries(weights).reduce((a,[name,w])=>a+(available.has(name)?w:0),0);
+  let pick=roll(s)*total;
+  for(const [name,w] of Object.entries(weights)){if(!available.has(name))continue;pick-=w;if(pick<0){tier=name;break}}
+  pool=pack.cards.filter(x=>x.rarity===tier);
+ }
  return pool[Math.floor(roll(s)*pool.length)];
 }
 function gainCard(s,c,card){
@@ -150,8 +159,9 @@ function gainCard(s,c,card){
 function draw(s,c,{packId,count}){
  const pack=c.packById[packId];
  if(!pack||!(count===1||count===10))throw Error("不支持的卡包/抽数");
- if(s.run.stones<pack.cost*count)throw Error("灵石不足，先刷当前关小怪");
- s.run.stones-=pack.cost*count;s.run.totalSpent+=pack.cost*count;
+ const price=packCost(s,c,packId)*count;
+ if(s.run.stones<price)throw Error("灵石不足，先刷当前关小怪");
+ s.run.stones-=price;s.run.totalSpent+=price;
  const items=[];
  for(let i=0;i<count;i++){
   let card;
@@ -163,7 +173,7 @@ function draw(s,c,{packId,count}){
   gainCard(s,c,card);
   items.push({...card,copies:s.run.cards[card.id]??s.run.pills[card.id]??1});
  }
- return {kind:"draw",items,cost:pack.cost*count,packId};
+ return {kind:"draw",items,cost:price,packId};
 }
 function battle(s,c,kind){
  if(!["mob","guardian","boss"].includes(kind))throw Error("无效战斗类型");
