@@ -392,3 +392,9 @@
 .wb-drawer-stage.cleared{background:#294b3b;border-color:#658f66}
 .wb-map-choice:disabled{opacity:.4}
 .wb-drawer-note{color:#9caf9f;font-size:10px;line-height:1.6}
+
+/* Equipment gacha has a forging cadence, independent from combat summons. */
+.v8-reveal-stage[data-pack="equipment"]{--accent:#a7c9d0}
+.v8-reveal-stage[data-pack="equipment"][data-phase="charge"] .v8-reveal-sigil{animation:wb-forge .73s ease-in-out infinite alternate}
+@keyframes wb-forge{0%{transform:translateY(-7px) rotate(-11deg);filter:drop-shadow(0 0 6px #cbdee3)}100%{transform:translateY(7px) rotate(9deg);filter:drop-shadow(0 0 20px #aac5cc)}}
+@media(prefers-reduced-motion:reduce){.v8-reveal-stage[data-pack="equipment"] .v8-reveal-sigil{animation:none!important}}
