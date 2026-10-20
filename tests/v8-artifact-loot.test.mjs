@@ -48,10 +48,10 @@ test("three herbs craft one combat item, preparation is queued and limited",()=>
  let s=createSave(99);s.run.herbs={H001:7};
  let result=step(s,"BREW",{id:"H001",count:2});s=result.state;
  assert.equal(s.run.herbs.H001,1);
- assert.equal(s.run.consumables.P001,2);
- s=step(s,"PREPARE_ITEM",{id:"P001"}).state;
- assert.equal(s.run.prepared.P001,1);
- assert.equal(s.run.consumables.P001,1);
+ assert.equal(s.run.consumables.MED001,2);
+ s=step(s,"PREPARE_ITEM",{id:"MED001"}).state;
+ assert.equal(s.run.prepared.MED001,1);
+ assert.equal(s.run.consumables.MED001,1);
  assert.throws(()=>step(s,"BREW",{id:"H001",count:1}),/不足/);
 });
 test("auto potion is not free or automatic: requires paid fate unlock and manual toggle",()=>{
@@ -107,12 +107,12 @@ test("reincarnation clears all per-life treasures but keeps unlocked auto-heal",
  s.meta.autoPotion={unlocked:true,enabled:true,threshold:.35};
  s.run.cards.F001=1;s.run.realmIndex=4;s.run.artifacts={foundation:"F001"};
  s.run.herbs={H001:9};s.run.boxes={gear:2,herb:4};
- s.run.consumables={P001:3};s.run.prepared={P003:1};
+ s.run.consumables={MED001:3};s.run.prepared={MED003:1};
  s.run.mapIndex=3;s.run.checkpoint=7;s.run.bossCleared=true;
  const r=step(s,"REINCARNATE").state;
  assert.equal(r.meta.autoPotion.unlocked,true);
  assert.ok(!Object.keys(r.run.artifacts).length);
  assert.equal(r.run.boxes.gear,0);
  assert.equal(r.run.herbs.H001,undefined);
- assert.equal(r.run.consumables.P001,undefined);
+ assert.equal(r.run.consumables.MED001,undefined);
 });
