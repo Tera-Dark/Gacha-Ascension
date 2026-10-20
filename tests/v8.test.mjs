@@ -141,7 +141,8 @@ test("reincarnation is voluntary and persistent relic chest uses independent low
  assert.ok(s.meta.relics[r.result.relic.id]>0);
  const before=heroStats(s,c);
  assert.ok(before.attack>=29&&before.hp>=260);
- assert.equal(c.fate.ultraChance,0.0001);
+ assert.equal(c.fate.ultraChance,0.000001);
+ assert.equal(c.fate.apexChance,0.00001);
 });
 test("invalid save cannot overwrite game; old namespaces remain untouched",()=>{
  const data=new Map([["gacha-ascension-m0-v3","old-v07"],["gacha-ascension-mvp-v1","old-v01"]]);
