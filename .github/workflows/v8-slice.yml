@@ -8,6 +8,7 @@ on:
       - "preview-v0.8.html"
       - "v8.css"
       - "tests/v8*.test.mjs"
+      - "tests/v8-mobile-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
@@ -44,6 +45,15 @@ jobs:
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/v8-phone.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
           test -s /tmp/v8-desktop.png
           test -s /tmp/v8-phone.png
+      - name: Click mobile accordions and More system drawer in Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=9000 --window-size=390,844 --dump-dom http://127.0.0.1:4173/tests/v8-mobile-smoke.html >/tmp/v8-mobile-functional.html 2>/tmp/v8-mobile-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-mobile-functional.html; then
+            grep -o 'FAIL:[^<]*' /tmp/v8-mobile-functional.html || true
+            cat /tmp/v8-mobile-errors.log
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
