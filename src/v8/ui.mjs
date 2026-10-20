@@ -108,8 +108,11 @@ function drawGearBag(){
   options.map(card=>{
    const own=s.run.cards[card.id]||0,active=equipped[slot.id]===card.id,can=active||eligible(card);
    const affix=Object.entries(card.stats).map(([k,v])=>STAT_LABELS[k]+" +"+v+(k==="speedPct"?"%":"")).join(" · ");
+   const diff=can&&!active?comparison(s,c,slot.id,card.id).difference:null;
+   const delta=diff?Object.entries(diff).filter(([,v])=>v!==0).map(([k,v])=>STAT_LABELS[k]+" "+(v>0?"+":"")+v+(k==="speedPct"?"%":"")).join(" · "):active?"当前已穿戴":"数量不足";
    return '<button type="button" class="wb-equipment-choice'+(active?" selected":"")+'" data-select-gear="'+card.id+'"'+(!can?" disabled":"")+
-    '><strong>'+escapeHTML(card.name)+(active?" · 已穿戴":"")+'</strong><small>'+escapeHTML(affix)+" · 库存"+own+'</small></button>';
+    '><strong>'+escapeHTML(card.name)+(active?" · 已穿戴":"")+'</strong><small>'+escapeHTML(affix)+" · 库存"+own+
+    '</small><small>装配变化：'+escapeHTML(delta)+'</small></button>';
   }).join("");
  $("equipmentCompare").textContent="当前槽位："+(equipped[slot.id]?c.cards[equipped[slot.id]].name:"空")+
   "。每件装备最多两条词条，装配后属性即时参与战斗，轮回时清空。";
