@@ -1,4 +1,4 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,packCost} from "./engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
@@ -40,9 +40,9 @@ function snapshot(hpId,barId,current,max){
 }
 function damagePop(actor,amount){
  const layer=$("damageLayer"),el=document.createElement("span");
- const side=actor==="enemy"?"hero-dmg":actor==="regen"?"heal-dmg":"enemy-dmg";
+ const side=actor==="enemy"||actor==="counter"?"hero-dmg":actor==="regen"?"heal-dmg":"enemy-dmg";
  el.className="damage-pop "+side;
- el.textContent=(actor==="regen"?"+":"−")+fmt(amount);
+ el.textContent=actor==="miss"?"闪避":(actor==="regen"?"+":"−")+fmt(amount);
  layer.append(el);setTimeout(()=>el.remove(),650);
  const src=$(actor==="enemy"?"enemySprite":"heroSprite");
  src.classList.remove("impact");void src.offsetWidth;src.classList.add("impact");
@@ -62,18 +62,28 @@ function animateCombat(result){
  items.forEach((event,index)=>{
   setTimeout(()=>{
    if(playToken!==token)return;
-   const hero=event.actor==="enemy",regen=event.actor==="regen";
+   if(event.actor==="wave"){
+    set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
+    snapshot("enemyHP","enemyBar",event.hp,event.max);
+    set("combatStatus","连续守关 · 第"+event.stage+"/"+event.total+"波");
+    return;
+   }
+   const hero=event.actor==="enemy"||event.actor==="counter"||
+    event.actor==="miss"&&event.owner==="enemy";
    if(hero)snapshot("heroHP","heroBar",event.hp,event.max);
    else snapshot("enemyHP","enemyBar",event.hp,event.max);
    damagePop(event.actor,event.amount);
-   set("combatStatus",event.actor==="pet"?"灵宠追击":event.actor==="regen"?"妖物恢复":hero?"妖物反击":"剑气交锋");
+   set("combatStatus",event.actor==="miss"?"攻击落空":event.actor==="pet"?"灵宠追击":
+    event.actor==="regen"?"敌人恢复":event.actor==="counter"?"剑气反震":hero?"敌人攻击":"剑气交锋");
   },50+Math.floor(duration*(index/Math.max(items.length,1))));
  });
  setTimeout(()=>{
   if(playToken!==token)return;
   snapshot("heroHP","heroBar",combat.heroRemaining,combat.hero.hp);
   snapshot("enemyHP","enemyBar",combat.enemyRemaining,combat.enemy.hp);
-  battleBusy=false;set("combatStatus",result.won?"✓ 战斗胜利":"✕ 守卫未破 · 原地刷怪");
+  battleBusy=false;
+  set("enemyLabel",combat.enemy.name);
+  set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":"✕ 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波挑战失败");
  },duration+90);
 }
 function incomePreview(){
@@ -123,13 +133,21 @@ function renderExplore(){
  }
  if(r.bossCleared){
   set("guardForecast","四图已经完成");
+  set("combatStyles","已通关");set("hitRates","—");set("survivalRisk","—");
+  set("waveSummary","四图终章完成");
+  set("combatAdvice","可以在当前关刷怪，满足筑基条件或自愿轮回。");
   set("goalHint","恭喜击败雾隐剑冢Boss！前往境界页面突破筑基，或通过轮回天命进入下一世。");
  }else{
-  const target=p.finalGuardian?"boss":"guardian",predict=fight(s,c,target);
-  set("guardForecast",predict.won?"可挑战 · 预计"+predict.turns+"回合":"暂时困难 · 优先积累");
-  set("goalHint",predict.won?
-   "现在的构筑有希望击败"+(p.finalGuardian?"地图Boss":"守卫")+"。击败后进入新关卡；当前关小怪依旧是基础资源来源。":
-   "当前"+(p.finalGuardian?"地图Boss":"守卫")+"强于你的构筑。保持自动刷本关小怪、抽卡或调整功法与灵宠，不会退关。");
+  const target=p.finalGuardian?"boss":"guardian",a=combatAssessment(s,c,target,24);
+  set("guardForecast",Math.round(a.winRate*100)+"% · "+a.risk);
+  set("combatStyles",a.heroStyle+" / "+a.enemyStyle+" · "+a.matchup);
+  set("hitRates",Math.round(a.heroHitChance*100)+"% / "+Math.round(a.enemyHitChance*100)+"%");
+  set("survivalRisk",Math.round(a.damageReduction*100)+"% / 最大单击约"+fmt(a.maxThreatHit));
+  set("waveSummary",a.waveCount+"波 · 预计"+fmt(a.averageTurns)+"次行动");
+  set("combatAdvice",a.opportunity+"。胜率来自24次独立模拟，不读取下一场的真实随机结果。");
+  set("goalHint",a.safeToAuto?
+   "当前构筑适合连续挑战"+(p.finalGuardian?"地图Boss":"守卫")+"。自动冲关将按风险判断执行。":
+   "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
  if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
   set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));}
@@ -229,8 +247,9 @@ function schedule(){
   afterBattle(result);
   if(!result){stopAuto();return}
   if(autoPush&&!s.run.bossCleared){
-   const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian",predict=fight(s,c,target);
-   if(predict.won){
+   const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
+   const assessment=combatAssessment(s,c,target,24);
+   if(assessment.safeToAuto){
     const advance=doCommand("BATTLE",{enemyType:target});afterBattle(advance);
     if(!advance?.won){autoPush=false;toast("当前守卫失败，已关闭自动冲关并继续原地刷怪。",true)}
    }
