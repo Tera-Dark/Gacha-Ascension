@@ -1,5 +1,6 @@
 import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS,combatStyle} from "./combat-depth.mjs";
 import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
+import {startIdle,claimIdle,stopIdle,battleIntervalMs} from "./idle.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -249,6 +250,11 @@ function openRelic(s,c){return pullFate(s,c,()=>roll(s))}
 export function dispatch(current,c,cmd){
  if(!cmd||cmd.seq!==current.seq+1||typeof cmd.type!=="string")throw Error("交易序号异常");
  const s=deep(current),r=s.run;let result;
+ const idleCombat=(st,cat)=>battle(st,cat,"mob");
+ const interval=(st,cat)=>battleIntervalMs(st,cat,yields);
+ // Resolve any past idle period before equipment, card or realm mutations.
+ if(r.idle?.active&&Number.isSafeInteger(cmd.now)&&!["START_IDLE","CLAIM_IDLE","STOP_IDLE"].includes(cmd.type))
+  claimIdle(s,c,cmd.now,idleCombat,interval);
  switch(cmd.type){
  case "DRAW":result=draw(s,c,cmd);break;
  case "BATTLE":result=battle(s,c,cmd.enemyType);break;
@@ -261,6 +267,9 @@ export function dispatch(current,c,cmd){
   r.pet=id;result={kind:"equip",slot:"pet",id};break}
  case "REINCARNATE":result=reincarnate(s,c);break;
  case "OPEN_RELIC":result=openRelic(s,c);break;
+ case "START_IDLE":result=startIdle(s,cmd.now);break;
+ case "CLAIM_IDLE":result=claimIdle(s,c,cmd.now,idleCombat,interval);break;
+ case "STOP_IDLE":result=stopIdle(s,c,cmd.now,idleCombat,interval);break;
  case "SET_FARM_FOCUS":{
   if(!c.farmTargets.some(x=>x.id===cmd.id))throw Error("不支持的刷怪目标");
   r.farmFocus=cmd.id;result={kind:"farmFocus",id:cmd.id};break;
