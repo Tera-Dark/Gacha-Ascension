@@ -40,9 +40,36 @@
 | src/v8/reveal.mjs | 不影响抽奖结果的各卡包动效 |
 | src/v8/details.mjs, src/v8/ui.mjs | 属性详情和界面交互 |
 | src/v8/storage.mjs | 本地独立存档 |
-| preview-v0.8.html, v8.css | 当前手机/电脑试玩界面 |
+| preview-v0.8.html, assets/css/preview.css（叠加 assets/css/workbench.css） | 当前手机/电脑试玩界面 |
 | data/v8-slice.json | **现行卡包、遗物及数值配置** |
 | data/realms-maps.v0.8.proposal.json | 24图/20境界规划与前4图参数 |
+
+## 仓库目录分工
+
+\`\`\`text
+Gacha-Ascension/
+├── index.html                       # Pages 默认入口，跳转现行试玩
+├── preview-v0.8.html                # 现行游戏（保留旧 URL / 存档命名空间）
+├── m0.html / codex.html             # 历史演示和旧图鉴，非现行设计
+├── assets/css/
+│   ├── workbench.css                # 新版和历史 M0 共用的工作台样式
+│   └── preview.css                  # 现行试玩新增样式
+├── src/
+│   ├── v8/                          # 现行玩法引擎、模块、UI、存档
+│   └── m0/                          # 历史 M0 专用，不作为新项目开发依据
+├── data/
+│   ├── v8-slice.json                # 现行数值唯一来源
+│   ├── realms-maps.v0.8.proposal.json
+│   ├── m0-*.json                    # 历史 M0 仍在运行的依赖
+│   └── codex/                       # 历史 v0.5 图鉴及生成索引
+├── docs/                             # 当前 GDD + 24 图规划
+├── tests/
+│   └── fixtures/                    # 仅供测试的旧版数据
+├── scripts/                           # 验证、模拟与历史图鉴生成
+└── .github/workflows/                # Pages、当前试玩及历史兼容 CI
+\`\`\`
+
+**维护约定：**入口与存档路径稳定优先；现行模块只引用现行配置；历史资料只为旧试玩提供兼容。不要为每次小改动创建并列 GDD/JSON，也不要把测试专用数据放回运行目录。详细约束见 [AGENTS.md](AGENTS.md)。
 
 ## 校验和部署
 
