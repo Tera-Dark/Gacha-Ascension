@@ -13,7 +13,7 @@ function advanceTo(s,mapIndex,checkpoint=0){
 }
 test("world registry has 24 planned maps, 20 no-level stages and four playable maps",()=>{
  assert.equal(c.allMaps.length,24);assert.equal(c.maps.length,4);assert.equal(c.realms.length,20);
- assert.equal(c.packs.length,8);
+ assert.equal(c.packs.length,9);
  assert.equal(c.realms[0].name,"炼气·初期");
  assert.equal(c.realms[3].name,"炼气·圆满");
  assert.equal(c.realms[4].name,"筑基·初期");
