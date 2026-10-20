@@ -116,3 +116,33 @@ test("reincarnation clears all per-life treasures but keeps unlocked auto-heal",
  assert.equal(r.run.herbs.H001,undefined);
  assert.equal(r.run.consumables.MED001,undefined);
 });
+
+test("actual seeded combat deducts exactly the healing potions shown in combat log",()=>{
+ let found=null;
+ for(let seed=1;seed<=600;seed++){
+  const s=createSave(seed);
+  s.run.mapIndex=2;s.run.checkpoint=5;
+  s.run.consumables={MED001:3};
+  s.meta.autoPotion={unlocked:true,enabled:true,threshold:.8};
+  const preview=fight(s,c,"guardian",{seed:s.seed});
+  if(preview.usedAuto>0){found={s,preview};break}
+ }
+ assert.ok(found,"at least one ordinary guarded stage must cause healable damage");
+ const {s,preview}=found;
+ const r=step(s,"BATTLE",{enemyType:"guardian"});
+ assert.equal(r.result.combat.usedAuto,preview.usedAuto);
+ assert.equal(r.state.run.consumables.MED001,3-preview.usedAuto);
+ assert.equal(r.result.combat.logs.filter(x=>x.actor==="potion"&&x.source==="auto").length,preview.usedAuto);
+});
+test("prepared offensive consumable increases one battle's computed attack and is then spent",()=>{
+ let s=createSave(71);
+ s.run.consumables={MED003:2};
+ const basic=combatSnapshot(s,c,"mob").hero.attack;
+ s=step(s,"PREPARE_ITEM",{id:"MED003"}).state;
+ assert.equal(s.run.consumables.MED003,1);
+ const improved=combatSnapshot(s,c,"mob").hero.attack;
+ assert.ok(improved>basic);
+ const result=step(s,"BATTLE",{enemyType:"mob"});
+ assert.equal(result.state.run.prepared.MED003,0);
+ assert.equal(combatSnapshot(result.state,c,"mob").hero.attack,basic);
+});
