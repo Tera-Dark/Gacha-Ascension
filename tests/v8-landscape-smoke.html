@@ -12,6 +12,9 @@ frame.addEventListener("load",async()=>{
   const d=frame.contentDocument,w=frame.contentWindow;
   for(let n=0;n<100&&d.querySelectorAll(".wb-gear-slot").length<10;n++)await sleep(60);
   check(d.querySelectorAll(".wb-gear-slot").length===10,"10 equipment slots missing");
+  check(d.querySelectorAll(".wb-artifact-slot").length===4,"Four major-realm artifacts missing");
+  check([...d.querySelectorAll(".wb-artifact-slot")].every(x=>x.disabled),"Artifact slots must remain locked before 筑基");
+  check(d.querySelectorAll('[data-view="items"]').length>=1,"Items inventory navigation absent");
   check(d.querySelectorAll(".battle-workbench>.wb-pane").length===2,"player/enemy station missing");
   const nav=d.getElementById("landscapeNavToggle");
   check(w.getComputedStyle(nav).display!=="none","landscape navigation toggle invisible");
@@ -30,6 +33,13 @@ frame.addEventListener("load",async()=>{
   check(d.getElementById("drawerCheckpointTrack").querySelectorAll("button").length===8,"stage list not populated");
   d.getElementById("landscapeBackdrop").click();
   check(!d.body.classList.contains("wb-nav-open"),"side drawer failed to close");
+  d.querySelector('.system-sidebar [data-view="items"]').click();await sleep(80);
+  check(d.querySelector('[data-view-panel="items"]').classList.contains("is-active"),"Items panel cannot open");
+  check(d.getElementById("boxInventory").querySelectorAll('[data-open-box]').length===2,"Box options missing");
+  check(d.getElementById("herbInventory").querySelectorAll('[data-brew]').length===3,"Herbs/crafting options missing");
+  check(d.getElementById("consumableInventory").querySelectorAll('[data-prepare-item]').length===3,"Combat medicine slots missing");
+  check(d.getElementById("unlockAutoPotion").disabled,"Auto potion must be gated behind reincarnation points");
+  d.querySelector('.system-sidebar [data-view="explore"]').click();await sleep(70);
   check(d.getElementById("enemySprite").textContent.trim().length>0,"no monster representation");
   check(d.getElementById("heroAttackBar").style.animationDuration.endsWith("ms"),"hero interval not tied to engine");
   check(d.getElementById("enemyAttackBar").style.animationDuration.endsWith("ms"),"enemy interval not tied to engine");
