@@ -1,12 +1,13 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {loadCatalog,createSave,dispatch,heroStats,yields} from "../src/v8/engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,fight} from "../src/v8/engine.mjs";
 import {baseCandidates,baseRates,rareRolls,pullFate} from "../src/v8/relic-pool.mjs";
 import {battleIntervalMs} from "../src/v8/idle.mjs";
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json"));
 const exec=(s,type,data={})=>dispatch(s,c,{type,seq:s.seq+1,...data});
+const nextMs=s=>Math.max(900,Math.ceil(fight(s,c,"mob",{seed:s.seed}).timeMs));
 test("layered tiers have explicitly exact 1/100000 and 1/1000000 chances",()=>{
  assert.equal(c.fate.apexChance,1/100000);assert.equal(c.fate.ultraChance,1/1000000);
  assert.deepEqual(rareRolls(0,0),{apex:true,hongmeng:true});
@@ -69,7 +70,7 @@ test("offline monster claim uses the exact on-screen battle mutation and only cu
  const t=1_000_000;
  let s=exec(createSave(127),"START_IDLE",{now:t}).state;
  assert.equal(s.run.idle.active,true);
- const result=exec(s,"CLAIM_IDLE",{now:t+1550});
+ const result=exec(s,"CLAIM_IDLE",{now:t+nextMs(s)});
  assert.equal(result.result.kind,"idleClaim");assert.equal(result.result.attempts,1);
  assert.equal(result.state.run.checkpoint,0);assert.equal(result.state.run.mapIndex,0);
  assert.equal(result.result.stones,result.result.lastBattle.stones);
@@ -114,11 +115,11 @@ test("offline time cap is 15 minutes first life, 2 hours after reincarnation",()
 });
 test("stop action settles first, then disables farm; upgrade commands settle old farm session first",()=>{
  let s=exec(createSave(10),"START_IDLE",{now:20000}).state;
- const stopped=exec(s,"STOP_IDLE",{now:21550});
+ const stopped=exec(s,"STOP_IDLE",{now:20000+nextMs(s)});
  assert.equal(stopped.state.run.idle.active,false);
  assert.equal(stopped.result.attempts,1);
  s=exec(createSave(20),"START_IDLE",{now:30000}).state;
- const funded=exec(s,"DRAW",{now:31550,packId:"battle",count:1});
+ const funded=exec(s,"DRAW",{now:30000+nextMs(s),packId:"battle",count:1});
  assert.ok(funded.state.run.mobKills>=1);
  assert.ok(funded.state.run.cards.B001>=1);
 });
