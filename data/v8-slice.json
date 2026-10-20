@@ -339,35 +339,39 @@
   "relics": [
     {
       "id": "R001",
-      "name": "凡尘灵骨",
+      "name": "凡尘武骨",
       "rarity": "huang",
-      "stat": "attackPct",
-      "value": 3,
-      "max": 25
+      "stat": "flatAttack",
+      "value": 2,
+      "max": null,
+      "stackMode": "uncapped"
     },
     {
       "id": "R002",
       "name": "玄黄护符",
       "rarity": "huang",
-      "stat": "hpPct",
-      "value": 3,
-      "max": 25
+      "stat": "flatHp",
+      "value": 12,
+      "max": null,
+      "stackMode": "uncapped"
     },
     {
       "id": "R003",
       "name": "聚宝微光",
       "rarity": "huang",
       "stat": "stonePct",
-      "value": 4,
-      "max": 20
+      "value": 1,
+      "max": null,
+      "stackMode": "uncapped"
     },
     {
       "id": "R004",
       "name": "聚灵仙纹",
       "rarity": "xuan",
       "stat": "qiPct",
-      "value": 4,
-      "max": 20
+      "value": 1,
+      "max": null,
+      "stackMode": "uncapped"
     },
     {
       "id": "R005",
@@ -375,7 +379,9 @@
       "rarity": "xuan",
       "stat": "attackPct",
       "value": 7,
-      "max": 16
+      "max": 16,
+      "stackMode": "capped",
+      "maxStacks": 16
     },
     {
       "id": "R006",
@@ -383,7 +389,9 @@
       "rarity": "xuan",
       "stat": "petPct",
       "value": 6,
-      "max": 16
+      "max": 16,
+      "stackMode": "capped",
+      "maxStacks": 16
     },
     {
       "id": "R007",
@@ -391,7 +399,9 @@
       "rarity": "di",
       "stat": "stonePct",
       "value": 10,
-      "max": 12
+      "max": 12,
+      "stackMode": "capped",
+      "maxStacks": 12
     },
     {
       "id": "R008",
@@ -399,7 +409,9 @@
       "rarity": "di",
       "stat": "hpPct",
       "value": 12,
-      "max": 12
+      "max": 12,
+      "stackMode": "capped",
+      "maxStacks": 12
     },
     {
       "id": "R009",
@@ -407,7 +419,9 @@
       "rarity": "tian",
       "stat": "attackPct",
       "value": 18,
-      "max": 10
+      "max": 10,
+      "stackMode": "capped",
+      "maxStacks": 10
     },
     {
       "id": "R010",
@@ -415,7 +429,45 @@
       "rarity": "tian",
       "stat": "qiPct",
       "value": 16,
-      "max": 10
+      "max": 10,
+      "stackMode": "capped",
+      "maxStacks": 10
+    },
+    {
+      "id": "R011",
+      "name": "法相真意",
+      "rarity": "xian",
+      "stat": "attackPct",
+      "value": 20,
+      "max": 8,
+      "stackMode": "capped"
+    },
+    {
+      "id": "R012",
+      "name": "九天聚气经",
+      "rarity": "xian",
+      "stat": "qiPct",
+      "value": 20,
+      "max": 10,
+      "stackMode": "capped"
+    },
+    {
+      "id": "R013",
+      "name": "洞玄宝库",
+      "rarity": "di",
+      "stat": "stonePct",
+      "value": 9,
+      "max": 16,
+      "stackMode": "capped"
+    },
+    {
+      "id": "R014",
+      "name": "玄元剑魄",
+      "rarity": "tian",
+      "stat": "hpPct",
+      "value": 15,
+      "max": 10,
+      "stackMode": "capped"
     }
   ],
   "ultras": [
@@ -423,37 +475,51 @@
       "id": "U001",
       "name": "开天斧",
       "effect": "heroMultiplier",
-      "value": 2.5
+      "value": 2.5,
+      "rarity": "hongmeng",
+      "description": "鸿蒙至宝，极低概率独立追加，永不保底"
     },
     {
       "id": "U002",
       "name": "始祖印",
       "effect": "petMultiplier",
-      "value": 4
+      "value": 4,
+      "rarity": "hongmeng",
+      "description": "鸿蒙至宝，极低概率独立追加，永不保底"
     },
     {
       "id": "U003",
       "name": "洞天珠",
       "effect": "caveMultiplier",
-      "value": 3
+      "value": 3,
+      "rarity": "hongmeng",
+      "description": "鸿蒙至宝，极低概率独立追加，永不保底"
     },
     {
       "id": "U004",
       "name": "大道书",
       "effect": "techniqueMultiplier",
-      "value": 2.5
+      "value": 2.5,
+      "rarity": "hongmeng",
+      "description": "鸿蒙至宝，极低概率独立追加，永不保底"
     }
   ],
   "fate": {
     "price": 40,
-    "ultraChance": 0.0001,
+    "ultraChance": 0.000001,
     "rarities": {
       "huang": 50,
       "xuan": 28,
       "di": 14,
-      "tian": 8
+      "tian": 7,
+      "xian": 1
     },
-    "pityAt": 20
+    "pityAt": 25,
+    "pityXianAt": 80,
+    "apexChance": 0.00001,
+    "maxFateRateBoost": 0,
+    "uncappedPoolInvariant": true,
+    "specialRules": "每个天命箱必得1件常规遗物；十万分之一太古、百万分之一鸿蒙是两次独立追加判定；常规满级物品退出卡池，无上限常规遗物始终存在；无稀有保底与充值加成。"
   },
   "realmPillPity": 8,
   "farmTargets": [
@@ -483,6 +549,40 @@
       "attackFactor": 1.1,
       "stoneFactor": 0.68,
       "qiFactor": 1.65
+    }
+  ],
+  "apex": [
+    {
+      "id": "A001",
+      "name": "太古命盘",
+      "rarity": "taigu",
+      "effect": "heroDamageMultiplier",
+      "value": 1.4,
+      "description": "修士普攻最终伤害×1.4；不放大宠物"
+    },
+    {
+      "id": "A002",
+      "name": "万灵祖契",
+      "rarity": "taigu",
+      "effect": "petMultiplier",
+      "value": 1.8,
+      "description": "灵宠最终伤害×1.8，独立乘区"
+    },
+    {
+      "id": "A003",
+      "name": "九窍灵根",
+      "rarity": "taigu",
+      "effect": "cultivationMultiplier",
+      "value": 1.5,
+      "description": "战斗所得修为×1.5，不作用于因果"
+    },
+    {
+      "id": "A004",
+      "name": "乾元钱母",
+      "rarity": "taigu",
+      "effect": "stoneMultiplier",
+      "value": 1.5,
+      "description": "战斗灵石×1.5，不作用于天命箱成本"
     }
   ]
 }
