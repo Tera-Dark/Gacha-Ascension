@@ -18,6 +18,7 @@
 <button class="nav-item" data-view="cave"><span class="nav-glyph">⌂</span><span>洞府<small>经营效率与抽卡投资</small></span></button>
 <button class="nav-item" data-view="pet"><span class="nav-glyph">♧</span><span>灵宠<small>独立攻击 / 护主</small></span></button>
 <div class="sidebar-heading spaced">长线追求</div>
+<button class="nav-item" data-view="items"><span class="nav-glyph">🎒</span><span>道具行囊<small>宝箱 / 炼药 / 自动服药</small></span></button>
 <button class="nav-item" data-view="fate"><span class="nav-glyph">✧</span><span>轮回天命<small>跨世遗物 / 因果</small></span></button>
 <button class="nav-item" data-view="atlas"><span class="nav-glyph">◈</span><span>世界图鉴<small>24张地图 · 20个境界</small></span></button>
 <button class="nav-item" data-view="settings"><span class="nav-glyph">⚙</span><span>存档设置<small>独立预览档 / 备份</small></span></button>
@@ -49,6 +50,8 @@
   </div>
   <div class="wb-subheading"><strong>法器与装备</strong><button id="openGearBag" type="button" class="wb-text-link">打开背包 ›</button></div>
   <div class="wb-gear-grid" id="equipmentGrid" aria-label="十个装备槽位"></div>
+  <div class="wb-subheading"><strong>本命法器 · 大境界逐阶解锁</strong><small id="artifactSlotsInfo">筑基起解锁</small></div>
+  <div class="wb-artifact-grid" id="artifactGrid" aria-label="独立法器槽位"></div>
   <div class="wb-quicklines">
    <div><span>主修功法</span><strong id="wbTechnique">尚未习得</strong></div>
    <div><span>出战灵宠</span><strong id="wbPet">暂无</strong></div>
@@ -98,6 +101,7 @@
   </div>
   <div class="activity-interval"><div class="interval-caption"><span id="fightMode">当前关持续积累</span><span id="fightTimer">下一场战斗</span></div><div class="track interval-track"><div class="interval-fill" id="intervalFill"></div></div></div>
   <div class="battle-feedback"><span class="result-bullet" id="combatReport">守卫失败不退关</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
+  <div class="wb-loot-flash" id="combatLootResult" aria-live="polite">击败怪物有机会获得装备箱、药草箱；死亡可能损失穿戴装备。</div>
   <details class="v8-disclosure wb-drop-panel"><summary><span><strong>本关奖励与挑战详情</strong><small>守卫波次 · 首通资格 · 刷怪策略</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="wb-drop-info"><p id="goalHint">继续积累灵石和修为，抽卡培养。</p><button class="text-action" data-view="gacha">前往抽卡 →</button></div></details>
   <div class="checkpoint-wrap"><div class="checkpoint-title"><b>关卡推进</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
  </section>
@@ -121,6 +125,23 @@
 <div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>本切片已实行五阶常规遗物、含基础攻击/气血/修为/灵石的无上限永久叠层。每箱另有十万分之一的太古奇珍与百万分之一的鸿蒙异宝，两层独立追加、均不保底；正式完整图鉴后续扩充。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
 <details class="v8-disclosure v8-relic-inventory"><summary><span><strong>查看永久遗物图鉴</strong><small>无上限常规遗物、太古奇珍及鸿蒙异宝 · 默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="relicList" class="v8-inventory"></div></details><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
 </section>
+<section class="view" data-view-panel="items">
+<div class="v8-panel"><h3>🎒 道具行囊 · 战利品与丹药</h3>
+<p>怪物有概率掉落装备箱和药草箱；开箱由固定公开池决定，稀有装备和本命法器主要通过机缘抽卡获得。</p>
+<div class="wb-items-panel"><h4>战利品宝箱</h4><div id="boxInventory" class="wb-item-inventory"></div>
+<h4>药草与炼药</h4><div id="herbInventory" class="wb-item-inventory"></div>
+<h4>战斗消耗品</h4><div id="consumableInventory" class="wb-item-inventory"></div>
+</div>
+<div class="wb-auto-potion"><h4>回春自律 · 轮回解锁</h4><p>首次解锁消耗25因果，永久保留。开启后，战斗中生命降低到设定比例且身上有回春丹时，才会自动消耗丹药。</p>
+<div id="autoPotionStatus" class="v8-gate">尚未解锁</div>
+<div class="wb-auto-row">
+<button id="unlockAutoPotion" class="action-btn">消耗25因果解锁</button>
+<label for="autoPotionThreshold">气血阈值</label>
+<select id="autoPotionThreshold" aria-label="自动补血阈值"><option value="0.2">20%</option><option value="0.35">35%</option><option value="0.5">50%</option><option value="0.7">70%</option></select>
+<button id="toggleAutoPotion" class="action-btn">开启自动吃药</button>
+</div></div>
+<details class="v8-disclosure" id="items"><summary><span><strong>掉落率及固定池说明</strong><small>每场独立概率 · 装备箱品质限制 · 药草数量</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-items"></div></details>
+</div></section>
 <section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><p>前四张可游玩、其余二十张已录入世界设定与Boss名称，后续接入同一套地图/境界模块即可扩展。</p><div id="mapAtlas" class="v8-atlas"></div>
 <details class="v8-disclosure v8-future-map"><summary><span><strong>查看未开放的20张地图</strong><small>地图规划数据，尚未实装关卡</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="mapAtlasFuture" class="v8-atlas"></div></details>
 <details class="v8-disclosure" id="atlas"><summary><span><strong>世界地图与指数曲线</strong><small>地图强度倍率 · Boss属性 · 开放范围</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-atlas"></div></details></div></section>
@@ -150,6 +171,7 @@
 <button data-view="technique">⚡ <span>功法构筑</span></button>
 <button data-view="cave">⌂ <span>洞府经营</span></button>
 <button data-view="pet">♧ <span>御兽灵契</span></button>
+<button data-view="items">🎒 <span>道具行囊</span></button>
 <button data-view="fate">◈ <span>轮回天命</span></button>
 <button data-view="atlas">▤ <span>世界图鉴</span></button>
 <button data-view="settings">⚙ <span>存档设置</span></button>
