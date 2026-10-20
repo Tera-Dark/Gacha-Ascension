@@ -2,6 +2,7 @@ import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS
 import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
 import {startIdle,claimIdle,stopIdle,battleIntervalMs} from "./idle.mjs";
 import {validateContentContract,unlockedPack} from "./modules.mjs";
+import {EQUIPMENT_SLOTS,validateEquipmentCards,verifyEquipment,equipmentStats,equipItem} from "./equipment.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=8;
@@ -10,12 +11,13 @@ const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const nat=n=>Number.isSafeInteger(n)&&n>=0;
 export function loadCatalog(world,slice){
  if(world?.maps?.length!==24||world?.cultivation?.length!==20||slice?.version!=="0.8-playable-slice-1")throw Error("版本化地图/卡池配置缺失");
- if(slice.playableMaps!==4||slice.packs.length!==7||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
+ if(slice.playableMaps!==4||slice.packs.length!==8||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
  validateContentContract(slice);
  if(!Array.isArray(slice.farmTargets)||slice.farmTargets.length!==3||
   new Set(slice.farmTargets.map(x=>x.id)).size!==3||
   slice.farmTargets.some(x=>!["balanced","stones","cultivation"].includes(x.id)||
     ["hpFactor","attackFactor","stoneFactor","qiFactor"].some(k=>!finite(x[k])||x[k]<=0)))throw Error("刷怪目标配置错误");
+ validateEquipmentCards(slice.packs.flatMap(p=>p.cards));
  const ids=new Set(),cards={};
  for(const p of slice.packs)for(const c of p.cards){
   if(ids.has(c.id))throw Error("重复卡牌 "+c.id);ids.add(c.id);cards[c.id]={...c,pack:p.id};
@@ -30,7 +32,7 @@ export function createSave(seed=20261020){
   run:createRun()};
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
- stones:110,farmFocus:"balanced",cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
+ stones:110,farmFocus:"balanced",equipment:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
  victories:0,mobKills:0,guardianWins:0,bossWins:0,losses:0,
  totalEarned:0,totalSpent:0,lastBattle:null};}
 export function validateSave(s,c){
@@ -42,6 +44,7 @@ export function validateSave(s,c){
  if(r.farmFocus!==undefined&&!c.farmTargets.some(x=>x.id===r.farmFocus))throw Error("刷怪目标异常");
  if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
+ verifyEquipment(s,c);
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
  for(const [id,count] of Object.entries(m.relics))if(!c.relics.some(x=>x.id===id)||!nat(count))throw Error("遗物记录损坏");
  if(m.apex&&Object.keys(m.apex).some(id=>!c.apex.some(x=>x.id===id)))throw Error("未知太古异宝");
@@ -62,16 +65,17 @@ export function heroStats(s,c){
  const realm=c.realms[r.realmIndex];
  const realmFactor=Math.pow(c.realm.breakStatSmall,r.realmIndex)*(r.realmIndex>=4?c.realm.breakStatMajor:1);
  const all=sumEffect(s,c,"allPct");
- const attack=Math.max(1,Math.round(applyPct(29*realmFactor+metaPct(s,c,"flatAttack"),all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))));
- const hp=Math.max(1,Math.round(applyPct(260*realmFactor+metaPct(s,c,"flatHp"),all+sumEffect(s,c,"hpPct")+metaPct(s,c,"hpPct"))));
- const defense=Math.max(1,Math.round(applyPct(12*realmFactor,all+sumEffect(s,c,"defPct"))));
+ const gear=equipmentStats(s,c);
+ const attack=Math.max(1,Math.round(applyPct(29*realmFactor+metaPct(s,c,"flatAttack")+gear.attack,all+sumEffect(s,c,"attackPct")+metaPct(s,c,"attackPct"))));
+ const hp=Math.max(1,Math.round(applyPct(260*realmFactor+metaPct(s,c,"flatHp")+gear.hp,all+sumEffect(s,c,"hpPct")+metaPct(s,c,"hpPct"))));
+ const defense=Math.max(1,Math.round(applyPct(12*realmFactor+gear.defense,all+sumEffect(s,c,"defPct"))));
  return {name:realm.name,attack,hp,defense,realmFactor};
 }
 export function yields(s,c){
  const caveMult=hasUltra(s,"U003")?3:1;
  const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")*caveMult,0,600)+metaPct(s,c,"stonePct");
  const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")*caveMult,0,600)+metaPct(s,c,"qiPct");
- const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed"),0,60);
+ const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed")+equipmentStats(s,c).speedPct,0,60);
  return {stonePct,qiPct,speedPct,petPct:cave(s,c,"pet")+metaPct(s,c,"petPct")};
 }
 export function progress(s,c){
@@ -165,6 +169,10 @@ function gainCard(s,c,card){
  run.cards[card.id]=(run.cards[card.id]||0)+1;
  if(card.effect==="technique"&&!run.technique)run.technique=card.id;
  if(card.effect==="pet"&&!run.pet)run.pet=card.id;
+ if(card.effect==="equipment"){
+  const free=EQUIPMENT_SLOTS.find(slot=>slot.type===card.equipmentSlot&&!(run.equipment||{})[slot.id]);
+  if(free)equipItem(s,c,free.id,card.id);
+ }
 }
 function draw(s,c,{packId,count}){
  const pack=c.packById[packId];
@@ -272,6 +280,7 @@ export function dispatch(current,c,cmd){
  case "EQUIP_TECH":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="technique"||!r.cards[id]))throw Error("功法未拥有");
   r.technique=id;result={kind:"equip",slot:"technique",id};break}
+ case "EQUIP_ITEM":result=equipItem(s,c,cmd.slot,cmd.id);break;
  case "EQUIP_PET":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="pet"||!r.cards[id]))throw Error("灵宠未拥有");
   r.pet=id;result={kind:"equip",slot:"pet",id};break}
