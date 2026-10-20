@@ -52,7 +52,9 @@ export function detailModel(s,c,analysis=null){
    row("装备增益合计",(()=>{const e=equipmentStats(s,c);return "攻击+"+e.attack+" / 气血+"+e.hp+" / 防御+"+e.defense+" / 攻速+"+e.speedPct+"%"})(),"最多两条词条/装备"),
    ...EQUIPMENT_SLOTS.map(slot=>{
     const card=c.cards[r.equipment?.[slot.id]];
-    return row(slot.name,card?.name||"空槽",card?Object.entries(card.stats).map(([key,value])=>({attack:"攻击",hp:"气血",defense:"防御",speedPct:"攻速"}[key]+" +"+value+(key==="speedPct"?"%":"")).join(" · "):"")
+    const label={attack:"攻击",hp:"气血",defense:"防御",speedPct:"攻速"};
+    const attrs=card?Object.entries(card.stats).map(([key,val])=>label[key]+" +"+val+(key==="speedPct"?"%":"")).join(" · "):"";
+    return row(slot.name,card?.name||"空槽",attrs);
    }),
    row("境界属性倍率","×"+h.realmFactor.toFixed(3),"小境界 ×"+c.realm.breakStatSmall+"；筑基后另有跨境倍率"),
    row("攻击",fmt(h.attack),"普通攻击最终伤害的基准属性"),
@@ -119,10 +121,14 @@ export function detailModel(s,c,analysis=null){
    const tiers=effectiveTierRates(pack,c.rarityWeights);
    return section(pack.name+" · 实际概率与卡牌图鉴",[
     ...tiers.map(x=>row(rarityName[x.tier]+"阶",pct(x.rate),"该阶每张卡概率≈"+pct(x.rate/x.cards.length))),
-    ...pack.cards.map(card=>row(card.name+" ["+rarityName[card.rarity]+"]","已持有×"+(r.cards[card.id]||r.pills[card.id]||0),
-     card.effect==="equipment"?
-      ("可穿戴："+EQUIPMENT_SLOTS.find(x=>x.type===card.equipmentSlot)?.name+" · "+Object.entries(card.stats).map(([key,v])=>({attack:"攻击",hp:"气血",defense:"防御",speedPct:"攻速"}[key]+" +"+v+(key==="speedPct"?"%":"")).join("、")):
-      ("本次候选效果 "+card.effect+" +"+card.value+(card.style?" · "+card.style:""))))
+    ...pack.cards.map(card=>{
+     const label={attack:"攻击",hp:"气血",defense:"防御",speedPct:"攻速"};
+     const note=card.effect==="equipment"?
+      ("可穿戴："+(EQUIPMENT_SLOTS.find(x=>x.type===card.equipmentSlot)?.name||card.equipmentSlot)+" · "+
+       Object.entries(card.stats).map(([key,val])=>label[key]+" +"+val+(key==="speedPct"?"%":"")).join("、")):
+      ("本次候选效果 "+card.effect+" +"+card.value+(card.style?" · "+card.style:""));
+     return row(card.name+" ["+rarityName[card.rarity]+"]","已持有×"+(r.cards[card.id]||r.pills[card.id]||0),note);
+    })
    ],"第1次战力秘藏固定破军剑心；丹道筑基丹最多8抽保底。稀有度缺档时会按剩余权重重投，因此这里展示实际有效阶位概率。");
   })
  ];
