@@ -4,6 +4,7 @@
  */
 import {SAVE_KEY,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequirements,packCost,farmTarget} from "./engine.mjs";
 import {STYLE_LABELS,combatStyle,RULES} from "./combat-depth.mjs";
+import {baseRates} from "./relic-pool.mjs";
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const fmt=n=>!Number.isFinite(n)?"—":Math.abs(n)>=1e12?(n/1e12).toFixed(2)+"兆":Math.abs(n)>=1e8?(n/1e8).toFixed(2)+"亿":Math.abs(n)>=1e4?(n/1e4).toFixed(2)+"万":Math.round(n*100)/100+"";
@@ -14,7 +15,7 @@ const relic=(s,c,key)=>c.relics.reduce((a,x)=>a+(x.stat===key?(s.meta.relics[x.i
 const section=(title,rows,note="")=>({title,rows,note});
 const row=(label,value,note="")=>({label,value:String(value),note});
 const passiveName={attackPct:"攻击",hpPct:"气血",defPct:"防御",allPct:"全属性",stonePct:"灵石收益",qiPct:"修为收益",speedPct:"战斗加速",petPct:"灵宠效果"};
-const rarityName={huang:"黄",xuan:"玄",di:"地",tian:"天"};
+const rarityName={huang:"黄",xuan:"玄",di:"地",tian:"天",xian:"仙"};
 
 export function effectiveTierRates(pack,weights){
  const base=Object.entries(weights);
@@ -39,8 +40,8 @@ export function detailModel(s,c,analysis=null){
  const caveMultiplier=s.meta.ultras.U003?3:1;
  const caveStone=cave(r,c,"stone"),caveQi=cave(r,c,"qi"),caveSpeed=cave(r,c,"speed"),cavePet=cave(r,c,"pet");
  const stoneBonus=qty(r,c,"stonePct"),qiBonus=qty(r,c,"qiPct"),speedBonus=qty(r,c,"speedPct");
- const totalStone=clamp(stoneBonus+caveStone*caveMultiplier+relic(s,c,"stonePct"),0,600);
- const totalQi=clamp(qiBonus+caveQi*caveMultiplier+relic(s,c,"qiPct"),0,600);
+ const totalStone=clamp(stoneBonus+caveStone*caveMultiplier,0,600)+relic(s,c,"stonePct");
+ const totalQi=clamp(qiBonus+caveQi*caveMultiplier,0,600)+relic(s,c,"qiPct");
  const nextName=c.realms[r.realmIndex+1]?.name||"待续";
  const details={};
  details.explore=[
@@ -53,6 +54,9 @@ export function detailModel(s,c,analysis=null){
    row("全属性卡加成",pct(all)),row("攻击卡加成",pct(atk)),
    row("气血卡加成",pct(hp)),row("防御卡加成",pct(def)),
    row("常规天命攻击 / 气血",pct(attackRelic)+" / "+pct(hpRelic)),
+   row("无限基础攻击",fmt(relic(s,c,"flatAttack")),"每抽到凡尘武骨永久增加基础攻击，无上限"),
+   row("无限基础气血",fmt(relic(s,c,"flatHp")),"每抽到玄黄护符永久增加基础气血，无上限"),
+   row("太古命盘",s.meta.apex?.A001?"普攻最终伤害×1.4":"未获得"),
    row("鸿蒙 · 开天斧",s.meta.ultras.U001?"普攻最终伤害 ×2.5":"尚未获得")
   ],"三围源自境界基础值、卡牌、永久遗物。攻击实际伤害还会受目标防御、命中、浮动和克制影响。"),
   section("守卫与敌方属性",[
@@ -92,7 +96,7 @@ export function detailModel(s,c,analysis=null){
    row("悟道增长规则","ceil(1 × 1.26^境界序号)"),
    row("本阶段序号",r.realmIndex+" / 19"),
    row("修为卡牌加成",pct(qiBonus)),row("洞府修为加成",pct(caveQi*caveMultiplier)),
-   row("永久遗物修为加成",pct(relic(s,c,"qiPct"))),
+   row("永久遗物修为加成",pct(relic(s,c,"qiPct")),"常规遗物的无上限加成不受600%局内封顶影响"),
    row("实际修为增益",pct(totalQi)+"（封顶600%）"),
    row("可持有筑基丹",fmt(r.pills.D004||0)),row("丹道筑基丹保底剩余",Math.max(1,c.realmPillPity-r.pillPity)+"抽")
   ],"地图中的小怪负责提供修为，丹药和悟道来自抽卡。当前切片可突破至筑基初期。")
@@ -133,6 +137,8 @@ export function detailModel(s,c,analysis=null){
    ...c.packs.find(x=>x.id==="cave").cards.map(x=>row(x.name+" ("+x.style+")",
      "×"+(r.cards[x.id]||0),"单份+"+pct(x.value)+"，合计+"+pct(x.value*(r.cards[x.id]||0)))),
    row("洞天珠",s.meta.ultras.U003?"洞府资源增量 ×3":"未获得"),
+   row("太古·乾元钱母",s.meta.apex?.A004?"战斗灵石收益×1.5":"未获得"),
+   row("太古·九窍灵根",s.meta.apex?.A003?"战斗修为收益×1.5":"未获得"),
    row("洞府灵石贡献",pct(caveStone*caveMultiplier)),
    row("洞府修为贡献",pct(caveQi*caveMultiplier)),
    row("洞府战斗加速",pct(caveSpeed)),
@@ -151,6 +157,7 @@ export function detailModel(s,c,analysis=null){
    row("洞府灵宠加成",pct(cavePet)),
    row("永久遗物灵宠加成",pct(relic(s,c,"petPct"))),
    row("鸿蒙始祖印",s.meta.ultras.U002?"灵宠技能伤害 ×4":"未获得"),
+   row("太古万灵祖契",s.meta.apex?.A002?"灵宠伤害×1.8":"未获得"),
    row("玄龟护盾",p.style==="ward"?fmt(Math.round(h.hp*clamp(p.power/200,0,.50)))+"（每场起始）":"未启用"),
    row("雷隼破甲",p.style==="pierce"?"无视敌人防御55%":"未启用")
   ],"宠物每次真实战斗独立结算；一场多波Boss战中护盾不会随波刷新。"),
@@ -167,13 +174,18 @@ export function detailModel(s,c,analysis=null){
    row("本世轮回预计获得",r.bossCleared?55+Math.max(0,r.realmIndex-3)*10:"需击败第四图Boss")
   ],"轮回清空本世卡牌/洞府/境界/资源；跨世永久遗物和因果不会清除。"),
   section("遗物掉落概率与永久效果",[
-   ...Object.entries(c.fate.rarities).map(([tier,w])=>row(rarityName[tier]+"阶常规遗物",pct(w))),
-   row("鸿蒙独立追加概率",(c.fate.ultraChance*100).toFixed(2)+"%","无保底，不替代常规抽取"),
-   row("常规遗物种类","测试池 "+c.relics.length+"种"),
+   ...baseRates(s,c).map(x=>row(rarityName[x.tier]+"阶常规遗物当前概率",(x.chance*100).toFixed(4)+"%","满级遗物退出后会按剩余阶层权重重新计算")),
+   row("太古奇珍独立追加概率","0.001%","十万分之一，无保底，不替代常规抽取"),
+   row("鸿蒙异宝独立追加概率","0.0001%","百万分之一，无保底，不替代常规抽取"),
+   row("常规保底","≥天阶 "+c.fate.pityAt+"抽 / 仙阶 "+c.fate.pityXianAt+"抽","仅当对应阶层还有可获得遗物时生效"),
+   row("常规箱开启次数",s.meta.totalFateChests||0),
+   row("无限叠加效果","基础攻击、基础气血、灵石、修为"),
+   row("常规遗物种类","预览池 "+c.relics.length+"种"),
    row("已拥有常规遗物种类",ownedRelics.length),
-   ...ownedRelics.map(x=>row(x.name+" ×"+s.meta.relics[x.id],pct(x.value*s.meta.relics[x.id]),passiveName[x.stat]||x.stat)),
-   ...c.ultras.map(x=>row("鸿蒙·"+x.name,s.meta.ultras[x.id]?"已获得":"未获得","专属最终效果 ×"+x.value))
-  ],"测试池仍只有10件常规遗物；正式30件遗物和毕业共鸣尚未全部实装。")
+   ...ownedRelics.map(x=>row(x.name+" ×"+s.meta.relics[x.id],x.stat==="flatAttack"||x.stat==="flatHp"?("+"+fmt(x.value*s.meta.relics[x.id])):pct(x.value*s.meta.relics[x.id]),(passiveName[x.stat]||x.stat)+(x.max==null?" · 无上限":" · 上限"+x.max)) ),
+   ...c.apex.map(x=>row("太古·"+x.name,s.meta.apex?.[x.id]?"已获得":"未获得","十万分之一池 · "+x.description)),
+   ...c.ultras.map(x=>row("鸿蒙·"+x.name,s.meta.ultras[x.id]?"已获得":"未获得","百万分之一池 · "+x.description))
+  ],"新版预览池14件常规遗物，含4种永久无上限叠加；满级遗物退出卡池，但宝箱不会耗尽。正式内容数量继续扩充。")
  ];
  details.atlas=[
   section("世界和当前地图",[
