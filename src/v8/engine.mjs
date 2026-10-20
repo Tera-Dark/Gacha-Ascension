@@ -138,7 +138,7 @@ export function combatSnapshot(s,c,kind){
  h.defense=Math.max(0,Math.round(h.defense*(1+(a.ward+(prepared.MED002?15:0))/100)));
  f.attack=Math.max(1,Math.round(f.attack*(1-a.curse/100)));
  const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
-  available:s.run.consumables?.P001||0,prepared:prepared.MED001||0};
+  available:s.run.consumables?.MED001||0,prepared:prepared.MED001||0};
  return {hero:h,enemy:f,tech:t,pet:p,heroUltra:hasUltra(s,"U001"),
   kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c).speedPct+a.blessing),
   apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
