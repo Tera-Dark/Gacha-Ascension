@@ -462,3 +462,46 @@
 .v8-save-recovery>div{display:flex;flex-wrap:wrap;gap:8px}
 .v8-save-recovery button{min-height:44px;border:1px solid #bea272;color:#f3e4be;background:#385449;padding:8px 13px;border-radius:8px;cursor:pointer}
 .v8-save-recovery button:focus-visible{outline:3px solid #e4c786;outline-offset:3px}
+
+/* v0.9.4 first-life UX: visible next action, no save schema additions. */
+.novice-guide[hidden]{display:none!important}
+.novice-guide{border:1px solid #bda474;border-radius:11px;background:linear-gradient(120deg,#3a4132,#223b31);padding:10px 12px;display:grid;gap:8px}
+.novice-guide>div:first-child{display:grid;gap:4px;min-width:0}
+.novice-guide small{font-size:10px;color:#edd092;letter-spacing:.05em}
+.novice-guide strong{font-size:14px;color:#f9e8ba}
+.novice-guide p{font-size:11px;color:#d5dfcf;line-height:1.55;margin:0}
+.novice-guide-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.novice-guide-actions button{min-height:44px;border-radius:8px;padding:9px 12px;border:1px solid #a4a77b;font-size:12px;background:#3d5b43;color:#f7eac6;cursor:pointer}
+.novice-guide-actions #noviceAction{background:#806a40;border-color:#e5b767;font-weight:700}
+.novice-guide-actions #noviceSkip{background:transparent;color:#bfcfbe;border-color:#647a67}
+.novice-mode .wb-player .wb-gear-grid,.novice-mode .wb-player .wb-artifact-grid,
+.novice-mode .wb-player .wb-subheading,.novice-mode .wb-player .wb-advisor,
+.novice-mode .wb-player .wb-quicklines{display:none!important}
+.wb-gear-slot.can-upgrade{border-color:#e6be71;box-shadow:inset 0 0 0 1px #b89a5b}
+.wb-gear-slot.can-upgrade:after{content:"↑";position:absolute;right:4px;top:1px;color:#f9d88a;font-weight:900;font-size:12px}
+.pack.is-recommended{border-color:#d7b679!important;box-shadow:0 0 0 1px #d7b67966}
+.pack.is-recommended .packtag{color:#f6d08b}
+.packpurpose{font-size:11px;color:#c8d9c8;margin:6px 0 4px;line-height:1.5}
+.v8-gacha-direction{border-left:3px solid #c4a36c;background:#26372f;padding:10px 12px;color:#ecdcbd;font-size:12px;line-height:1.6;border-radius:0 8px 8px 0}
+.v8-quick-reveal{display:flex;flex-wrap:wrap;align-items:center;gap:9px;min-height:44px;cursor:pointer;padding:8px 10px;border:1px solid #577267;border-radius:8px;background:#1d312c;font-size:12px;color:#e7d5a9}
+.v8-quick-reveal input{width:20px;height:20px;accent-color:#ae945e;flex:0 0 20px;cursor:pointer}
+.v8-quick-reveal small{color:#a1bdb0;font-size:10px;line-height:1.4}
+.v8-fate-choice{border-left:3px solid #cba16e;padding:10px 11px;border-radius:0 8px 8px 0;background:#25332e;color:#efdeb6;font-size:12px;line-height:1.7}
+.v8-legacy-link{font-size:11px;color:#9bb9a9}.v8-legacy-link a{color:#d8bd89}
+@media(max-width:700px) and (orientation:portrait){
+ .battle-workbench>.wb-enemy{grid-column:1;grid-row:1}
+ .battle-workbench>.wb-player{grid-column:1;grid-row:2}
+ .wb-enemy>.wb-heading{order:-3}
+ .wb-enemy>.novice-guide{order:-2}
+ .wb-enemy>.v8-battle-actions{order:-1;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .wb-enemy .v8-battle-actions .primary-action{grid-column:span 2}
+ .wb-enemy .v8-battle-actions #autoPush{grid-column:span 2}
+ .wb-enemy .wb-monster-stage{min-height:120px;flex-basis:125px;max-height:185px}
+ .wb-orientation-note{display:none!important}
+}
+@media(max-width:850px) and (orientation:landscape) and (max-height:480px){
+ .novice-guide{padding:6px 8px;gap:4px}
+ .novice-guide p{font-size:10px}
+ .novice-guide-actions button{min-height:36px;padding:5px 10px}
+}
+@media(prefers-reduced-motion:reduce){.novice-guide *,.pack.is-recommended{animation:none!important;transition:none!important}}
