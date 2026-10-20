@@ -1,4 +1,4 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
@@ -292,7 +292,13 @@ function renderExplore(){
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
  $("farmFocus").value=s.run.farmFocus||"balanced";
  set("farmFocusTip",farmTarget(s,c).desc);
- const foe=enemyPreview(s,c,r.bossCleared?"mob":p.finalGuardian?"boss":"guardian");
+ const foe=combatSnapshot(s,c,r.bossCleared?"mob":p.finalGuardian?"boss":"guardian").enemy;
+ const live=combatSnapshot(s,c,"mob");
+ const attackMs=RULES.heroIntervalMs/(1+live.heroSpeedPct/100);
+ set("heroAttackSpeed","出手间隔 "+(attackMs/1000).toFixed(2)+"秒");
+ $("heroAttackBar").style.animationDuration=attackMs+"ms";
+ set("heroStats","攻击 "+fmt(live.hero.attack)+" · 防御 "+fmt(live.hero.defense));
+ set("playerStatsCompact","法器及备战增益已生效 · 气血 "+fmt(live.hero.hp));
  set("enemyAttackSpeed","出手间隔 "+(RULES.enemyIntervalMs/(1+r.mapIndex*.025)/1000).toFixed(2)+"秒");
  $("enemyAttackBar").style.animationDuration=(RULES.enemyIntervalMs/(1+r.mapIndex*.025))+"ms";
  set("wbWave",r.bossCleared?"可持续刷怪":p.finalGuardian?"地图Boss · 3波":"关卡守卫 · 2波");
@@ -300,9 +306,9 @@ function renderExplore(){
  $("enemySprite").querySelector("span").textContent=["🐺","🦉","🌿","👻"][r.mapIndex]||"妖";
  renderGear();renderArtifacts();renderMapDrawer();
  if(!battleBusy){
-  const e=enemyPreview(s,c,"mob");
+  const e=live.enemy;
   set("enemyLabel",e.name);set("enemyStats","攻击 "+fmt(e.attack)+" · 防御 "+fmt(e.defense));
-  snapshot("heroHP","heroBar",h.hp,h.hp);snapshot("enemyHP","enemyBar",e.hp,e.hp);
+  snapshot("heroHP","heroBar",live.hero.hp,live.hero.hp);snapshot("enemyHP","enemyBar",e.hp,e.hp);
  }
  if(r.bossCleared){
   lastCombatAnalysis=null;
