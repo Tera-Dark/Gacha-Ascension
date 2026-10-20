@@ -353,6 +353,13 @@ function startManualBattle(kind,resumeAuto=false){
  manualResumeAuto=resumeAuto;
  scheduleManual();
 }
+function refreshCombatButtons(){
+ const r=s.run,p=progress(s,c),pending=!!r.pendingBattle,busy=battleBusy&&!auto;
+ $("killMob").disabled=auto||busy||pending;
+ $("challenge").disabled=p.finalGuardian||r.bossCleared||busy||pending||!!pendingRealmGate(s,c);
+ $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||busy||pending;
+ $("analyzeBuild").disabled=r.bossCleared||battleBusy||pending;
+}
 function settleLiveTimeline(result){
  const hadLive=livePreview;
  clearLiveTimeline();
@@ -367,6 +374,12 @@ function settleLiveTimeline(result){
   $("enemySprite").classList.add("defeated");
   setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
  }
+ refreshCombatButtons();
+ // Give the player a moment to read the final hit and loot before restoring
+ // the next target's full HP; never overwrite another fight's live timeline.
+ setTimeout(()=>{
+  if(!battleBusy&&!auto&&!s.run.pendingBattle&&view==="explore")render();
+ },850);
 }
 function animateCombat(result,onComplete=null){
  clearLiveTimeline();
