@@ -39,7 +39,8 @@ async function start(){
   verify(d.getElementById("detail-gacha").textContent.includes("概率"),"Gacha pool probability details absent");
   const drawButton=d.querySelector('#packList button[data-draw="battle"][data-count="1"]');
   verify(!!drawButton&&!drawButton.disabled,"Fresh save cannot afford first battle draw");
-  const before=JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  const existing=w.localStorage.getItem("gacha-ascension-v8-slice-v1");
+  const before=existing?JSON.parse(existing):{seq:0}; // Fresh preview state is not stored until first transaction.
   drawButton.click();await sleep(100);
   const overlay=d.getElementById("revealOverlay");
   verify(!overlay.hidden,"Gacha reveal stage failed to open");
