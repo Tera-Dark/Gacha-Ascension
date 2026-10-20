@@ -75,6 +75,16 @@ export function nextStep(s,c,forecast=null){
   if(!req.hasQi)return {title:"积累突破修为",description:"突破还需 "+(req.qi-r.qi)+" 修为。切换修为优先的小怪刷取。",view:"explore",action:"前往自动刷怪"};
   return {title:"选择下一世",description:"四图已通关，可选择继续积累或轮回。",view:"fate",action:"查看轮回"};
  }
+ // Present optional early-life economic investment where repeated farming makes it
+ // meaningful. This is a short, bounded suggestion (at most one draw per pack),
+ // not a forced spending quota or a hidden change to gacha probabilities.
+ const growthWindow=r.mapIndex>=1&&r.mapIndex<=2&&r.checkpoint<=5;
+ if(growthWindow&&!(r.draws.wealth>0)&&
+    r.stones>=packCost(s,c,"wealth")+Math.max(20,Math.round(packCost(s,c,"battle")*.25)))
+  return pick("wealth","试试聚财投资","你已走出第一图，后续刷怪次数会增加。聚财机缘可能提高每场灵石或攻速，收益会随之后的战斗积累；也可跳过继续闯关。","看看聚财机缘");
+ if(growthWindow&&r.mapIndex>=2&&!(r.draws.cave>0)&&
+    r.stones>=packCost(s,c,"cave")+Math.max(20,Math.round(packCost(s,c,"battle")*.25)))
+  return pick("cave","经营自己的洞府","进入第三图后，洞府能长期增益灵石、修为、攻速或灵宠。建议体验一抽，比较刷怪收益；这是可选的经营投资。","看看洞府营造");
  if(forecast?.winRate>=.83)return {title:"守关时机已到",description:"24场模拟胜率约 "+Math.round(forecast.winRate*100)+"%。可挑战"+(r.checkpoint===c.checkpointsPerMap-1?"地图Boss":"守卫")+"；死亡可能遗失穿戴装备。",view:"explore",action:"前往挑战"};
  if(!r.technique)return pick("technique","先取得功法","尚未装配主修功法。功法秘卷可以提高输出、护盾或灵宠协同能力；抽到后请进入功法页面装配。","抽功法秘卷");
  if(!r.pet)return pick("pet","灵宠协同作战","已有功法，但尚无出战灵宠。御兽灵契提供协战与护盾，搭配特定功法可产生共鸣。","抽御兽灵契");
