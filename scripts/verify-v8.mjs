@@ -7,7 +7,7 @@ assert.equal(ids.length,idSet.size,"Duplicate id in playable v0.8 page");
 for(const id of [...js.matchAll(/\$\("([^"]+)"\)/g),...js.matchAll(/\bset\("([^"]+)"/g)].map(m=>m[1]))
  assert.ok(idSet.has(id),"UI references absent node "+id);
 assert.match(html,/src="\.\/src\/v8\/ui\.mjs"/);
-assert.match(html,/href="\.\/v8\.css"/);
+assert.match(html,/href="\.\/assets\/css\/preview\.css"/);
 assert.match(html,/id="heroBar"/);assert.match(html,/id="enemyBar"/);
 assert.match(html,/id="autoFarm"/);assert.match(html,/id="challengeBoss"/);
 assert.match(html,/data-view-panel="fate"/);assert.match(js,/BATTLE/);
