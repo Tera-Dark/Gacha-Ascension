@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Realtime manual and multiwave combat acceptance</title><style>html,body{margin:0;background:#132622;color:#f1d5a1;font:12px sans-serif}output{padding:5px;display:block}iframe{width:100vw;height:calc(100dvh - 24px);border:0}</style></head><body><output data-result="PENDING" id="result">RUNNING REAL-TIME COMBAT</output><iframe src="../preview-v0.8.html" id="game" title="Live game"></iframe>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Realtime manual and multiwave combat acceptance</title><style>html,body{margin:0;background:#132622;color:#f1d5a1;font:12px sans-serif}output{padding:5px;display:block}iframe{width:100vw;height:calc(100dvh - 24px);border:0}</style></head><body><output data-result="PENDING" id="result">RUNNING REAL-TIME COMBAT</output><iframe id="game" title="Live game"></iframe>
 <script type="module">
 import {fight,loadCatalog} from "../src/v8/engine.mjs";
 const frame=document.getElementById("game"),out=document.getElementById("result");
@@ -58,4 +58,6 @@ frame.addEventListener("load",async()=>{
   out.dataset.result="PASS";out.textContent="PASS: manual HP changes before rewards, multi-wave guardian survives reload without early progression or duplicated payout";
  }catch(e){out.dataset.result="FAIL";out.textContent="FAIL: "+e.message}
 });
+// Register the load handler first: top-level config fetch otherwise races iframe load.
+frame.src="../preview-v0.8.html";
 </script></body></html>
