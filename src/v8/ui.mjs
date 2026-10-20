@@ -44,7 +44,7 @@ function changeView(target){
 function doCommand(type,more={}){
  if(!s||!c)return null;
  try{
-  const out=dispatch(s,c,{type,seq:s.seq+1,...more});
+  const out=dispatch(s,c,{type,seq:s.seq+1,now:Date.now(),...more});
   writeGame(out.state,c);s=out.state;render();
   return out.result;
  }catch(error){toast(error.message,true);return null}
@@ -291,23 +291,42 @@ function afterBattle(result){
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
  else if(!result.won&&result.type!=="mob")toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
 }
-function stopAuto(){auto=false;if(timer!==null)clearTimeout(timer);timer=null;$("intervalFill").classList.remove("running");renderTop()}
+function stopAuto(){
+ if(timer!==null)clearTimeout(timer);timer=null;
+ const wasActive=auto;auto=false;
+ if(wasActive&&s?.run?.idle?.active){
+  const claim=doCommand("STOP_IDLE");
+  if(claim?.attempts>1)toast("已结算 "+claim.wins+" 场小怪战斗，获得灵石 "+fmt(claim.stones));
+ }
+ $("intervalFill").classList.remove("running");renderTop();
+}
+function reportIdle(recovered){
+ if(!recovered||recovered.attempts<1)return;
+ set("combatReport","安全挂机已结算："+recovered.wins+"胜 / "+recovered.attempts+"战");
+ set("rewardLabel","◆ +"+fmt(recovered.stones)+" / 修为 +"+fmt(recovered.qi));
+ if(recovered.attempts>1)toast("离线/后台安全刷怪 "+recovered.wins+"场，灵石 +"+fmt(recovered.stones)+"、修为 +"+fmt(recovered.qi));
+ if(recovered.capped)toast("超过离线上限的时间未计入收益（首世15分钟，轮回后2小时）");
+ if(!recovered.active){auto=false;toast("小怪挑战失败，安全挂机已暂停，进度没有倒退。",true)}
+}
 function schedule(){
+ if(timer!==null)clearTimeout(timer);timer=null;
  if(!auto||document.hidden)return;
- const y=yields(s,c),delay=Math.max(900,1550*(1-y.speedPct/100));
+ const y=yields(s,c),delay=Math.max(900,Math.round(1550*(1-y.speedPct/100)));
  const fill=$("intervalFill");fill.classList.remove("running");void fill.offsetWidth;
  fill.style.setProperty("--interval-duration",delay+"ms");fill.classList.add("running");
  timer=setTimeout(()=>{
-  if(!auto||document.hidden)return;
-  const result=doCommand("BATTLE",{enemyType:"mob"});
-  afterBattle(result);
-  if(!result){stopAuto();return}
+  timer=null;if(!auto||document.hidden)return;
+  const summary=doCommand("CLAIM_IDLE");
+  if(!summary){stopAuto();return}
+  if(summary.lastBattle)afterBattle(summary.lastBattle);
+  if(!summary.active){auto=false;reportIdle(summary);renderTop();return}
   if(autoPush&&!s.run.bossCleared){
    const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
-   const assessment=combatAssessment(s,c,target,24);
-   if(assessment.safeToAuto){
-    const advance=doCommand("BATTLE",{enemyType:target});afterBattle(advance);
-    if(!advance?.won){autoPush=false;toast("当前守卫失败，已关闭自动冲关并继续原地刷怪。",true)}
+   const risk=combatAssessment(s,c,target,24);
+   if(risk.safeToAuto){
+    const next=doCommand("BATTLE",{enemyType:target});
+    afterBattle(next);
+    if(!next?.won){autoPush=false;toast("守关失败，自动冲关关闭，继续刷本关小怪。",true)}
    }
   }
   schedule();
@@ -315,8 +334,9 @@ function schedule(){
 }
 function startAuto(){
  if(auto){stopAuto();return}
- if(s.run.bossCleared)toast("已通关四图：继续刷最后一关小怪，积累突破丹药或因果准备。");
- auto=true;renderTop();schedule();toast("已开始当前关卡小怪自动刷取");
+ const result=doCommand("START_IDLE");
+ if(!result)return;
+ auto=true;renderTop();schedule();toast("正在挂机刷当前关小怪；关闭页面后仅进行安全小怪离线结算");
 }
 function exportSave(){
  const b=new Blob([JSON.stringify(s,null,2)],{type:"application/json;charset=utf-8"});
@@ -384,7 +404,20 @@ async function init(){
   $("exportSave").addEventListener("click",exportSave);
   $("resetSave").addEventListener("click",()=>{if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
    stopAuto();playToken++;s=backupAndReset(c);set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")});
-  document.addEventListener("visibilitychange",()=>{if(document.hidden&&auto){stopAuto();toast("页面转后台已暂停。此版本不会凭空发放离线收益。")}});
+  document.addEventListener("visibilitychange",()=>{
+   if(document.hidden&&auto){if(timer!==null)clearTimeout(timer);timer=null;return}
+   if(!document.hidden&&auto){
+    const claim=doCommand("CLAIM_IDLE");
+    reportIdle(claim);
+    if(auto)schedule();else renderTop();
+   }
+  });
+  if(s.run.idle?.active){
+   auto=true;
+   const resumed=doCommand("CLAIM_IDLE");
+   reportIdle(resumed);
+   if(auto){renderTop();schedule()}
+  }
  }catch(error){toast("初始化失败："+error.message,true);set("saveStatus",error.stack||error.message)}
 }
 init();
