@@ -455,5 +455,34 @@
     },
     "pityAt": 20
   },
-  "realmPillPity": 8
+  "realmPillPity": 8,
+  "farmTargets": [
+    {
+      "id": "balanced",
+      "name": "山野小妖",
+      "desc": "灵石与修为均衡积累",
+      "hpFactor": 1,
+      "attackFactor": 1,
+      "stoneFactor": 1,
+      "qiFactor": 1
+    },
+    {
+      "id": "stones",
+      "name": "藏金灵兽",
+      "desc": "更难击败，灵石奖励提升，修为较少",
+      "hpFactor": 1.16,
+      "attackFactor": 1.08,
+      "stoneFactor": 1.75,
+      "qiFactor": 0.6
+    },
+    {
+      "id": "cultivation",
+      "name": "聚灵幽精",
+      "desc": "强化修为掉落，但灵石较少",
+      "hpFactor": 1.08,
+      "attackFactor": 1.1,
+      "stoneFactor": 0.68,
+      "qiFactor": 1.65
+    }
+  ]
 }
