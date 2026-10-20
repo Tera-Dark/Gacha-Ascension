@@ -91,8 +91,8 @@
 <div class="v8-panel"><div class="section-kicker">SAMSARA / FATE</div><h3>轮回天命</h3><p>击败第四张地图最终Boss以后可自愿轮回。轮回清空当前世修炼、卡牌和地图，保留因果与已抽到的永久遗物。首四图切片已具备真正的跨世记录。</p><div class="v8-resource"><div><small>轮回次数</small><strong id="reincarnations">0</strong></div><div><small>持有因果</small><strong id="fatePoints">0</strong></div><div><small>最大地图</small><strong id="bestMap">第1图</strong></div></div><div class="v8-gate" id="reincarnationHint">完成雾隐剑冢后可以选择轮回。</div>
 <button class="action-btn primary-action v8-primary-wide" id="reincarnate">自愿轮回（本世进度清零）</button>
 </div>
-<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>切片采用10件常规遗物测试池，鸿蒙异宝保持独立0.01%附加判定、无保底。正式30件常规池会在完整版本合并；此处不冒充正式毕业图鉴。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
-<details class="v8-disclosure v8-relic-inventory"><summary><span><strong>查看永久遗物图鉴</strong><small>全部常规遗物等级和鸿蒙拥有状态 · 默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="relicList" class="v8-inventory"></div></details><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
+<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>本切片已实行五阶常规遗物、含基础攻击/气血/修为/灵石的无上限永久叠层。每箱另有十万分之一的太古奇珍与百万分之一的鸿蒙异宝，两层独立追加、均不保底；正式完整图鉴后续扩充。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
+<details class="v8-disclosure v8-relic-inventory"><summary><span><strong>查看永久遗物图鉴</strong><small>无上限常规遗物、太古奇珍及鸿蒙异宝 · 默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="relicList" class="v8-inventory"></div></details><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
 </section>
 <section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><p>前四张可游玩、其余二十张已录入世界设定与Boss名称，后续接入同一套地图/境界模块即可扩展。</p><div id="mapAtlas" class="v8-atlas"></div>
 <details class="v8-disclosure v8-future-map"><summary><span><strong>查看未开放的20张地图</strong><small>地图规划数据，尚未实装关卡</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="mapAtlasFuture" class="v8-atlas"></div></details>
@@ -127,6 +127,16 @@
 <button data-view="atlas">▤ <span>世界图鉴</span></button>
 <button data-view="settings">⚙ <span>存档设置</span></button>
 </div>
+</div>
+<div class="v8-reveal" id="revealOverlay" role="dialog" aria-modal="true" aria-labelledby="revealTitle" hidden>
+ <div class="v8-reveal-stage" id="revealStage" data-phase="charge" data-pack="battle">
+  <div class="v8-reveal-head"><span id="revealSubtitle">命运正在流转</span><button id="skipReveal" type="button">跳过动画</button></div>
+  <div class="v8-reveal-sigil" id="revealSigil" aria-hidden="true">✦</div>
+  <h2 id="revealTitle">机缘已至</h2>
+  <p id="revealFlavor">神识探向未知的机缘……</p>
+  <div class="v8-reveal-cards" id="revealCards"></div>
+  <button id="closeReveal" type="button" class="v8-reveal-close" hidden>收下机缘</button>
+ </div>
 </div>
 <div class="v8-toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module" src="./src/v8/ui.mjs"></script>
