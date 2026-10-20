@@ -398,3 +398,37 @@
 .v8-reveal-stage[data-pack="equipment"][data-phase="charge"] .v8-reveal-sigil{animation:wb-forge .73s ease-in-out infinite alternate}
 @keyframes wb-forge{0%{transform:translateY(-7px) rotate(-11deg);filter:drop-shadow(0 0 6px #cbdee3)}100%{transform:translateY(7px) rotate(9deg);filter:drop-shadow(0 0 20px #aac5cc)}}
 @media(prefers-reduced-motion:reduce){.v8-reveal-stage[data-pack="equipment"] .v8-reveal-sigil{animation:none!important}}
+
+
+/* V0.9.2: incremental combat feedback, four realm artifacts and usable loot panels */
+.wb-player .health-track .track-fill,.wb-enemy .health-track .track-fill{transition:width .13s ease-out!important}
+.wb-artifact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.wb-artifact-slot{min-width:0;display:flex;flex-direction:column;gap:3px;justify-content:center;border:1px solid #705e86;border-radius:8px;background:#293043;padding:9px;min-height:49px;color:#e4cee9;cursor:pointer}
+.wb-artifact-slot strong{font-size:11px}.wb-artifact-slot small{font-size:10px;color:#b5b5d1;overflow-wrap:anywhere}
+.wb-artifact-slot.active{border-color:#ba9dd8;background:#3d354c}
+.wb-artifact-slot:disabled{opacity:.47;cursor:not-allowed}
+.wb-subheading>small{font-size:10px;color:#b9b0cb;max-width:65%;text-align:right;line-height:1.4}
+.wb-loot-flash{padding:7px 9px;border:1px solid #556f54;background:#1f342a;border-radius:8px;font-size:10px;color:#dfcea7;line-height:1.5}
+.wb-items-panel{display:flex;flex-direction:column;gap:9px}
+.wb-items-panel h4,.wb-auto-potion h4{font-size:15px;font-family:serif;color:#eacb92}
+.wb-item-inventory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wb-inventory-item{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;background:#1c312d;border:1px solid #476257;border-radius:9px;padding:10px}
+.wb-inventory-item>div{min-width:0}.wb-inventory-item b{display:block;font-size:12px;color:#edd7a4}
+.wb-inventory-item small{display:block;font-size:10px;color:#a7bdaa;line-height:1.6}
+.wb-inventory-item button{padding:7px 10px;min-height:44px;min-width:77px;border:1px solid #9e906d;background:#34513f;border-radius:8px;color:#ebd69b;cursor:pointer}
+.wb-inventory-item button:disabled{opacity:.4;cursor:not-allowed}
+.wb-auto-potion{display:grid;gap:9px;padding:12px;border:1px solid #7e6c46;background:#2b332a;border-radius:11px}
+.wb-auto-potion p{line-height:1.7;font-size:11px;color:#b6caba}
+.wb-auto-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.wb-auto-row label{font-size:12px;color:#b5cbba}
+.wb-auto-row select{min-height:44px;padding:6px 8px;color:#ead8a5;background:#1e342b;border:1px solid #6b8266;border-radius:7px}
+.wb-auto-row button{min-height:44px}
+@media(max-width:850px) and (orientation:landscape){
+ .wb-artifact-grid{gap:3px}
+ .wb-artifact-slot{padding:5px;min-height:44px}
+ .wb-artifact-slot strong{font-size:9px}.wb-artifact-slot small{font-size:9px}
+ .wb-item-inventory{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .wb-inventory-item{padding:6px}
+}
+@media(max-width:540px) and (orientation:portrait){.wb-item-inventory{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.wb-player .health-track .track-fill,.wb-enemy .health-track .track-fill{transition:none!important}}
