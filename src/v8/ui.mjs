@@ -325,7 +325,10 @@ function renderExplore(){
    "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
  if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
-  set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));}
+  set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));
+  const loss=r.lastBattle.lostGear,loot=r.lastBattle.boxes||[];
+  set("combatLootResult",loss?"☠ 上次战败遗失："+(loss.name||"装备"):loot.length?"🎁 上场战利品："+loot.map(x=>x.name).join("、"):"本场战斗无额外宝箱");
+ }
 }
 function renderCultivate(){
  const p=progress(s,c),req=breakthroughRequirements(s,c),r=s.run;
@@ -444,7 +447,7 @@ function afterBattle(result){
  if(result.lostGear)toast("战败：遗失了 "+result.lostGear.name,true);
  animateCombat(result);
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
- else if(!result.won&&result.type!=="mob")toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
+ else if(!result.won&&result.type!=="mob"&&!result.lostGear)toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
 }
 function stopAuto(){
  if(timer!==null)clearTimeout(timer);timer=null;
