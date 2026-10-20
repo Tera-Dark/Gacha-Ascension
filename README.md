@@ -46,7 +46,7 @@
 
 ## 仓库目录分工
 
-\`\`\`text
+```text
 Gacha-Ascension/
 ├── index.html                       # Pages 默认入口，跳转现行试玩
 ├── preview-v0.8.html                # 现行游戏（保留旧 URL / 存档命名空间）
@@ -67,7 +67,7 @@ Gacha-Ascension/
 │   └── fixtures/                    # 仅供测试的旧版数据
 ├── scripts/                           # 验证、模拟与历史图鉴生成
 └── .github/workflows/                # Pages、当前试玩及历史兼容 CI
-\`\`\`
+```
 
 **维护约定：**入口与存档路径稳定优先；现行模块只引用现行配置；历史资料只为旧试玩提供兼容。不要为每次小改动创建并列 GDD/JSON，也不要把测试专用数据放回运行目录。详细约束见 [AGENTS.md](AGENTS.md)。
 
