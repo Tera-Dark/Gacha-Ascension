@@ -1,5 +1,5 @@
 import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
-import {readGame,writeGame,backupAndReset} from "./storage.mjs";
+import {readGame,writeGame,backupAndReset,recoverInvalidSave} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
 import {unlockedPack} from "./modules.mjs";
@@ -22,6 +22,39 @@ const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("visible"),3400);
+}
+/** Preserve unreadable save bytes and give players a conscious recovery choice. */
+function offerInvalidSaveRecovery(raw,message){
+ const panel=document.createElement("section");
+ panel.id="invalidSaveRecovery";panel.className="v8-save-recovery";
+ panel.setAttribute("role","alert");
+ const title=document.createElement("strong");
+ title.textContent="存档读取失败，原始存档未被覆盖";
+ const desc=document.createElement("p");
+ desc.textContent=message+"。建议先导出原始数据，再选择保留备份并重开。";
+ const actions=document.createElement("div");
+ const exportButton=document.createElement("button");
+ exportButton.type="button";exportButton.id="exportInvalidSave";
+ exportButton.textContent="导出原始存档";
+ exportButton.addEventListener("click",()=>{
+  const blob=new Blob([raw],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download="gacha-ascension-unreadable-save.json";
+  document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+ });
+ const resetButton=document.createElement("button");
+ resetButton.type="button";resetButton.id="recoverInvalidSave";
+ resetButton.textContent="保留备份并新建存档";
+ resetButton.addEventListener("click",()=>{
+  if(!window.confirm("原始存档将另存为独立备份，然后开始新游戏。确认继续？"))return;
+  try{
+   const result=recoverInvalidSave(c);
+   set("saveStatus","旧存档已备份至 "+result.backupKey);
+   window.location.reload();
+  }catch(error){toast("备份失败，原始存档未被覆盖："+error.message,true)}
+ });
+ actions.append(exportButton,resetButton);panel.append(title,desc,actions);
+ document.querySelector(".game-shell")?.prepend(panel);
 }
 function closeMobileSheet(){
  const sheet=$("mobileSheet"),backdrop=$("mobileSheetBackdrop"),button=$("moreSystems");
@@ -256,7 +289,7 @@ function settleLiveTimeline(result){
  snapshot("heroHP","heroBar",combat.heroRemaining,combat.hero.hp);
  snapshot("enemyHP","enemyBar",combat.enemyRemaining,combat.enemy.hp);
  set("enemyLabel",combat.enemy.name);
- set("combatStatus",result.won?"✓ 战斗胜利 · 每次攻击已即时呈现":"✕ 战斗失败 · 战斗结算已完成");
+ set("combatStatus",result.won?"✓ 战斗胜利 · 每次攻击已即时呈现":combat.reason==="timeout"?"⌛ 战斗僵持 · 没有死亡掉装":"✕ 战斗失败 · 战斗结算已完成");
  if(result.won){
   $("enemySprite").classList.add("defeated");
   setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
@@ -294,6 +327,7 @@ function animateCombat(result,onComplete=null){
   battleBusy=false;
   set("enemyLabel",combat.enemy.name);
   set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":
+   combat.reason==="timeout"?"⌛ 行动达到上限 · 战斗未分胜负":
    "✕ 挑战失败 · 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波");
   if(result.won){
    $("enemySprite").classList.add("defeated");
@@ -372,9 +406,9 @@ function renderExplore(){
  set("checkpointCount",r.bossCleared?"四图切片已通关":"第"+p.stage+"/"+c.checkpointsPerMap+"关");
  $("checkpointTrack").innerHTML=Array.from({length:c.checkpointsPerMap},(_,i)=>
   '<div class="checkpoint-node '+(i<r.checkpoint?"passed":i===r.checkpoint?"current":"")+'">'+(i===c.checkpointsPerMap-1?"B":i+1)+'</div>').join("");
- $("challenge").disabled=p.finalGuardian||r.bossCleared;
- $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared;
- $("killMob").disabled=false;
+ $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
+ $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
+ $("killMob").disabled=auto||battleBusy;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
  $("farmFocus").value=s.run.farmFocus||"balanced";
  set("farmFocusTip",farmTarget(s,c).desc);
@@ -423,7 +457,7 @@ function renderExplore(){
  if(step.packId)$("goalAction").dataset.packId=step.packId;else delete $("goalAction").dataset.packId;
  set("goalAction",step.action+" →");
  renderBuildAdvice();
- if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
+ if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":r.lastBattle.failureReason==="timeout"?"上场战斗僵持 · 未死亡":"上场挑战失败 · 留在当前关刷小怪");
   set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));
   const loss=r.lastBattle.lostGear,loot=r.lastBattle.boxes||[];
   set("combatLootResult",loss?"☠ 上次战败遗失："+(loss.name||"装备"):loot.length?"🎁 上场战利品："+loot.map(x=>x.name).join("、"):"本场战斗无额外宝箱");
@@ -540,7 +574,7 @@ async function drawPack(packId,count){
 }
 function afterBattle(result,{replay=true,onComplete=null}={}){
  if(!result)return;
- set("combatReport",result.won?(result.type==="mob"?"本关小怪":"挑战")+"胜利 · "+result.combat.turns+"回合":"挑战失败 · 仍在当前关刷小怪");
+ set("combatReport",result.won?(result.type==="mob"?"本关小怪":"挑战")+"胜利 · "+result.combat.turns+"回合":result.combat.reason==="timeout"?"战斗僵持 · 未死亡不扣装备":"挑战失败 · 仍在当前关刷小怪");
  set("rewardLabel","◆ +"+fmt(result.stones)+" / 修为 +"+fmt(result.qi));
  const boxDrops=(result.boxes||[]).map(x=>x.name).join("、");
  set("combatLootResult",result.lostGear?"☠ 战败遗失装备："+result.lostGear.name+"（已从持有量扣除）":
@@ -550,6 +584,7 @@ function afterBattle(result,{replay=true,onComplete=null}={}){
  if(replay)animateCombat(result,onComplete);
  else settleLiveTimeline(result);
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
+ else if(result.combat.reason==="timeout")toast("战斗僵持：未死亡，不触发掉装惩罚。");
  else if(!result.won&&result.type!=="mob"&&!result.lostGear)toast("守卫仍很强。继续刷本关小怪进行抽卡成长。",true);
 }
 function stopAuto(){
@@ -628,6 +663,7 @@ function schedule(){
 }
 function startAuto(){
  if(auto){stopAuto();return}
+ if(battleBusy){toast("当前战斗演出尚未结束，不能重叠启动挂机。",true);return}
  const result=doCommand("START_IDLE");
  if(!result)return;
  auto=true;renderTop();schedule();toast("正在挂机刷当前关小怪；关闭页面后仅进行安全小怪离线结算");
@@ -645,7 +681,7 @@ async function init(){
   ]);
   c=loadCatalog(w,p);
   const loaded=readGame(c);
-  if(loaded.status==="invalid"){toast("旧v0.8预览存档格式不匹配，请先导出或备份，不能直接覆盖。",true);set("saveStatus",loaded.message);return}
+  if(loaded.status==="invalid"){offerInvalidSaveRecovery(loaded.raw,loaded.message);set("saveStatus",loaded.message);return}
   s=loaded.state;
   set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
   render();
@@ -756,14 +792,16 @@ async function init(){
   });
   $("autoFarm").addEventListener("click",startAuto);
   $("killMob").addEventListener("click",()=>{
-   if(auto){toast("自动战斗正在逐击运行；先停止挂机再手动攻击。");return}
+   if(auto||battleBusy){toast("当前战斗尚未结束，请勿叠加新的攻击。");return}
    afterBattle(doCommand("BATTLE",{enemyType:"mob"}));
   });
   $("challenge").addEventListener("click",()=>{
+   if(battleBusy&&!auto){toast("先完成当前战斗，再挑战守卫。");return}
    if(auto)stopAuto();
    afterBattle(doCommand("BATTLE",{enemyType:"guardian"}));
   });
   $("challengeBoss").addEventListener("click",()=>{
+   if(battleBusy&&!auto){toast("先完成当前战斗，再挑战Boss。");return}
    if(auto)stopAuto();
    afterBattle(doCommand("BATTLE",{enemyType:"boss"}));
   });
