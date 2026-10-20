@@ -118,11 +118,12 @@ export function simulateEncounter(input,startSeed){
   const matchup=styleMatchup(heroStyle,foe.style);
   const dr=mitigation(hero.defense,tech.style==="guard"?tech.power:0);
   let enemyHp=foe.hp,heroAt=heroInterval,enemyAt=enemyInterval;
-  let heroAttacks=0,enemyAttacks=0;
+  let heroAttacks=0,enemyAttacks=0,lastActionAt=0;
   log({actor:"wave",stage:idx+1,total:waves.length,name:foe.name,max:foe.hp,hp:foe.hp,style:foe.style});
   for(let steps=0;steps<RULES.maxActionsPerWave&&enemyHp>0&&heroHp>0;steps++){
+   lastActionAt=Math.min(heroAt,enemyAt);
    if(heroAt<=enemyAt){
-    timeMs+=0;heroAttacks++;turns++;
+    heroAttacks++;turns++;
     const hit=random()<ratings.heroHitChance;
     let amount=0;
     if(hit){
@@ -183,7 +184,7 @@ export function simulateEncounter(input,startSeed){
    }
   }
   enemyRemaining=enemyHp;
-  timeMs+=Math.max(heroAt,enemyAt);
+  timeMs+=Math.ceil(Math.max(lastActionAt,heroInterval));
   if(enemyHp>0||heroHp<=0)break;
   completedWaves++;
  }
