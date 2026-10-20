@@ -102,7 +102,7 @@ export function simulateEncounter(input,startSeed){
  let rng=startSeed,heroHp=hero.hp,shield=pet.style==="ward"?
   Math.round(hero.hp*cap(pet.power/200,0,.50)):0;
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
-  enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0;
+  enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0,activeWave=waves[0];
  const head=[],tail=[],waveMarkers=[];
  let eventSeq=0;
  const log=event=>{
@@ -114,6 +114,7 @@ export function simulateEncounter(input,startSeed){
  const random=()=>{const p=rand(rng);rng=p.seed;return p.value};
  for(let idx=0;idx<waves.length;idx++){
   const foe=waves[idx],ratings=unitRatings(hero,foe,foe.special);
+  activeWave=foe;
   const matchup=styleMatchup(heroStyle,foe.style);
   const dr=mitigation(hero.defense,tech.style==="guard"?tech.power:0);
   let enemyHp=foe.hp,heroAt=heroInterval,enemyAt=enemyInterval;
@@ -188,7 +189,7 @@ export function simulateEncounter(input,startSeed){
  const won=completedWaves===waves.length&&heroHp>0;
  return {won,reason:won?"victory":heroHp<=0?"defeat":"timeout",
   turns,completedWaves,totalWaves:waves.length,heroDealt,petDealt,blocked,misses,maxEnemyHit,
-  heroRemaining:heroHp,enemyRemaining,hero,enemy:waves.at(-1),waves,
+  heroRemaining:heroHp,enemyRemaining,hero,enemy:activeWave,waves,
   timeMs,nextSeed:rng,
   logs:[...new Map([...head,...tail,...waveMarkers].map(x=>[x.seq,x])).values()]
    .sort((a,b)=>a.seq-b.seq)};
