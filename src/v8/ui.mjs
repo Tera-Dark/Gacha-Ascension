@@ -3,6 +3,8 @@ import {readGame,writeGame,backupAndReset} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
 import {unlockedPack} from "./modules.mjs";
+import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from "./equipment.mjs";
+import {RULES} from "./combat-depth.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -10,7 +12,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1";
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -28,7 +30,7 @@ function toggleMobileSheet(){
  button.setAttribute("aria-expanded",String(shouldOpen));
 }
 function changeView(target){
- closeMobileSheet();
+ closeMobileSheet();closeLandscapeNav();
  if(!["explore","cultivate","gacha","technique","cave","pet","fate","atlas","settings"].includes(target))return;
  view=target;
  for(const el of document.querySelectorAll("[data-view-panel]"))el.classList.toggle("is-active",el.dataset.viewPanel===target);
@@ -50,6 +52,69 @@ function doCommand(type,more={}){
   return out.result;
  }catch(error){toast(error.message,true);return null}
 }
+
+function closeLandscapeNav(){
+ document.body.classList.remove("wb-nav-open");
+ $("landscapeBackdrop").hidden=true;
+ $("landscapeNavToggle").setAttribute("aria-expanded","false");
+}
+function openLandscapeNav(){
+ document.body.classList.add("wb-nav-open");
+ $("landscapeBackdrop").hidden=false;
+ $("landscapeNavToggle").setAttribute("aria-expanded","true");
+}
+function renderMapDrawer(){
+ $("mapDrawerList").innerHTML=c.maps.map((map,i)=>{
+  const current=s.run.mapIndex===i,available=i+1<=s.meta.bestMap;
+  return '<button class="wb-map-choice'+(current?" current":"")+'" type="button" data-map-info="'+i+'" '+
+   (!available?"disabled":"")+'><strong>'+escapeHTML(map.name)+'</strong><small>'+
+   (current?"当前探索 · 第"+(s.run.checkpoint+1)+"关":available?"已解锁 · 可查看资料":"尚未解锁")+
+   '</small></button>';
+ }).join("");
+ $("drawerCheckpointTrack").innerHTML=Array.from({length:c.checkpointsPerMap},(_,i)=>{
+  const active=i===s.run.checkpoint,done=i<s.run.checkpoint;
+  return '<button class="wb-drawer-stage'+(active?" active":done?" cleared":"")+'" type="button" data-stage-info="'+i+'">'+
+   (i===7?"最终Boss":("关卡 "+(i+1)))+(active?" · 当前":"")+'</button>';
+ }).join("");
+}
+function renderGear(){
+ const equipment=equippedMap(s);
+ $("equipmentGrid").innerHTML=EQUIPMENT_SLOTS.map(slot=>{
+  const id=equipment[slot.id],card=id?c.cards[id]:null;
+  return '<button class="wb-gear-slot'+(card?" filled":"")+'" type="button" data-gear-slot="'+slot.id+'" aria-label="'+
+    escapeHTML(slot.name+(card?" "+card.name:" 空槽"))+'"><span class="wb-gear-icon">'+slot.icon+'</span>'+
+    '<span class="wb-gear-caption">'+escapeHTML(slot.name)+'</span>'+
+    '<span class="wb-gear-name">'+escapeHTML(card?.name||"空")+'</span></button>';
+ }).join("");
+}
+function openGear(slot){
+ selectedGearSlot=slot;
+ $("equipmentDrawer").hidden=false;
+ drawGearBag();
+ $("closeEquipment").focus();
+}
+function closeGear(){
+ $("equipmentDrawer").hidden=true;
+}
+function drawGearBag(){
+ const slot=EQUIPMENT_SLOTS.find(x=>x.id===selectedGearSlot);
+ if(!slot)return;
+ $("equipmentDrawerTitle").textContent=slot.name+" · 装备选择";
+ const equipped=equippedMap(s),same=Object.values(equipped);
+ const options=Object.values(c.cards).filter(x=>x.effect==="equipment"&&x.equipmentSlot===slot.type);
+ const eligible=card=>(s.run.cards[card.id]||0)>same.filter(x=>x===card.id).length;
+ $("equipmentChoices").innerHTML=
+  '<button type="button" class="wb-equipment-choice'+(!equipped[slot.id]?" selected":"")+'" data-select-gear="none"><strong>卸下装备</strong><small>清空本槽位</small></button>'+
+  options.map(card=>{
+   const own=s.run.cards[card.id]||0,active=equipped[slot.id]===card.id,can=active||eligible(card);
+   const affix=Object.entries(card.stats).map(([k,v])=>STAT_LABELS[k]+" +"+v+(k==="speedPct"?"%":"")).join(" · ");
+   return '<button type="button" class="wb-equipment-choice'+(active?" selected":"")+'" data-select-gear="'+card.id+'"'+(!can?" disabled":"")+
+    '><strong>'+escapeHTML(card.name)+(active?" · 已穿戴":"")+'</strong><small>'+escapeHTML(affix)+" · 库存"+own+'</small></button>';
+  }).join("");
+ $("equipmentCompare").textContent="当前槽位："+(equipped[slot.id]?c.cards[equipped[slot.id]].name:"空")+
+  "。每件装备最多两条词条，装配后属性即时参与战斗，轮回时清空。";
+}
+
 function snapshot(hpId,barId,current,max){
  set(hpId,fmt(current)+" / "+fmt(max));
  const el=$(barId);if(el)el.style.width=Math.max(0,Math.min(100,100*current/max||0))+"%";
@@ -60,7 +125,7 @@ function damagePop(actor,amount){
  el.className="damage-pop "+side;
  el.textContent=actor==="miss"?"闪避":(actor==="regen"?"+":"−")+fmt(amount);
  layer.append(el);setTimeout(()=>el.remove(),650);
- const src=$(actor==="enemy"?"enemySprite":"heroSprite");
+ const src=$(actor==="enemy"||actor==="counter"?"heroSprite":"enemySprite");
  src.classList.remove("impact");void src.offsetWidth;src.classList.add("impact");
  setTimeout(()=>src.classList.remove("impact"),250);
 }
@@ -73,6 +138,7 @@ function animateCombat(result){
  snapshot("enemyHP","enemyBar",combat.enemy.hp,combat.enemy.hp);
  set("enemyLabel",combat.enemy.name);
  set("combatStatus","交锋中");
+ $("heroAttackBar").style.animationPlayState="running";$("enemyAttackBar").style.animationPlayState="running";
  const important=new Set();
  for(let i=0;i<logs.length;i++)if(logs[i].actor==="wave")important.add(i);
  for(const i of [0,1,2,logs.length-3,logs.length-2,logs.length-1])
@@ -85,6 +151,7 @@ function animateCombat(result){
    if(playToken!==token)return;
    if(event.actor==="wave"){
     set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
+    set("wbWave","第"+event.stage+"/"+event.total+"波");
     snapshot("enemyHP","enemyBar",event.hp,event.max);
     set("combatStatus","连续守关 · 第"+event.stage+"/"+event.total+"波");
     return;
@@ -105,6 +172,8 @@ function animateCombat(result){
   battleBusy=false;
   set("enemyLabel",combat.enemy.name);
   set("combatStatus",result.won?"✓ 连续"+combat.totalWaves+"波胜利":"✕ 第"+Math.min(combat.totalWaves,combat.completedWaves+1)+"波挑战失败");
+  if(result.won){$("enemySprite").classList.add("defeated");setTimeout(()=>$("enemySprite").classList.remove("defeated"),340)}
+  if(!auto){$("heroAttackBar").style.animationPlayState="paused";$("enemyAttackBar").style.animationPlayState="paused"}
  },duration+90);
 }
 function incomePreview(){
@@ -124,6 +193,13 @@ function renderTop(){
  set("topStage",p.map.name+" · 第"+p.stage+"关");
  set("heroLabel","修士·"+h.name);
  set("heroStats","攻击 "+fmt(h.attack)+" · 防御 "+fmt(h.defense));
+ set("playerStatsCompact","气血 "+fmt(h.hp)+" · 装备攻速 +"+fmt(equipmentStats(s,c).speedPct)+"%");
+ set("heroAttackSpeed","出手间隔 "+(RULES.heroIntervalMs/(1+y.speedPct/100)/1000).toFixed(2)+"秒");
+ $("heroAttackBar").style.animationDuration=(RULES.heroIntervalMs/(1+y.speedPct/100))+"ms";
+ $("heroAttackBar").style.animationPlayState=auto||battleBusy?"running":"paused";
+ $("enemyAttackBar").style.animationPlayState=auto||battleBusy?"running":"paused";
+ set("wbTechnique",r.technique?c.cards[r.technique].name:"未习得");
+ set("wbPet",r.pet?c.cards[r.pet].name:"未出战");
  set("sideAtk",fmt(h.attack));set("sideHp",fmt(h.hp));set("sideDef",fmt(h.defense));
  set("sideTech",r.technique?c.cards[r.technique].name:"未装备");
  set("sidePet",r.pet?c.cards[r.pet].name:"未出战");
@@ -150,6 +226,13 @@ function renderExplore(){
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
  $("farmFocus").value=s.run.farmFocus||"balanced";
  set("farmFocusTip",farmTarget(s,c).desc);
+ const foe=enemyPreview(s,c,r.bossCleared?"mob":p.finalGuardian?"boss":"guardian");
+ set("enemyAttackSpeed","出手间隔 "+(RULES.enemyIntervalMs/(1+r.mapIndex*.025)/1000).toFixed(2)+"秒");
+ $("enemyAttackBar").style.animationDuration=(RULES.enemyIntervalMs/(1+r.mapIndex*.025))+"ms";
+ set("wbWave",r.bossCleared?"可持续刷怪":p.finalGuardian?"地图Boss · 3波":"关卡守卫 · 2波");
+ set("wbEnemyTraits",foe.traits.join(" · "));
+ $("enemySprite").querySelector("span").textContent=["🐺","🦉","🌿","👻"][r.mapIndex]||"妖";
+ renderGear();renderMapDrawer();
  if(!battleBusy){
   const e=enemyPreview(s,c,"mob");
   set("enemyLabel",e.name);set("enemyStats","攻击 "+fmt(e.attack)+" · 防御 "+fmt(e.defense));
@@ -363,10 +446,31 @@ async function init(){
    });
   }
   $("moreSystems").addEventListener("click",toggleMobileSheet);
+  $("landscapeNavToggle").addEventListener("click",()=>document.body.classList.contains("wb-nav-open")?closeLandscapeNav():openLandscapeNav());
+  $("openMapDrawer").addEventListener("click",openLandscapeNav);
+  $("landscapeBackdrop").addEventListener("click",closeLandscapeNav);
+  $("openGearBag").addEventListener("click",()=>openGear("weapon1"));
+  $("closeEquipment").addEventListener("click",closeGear);
+  let swipe=null;
+  document.addEventListener("touchstart",event=>{const t=event.touches[0];swipe=t.clientX<24?{x:t.clientX,y:t.clientY}:null},{passive:true});
+  document.addEventListener("touchend",event=>{if(!swipe)return;const t=event.changedTouches[0],dx=t.clientX-swipe.x,dy=Math.abs(t.clientY-swipe.y);if(dx>65&&dy<45)openLandscapeNav();swipe=null},{passive:true});
   $("closeMobileSheet").addEventListener("click",closeMobileSheet);
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
-  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMobileSheet()});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
   document.addEventListener("click",e=>{
+   const gearSlot=e.target.closest("button[data-gear-slot]");
+   if(gearSlot){openGear(gearSlot.dataset.gearSlot);return}
+   const gearChoice=e.target.closest("button[data-select-gear]");
+   if(gearChoice&&!gearChoice.disabled){
+    const id=gearChoice.dataset.selectGear==="none"?null:gearChoice.dataset.selectGear;
+    const old=heroStats(s,c),result=doCommand("EQUIP_ITEM",{slot:selectedGearSlot,id});
+    if(result){const next=heroStats(s,c);drawGearBag();toast("穿戴已生效 · 攻击 "+fmt(old.attack)+" → "+fmt(next.attack)+"，气血 "+fmt(old.hp)+" → "+fmt(next.hp))}
+    return
+   }
+   const mapInfo=e.target.closest("button[data-map-info]");
+   if(mapInfo){const i=Number(mapInfo.dataset.mapInfo);toast(i===s.run.mapIndex?"当前正在探索此地图":c.maps[i].name+"已解锁。此版本仅在当前推进位置继续战斗。");return}
+   const stageInfo=e.target.closest("button[data-stage-info]");
+   if(stageInfo){const i=Number(stageInfo.dataset.stageInfo);toast(i===s.run.checkpoint?"当前第"+(i+1)+"关":i<s.run.checkpoint?"已通过的守卫关卡，当前无法回退刷关":"请先击败前面的守卫。");return}
    const nav=e.target.closest("button[data-view]");
    if(nav){changeView(nav.dataset.view);return}
    const draw=e.target.closest("button[data-draw]");
