@@ -6,6 +6,8 @@ import {SAVE_KEY,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequir
 import {equipmentStats,EQUIPMENT_SLOTS} from "./equipment.mjs";
 import {STYLE_LABELS,combatStyle,RULES} from "./combat-depth.mjs";
 import {baseRates} from "./relic-pool.mjs";
+import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactBonuses,artifactsOwned} from "./artifacts.mjs";
+import {HERBS,ITEMS,AUTO_POTION_COST} from "./treasure.mjs";
 
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const fmt=n=>!Number.isFinite(n)?"—":Math.abs(n)>=1e12?(n/1e12).toFixed(2)+"兆":Math.abs(n)>=1e8?(n/1e8).toFixed(2)+"亿":Math.abs(n)>=1e4?(n/1e4).toFixed(2)+"万":Math.round(n*100)/100+"";
@@ -49,6 +51,11 @@ export function detailModel(s,c,analysis=null){
   section("修士属性构成",[
    row("当前境界",h.name),row("基础攻 / 气血 / 防","29 / 260 / 12"),
    row("本世已穿戴装备",Object.keys(r.equipment||{}).length+" / 10槽"),
+   ...ARTIFACT_SLOTS.map(slot=>{
+    const card=c.cards[artifactsOwned(s)[slot.id]];
+    return row(slot.name,s.run.realmIndex<slot.realmIndex?"境界未开放":card?.name||"空法器槽",
+     card?ARTIFACT_EFFECTS[card.artifactKind]+"+"+card.artifactValue+"%":"");
+   }),
    row("装备增益合计",(()=>{const e=equipmentStats(s,c);return "攻击+"+e.attack+" / 气血+"+e.hp+" / 防御+"+e.defense+" / 攻速+"+e.speedPct+"%"})(),"最多两条词条/装备"),
    ...EQUIPMENT_SLOTS.map(slot=>{
     const card=c.cards[r.equipment?.[slot.id]];
@@ -178,6 +185,23 @@ export function detailModel(s,c,analysis=null){
   ],"宠物每次真实战斗独立结算；一场多波Boss战中护盾不会随波刷新。"),
   section("御兽图鉴与库存",
    c.packs.find(x=>x.id==="pet").cards.map(x=>row(x.name,"×"+(r.cards[x.id]||0),x.description||"")))
+ ];
+ details.items=[
+  section("本次战利品宝箱与固定掉率",[
+   ...["mob","guardian","boss"].flatMap(kind=>[
+    row(({mob:"普通小怪",guardian:"关卡守卫",boss:"地图Boss"}[kind])+" 装备箱",pct(c.dropRates[kind].gear*100)),
+    row(({mob:"普通小怪",guardian:"关卡守卫",boss:"地图Boss"}[kind])+" 药草箱",pct(c.dropRates[kind].herb*100))
+   ]),
+   row("背包装备箱",(r.boxes?.gear||0)+"个","只随机开黄/玄阶基础装备，无高阶神器"),
+   row("背包药草箱",(r.boxes?.herb||0)+"个","随机一种草药2–5份")
+  ],"每次战斗胜利后，各类箱子独立判定是否掉落；它们并不替代功法、法器或高阶装备抽卡。"),
+  section("药草、消耗品与自动补血",[
+   ...HERBS.map(herb=>row(herb.name,"×"+(r.herbs?.[herb.id]||0),"三份可炼"+ITEMS.find(x=>x.id===herb.potion)?.name)),
+   ...ITEMS.map(item=>row(item.name,"库存×"+(r.consumables?.[item.id]||0)+" · 已备战"+(r.prepared?.[item.id]||0),item.desc)),
+   row("轮回点自动吃药",s.meta.autoPotion?.unlocked?"已解锁":"待用"+AUTO_POTION_COST+"因果解锁"),
+   row("自动吃药触发条件",s.meta.autoPotion?.enabled?"气血≤"+Math.round(s.meta.autoPotion.threshold*100)+"%且持有回春丹":"未开启"),
+   row("战败惩罚","50%概率丢失随机一件已穿戴装备","只从实际穿戴槽中抽取一件，背包中其他副本不受影响")
+  ],"手动预备的回春丹只在战斗中真的满足低血条件时使用；防御和攻击消耗品在下一场战斗直接生效。")
  ];
  const ownedRelics=c.relics.filter(x=>s.meta.relics[x.id]);
  details.fate=[
