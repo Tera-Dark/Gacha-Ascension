@@ -71,9 +71,10 @@ export function progress(s,c){
 export function breakthroughRequirements(s,c){
  const i=s.run.realmIndex,r=c.realms[i],qi=r.nextQiCost,insight=r.nextInsightCost;
  const needsPill=i===3,needBoss=needsPill&&!s.run.bossCleared;
- return {qi,insight,needsPill,needBoss,pillName:needsPill?"筑基丹":null,
+ const needMapMilestone=i<3&&s.run.mapIndex<=i;
+ return {qi,insight,needsPill,needBoss,needMapMilestone,pillName:needsPill?"筑基丹":null,
   hasQi:s.run.qi>=qi,hasInsight:s.run.insight>=insight,hasPill:!needsPill||!!s.run.pills.D004,
-  canBreak:i<4&&s.run.qi>=qi&&s.run.insight>=insight&&(!needsPill||(s.run.bossCleared&&s.run.pills.D004>0))};
+  canBreak:i<4&&!needMapMilestone&&s.run.qi>=qi&&s.run.insight>=insight&&(!needsPill||(s.run.bossCleared&&s.run.pills.D004>0))};
 }
 function enemy(s,c,kind){
  const {mapIndex,checkpoint}=s.run,k=checkpoint,m=mapIndex,b=c.balance;
@@ -169,6 +170,7 @@ function draw(s,c,{packId,count}){
   else if(packId==="elixir"&&s.run.pillPity>=c.realmPillPity-1)card=c.cards.D004;
   else card=weightedCard(s,c,pack);
   if(packId==="elixir")s.run.pillPity=card.id==="D004"?0:s.run.pillPity+1;
+  if(packId==="cultivation")s.run.insight+=1; // Every cultivation draw provides deterministic enlightenment.
   s.run.draws[packId]=(s.run.draws[packId]||0)+1;
   gainCard(s,c,card);
   items.push({...card,copies:s.run.cards[card.id]??s.run.pills[card.id]??1});
@@ -211,6 +213,7 @@ function breakthrough(s,c){
  const r=s.run,needs=breakthroughRequirements(s,c);
  if(r.realmIndex>=4)throw Error("本次可玩切片最高至筑基初期");
  if(!needs.canBreak){
+  if(needs.needMapMilestone)throw Error("先击败当前地图Boss，取得下一小境界的突破资格");
   if(!needs.hasQi)throw Error("修为不足，还需积累 "+(needs.qi-r.qi));
   if(!needs.hasInsight)throw Error("悟道不足，抽取修为造化卡包");
   if(needs.needBoss)throw Error("请先击败雾隐剑冢地图Boss");
