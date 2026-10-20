@@ -8,7 +8,7 @@ frame.addEventListener("load",async()=>{
   const d=frame.contentDocument,w=frame.contentWindow;
   for(let n=0;n<90&&!d.querySelector('#packList [data-pack-id="battle"]');n++)await wait(40);
   const guide=d.getElementById("noviceGuide"),read=()=>JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
-  check(!!read(),"new account did not initialize");
+  check(!!d.querySelector('#packList [data-pack-id="battle"]'),"new account did not render its packs");
   check(!guide.hidden&&d.getElementById("noviceStep").textContent.includes("1/3"),"first-step guide missing");
   check(d.getElementById("nextGoalTitle").textContent.includes("首次机缘"),"first goal wrongly recommends guardian");
   if(w.innerWidth<=700&&w.innerHeight>w.innerWidth){
