@@ -1,0 +1,51 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Novice first three steps</title><style>body{margin:0;background:#162522;color:#f2d89f;font:12px system-ui}output{display:block;padding:4px}iframe{width:100%;height:calc(100dvh - 30px);border:0}</style></head><body><output id="result" data-result="PENDING">RUNNING NOVICE ACCEPTANCE</output><iframe id="app" src="../preview-v0.8.html" title="New-player gameplay"></iframe>
+<script type="module">
+import {fight,loadCatalog} from "../src/v8/engine.mjs";
+const frame=document.getElementById("app"),output=document.getElementById("result"),wait=ms=>new Promise(r=>setTimeout(r,ms));
+const check=(v,msg)=>{if(!v)throw Error(msg)};
+frame.addEventListener("load",async()=>{
+ try{
+  const d=frame.contentDocument,w=frame.contentWindow;
+  for(let n=0;n<90&&!d.querySelector('#packList [data-pack-id="battle"]');n++)await wait(40);
+  const guide=d.getElementById("noviceGuide"),read=()=>JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  check(!!read(),"new account did not initialize");
+  check(!guide.hidden&&d.getElementById("noviceStep").textContent.includes("1/3"),"first-step guide missing");
+  check(d.getElementById("nextGoalTitle").textContent.includes("首次机缘"),"first goal wrongly recommends guardian");
+  if(w.innerWidth<=700&&w.innerHeight>w.innerWidth){
+   check(d.querySelector(".wb-enemy").getBoundingClientRect().top<d.querySelector(".wb-player").getBoundingClientRect().top,
+    "mobile portrait battle actions must appear before optional equipment");
+  }
+  d.getElementById("noviceAction").click();await wait(70);
+  check(d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active"),"novice first action did not open gacha");
+  check(d.querySelector('#packList .pack:first-child').dataset.packId==="battle","battle pack was not prioritized for first draw");
+  check(d.getElementById("gachaDirection").textContent.includes("战力"),"gacha guidance has no explanation");
+  d.querySelector('#packList [data-draw="battle"][data-count="1"]').click();await wait(120);
+  check(!d.getElementById("revealOverlay").hidden,"first draw must have full reveal");
+  d.getElementById("skipReveal").click();await wait(50);d.getElementById("closeReveal").click();await wait(70);
+  check(read().run.cards.B001>0,"guaranteed useful first card was not saved");
+  d.querySelector('.mobile-tabs [data-view="explore"]')?.click();
+  if(!d.querySelector('[data-view-panel="explore"]').classList.contains("is-active"))
+   d.querySelector('.system-sidebar [data-view="explore"]').click();
+  await wait(50);
+  check(d.getElementById("noviceStep").textContent.includes("2/3"),"guide did not follow completed first draw");
+  const state=read(),config=loadCatalog(await (await fetch("../data/realms-maps.v0.8.proposal.json")).json(),await (await fetch("../data/v8-slice.json")).json());
+  const planned=fight(state,config,"mob",{seed:state.seed});
+  d.getElementById("noviceAction").click();await wait(60);
+  check(read().run.idle?.active,"second tutorial CTA did not actually start safe mob farming");
+  await wait(planned.timeMs+480);
+  check(read().run.mobKills>=1,"first auto mob encounter never completed");
+  check(d.getElementById("noviceStep").textContent.includes("3/3"),"third guide action missing after farming");
+  d.getElementById("noviceAction").click();await wait(60);
+  check(d.querySelector('[data-view-panel="explore"]').classList.contains("is-active"),"guardian prompt lost explore focus");
+  d.getElementById("autoFarm").click();await wait(60);
+  check(!read().run.idle.active,"stopping automation failed");
+  check(!d.getElementById("quickReveal").checked,"fast reveal must remain opt-in");
+  d.querySelector('.mobile-tabs [data-view="gacha"]')?.click();
+  if(!d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active"))
+   d.querySelector('.system-sidebar [data-view="gacha"]').click();
+  d.getElementById("quickReveal").click();await wait(30);
+  check(w.localStorage.getItem("gacha-ascension-v8-quick-reveal-v1")==="1","quick reveal preference not saved");
+  output.dataset.result="PASS";output.textContent="PASS: tutorial, meaningful first draw, real automated mob battle, guardian guidance, portrait layout, opt-in fast reveals";
+ }catch(err){output.dataset.result="FAIL";output.textContent="FAIL: "+err.message}
+});
+</script></body></html>
