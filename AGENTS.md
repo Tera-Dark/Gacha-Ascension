@@ -22,6 +22,17 @@
 - 系统标记为 planned 不等于实装；不能把24图规划数据、法宝、宗门和飞升说成已上线。
 - 如遇 README、GDD、JSON 和代码冲突：以**运行代码与实际测试**说明现状，以 JSON 定位数值来源，并在修改前记录不一致；禁止靠猜测合并旧规范。
 
+## 目录边界（优先使用现有位置）
+
+- **前端入口**：根目录 `index.html` 只跳转；`preview-v0.8.html` 是唯一现行游戏；`m0.html` 和 `codex.html` 属历史兼容，不要改动其公开URL。
+- **样式**：`assets/css/workbench.css` 为当前和 M0 共同使用；`assets/css/preview.css` 只给现行试玩追加样式。不要在仓库根目录重新创建 CSS。
+- **逻辑**：`src/v8/` 负责现行规则，`src/m0/` 只维护历史代码；不要跨版本导入。
+- **配置**：`data/v8-slice.json` 是现行数值；`data/realms-maps.v0.8.proposal.json` 为地图/境界。剩余 `data/m0-*` 和 `data/codex/` 仅属历史兼容。
+- **测试**：`tests/v8*.test.mjs` 为现行回归，`tests/m0*.test.mjs` 为旧兼容测试，历史示例配置放 `tests/fixtures/`。
+- **文档**：`docs/` 只保留当前总GDD与地图规划。实验性方案需合并入现有文档或 Git issue，不要再次堆积多代并列 GDD。
+- **工具**：`scripts/` 放可执行校验/模拟；`.github/workflows/` 放部署与CI；产生的 dist、coverage、临时日志受 `.gitignore` 忽略。
+- 新增目录前，请检查是否已有职责相同的模块；除非确有必要，不要为了单个文件新建一个功能分类。
+
 ## 约束与质量门槛
 
 - 当前用户偏好：**不主动生成图片**；没有明确要求时只做代码、文档或提示词输出。
