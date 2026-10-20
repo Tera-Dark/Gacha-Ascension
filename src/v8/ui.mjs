@@ -522,6 +522,33 @@ async function init(){
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
   document.addEventListener("click",e=>{
+   const artifactSlot=e.target.closest("button[data-artifact-slot]");
+   if(artifactSlot&&!artifactSlot.disabled){openArtifact(artifactSlot.dataset.artifactSlot);return}
+   const artifactChoice=e.target.closest("button[data-select-artifact]");
+   if(artifactChoice&&!artifactChoice.disabled){
+    const id=artifactChoice.dataset.selectArtifact==="none"?null:artifactChoice.dataset.selectArtifact;
+    const result=doCommand("EQUIP_ARTIFACT",{slot:selectedArtifactSlot,id});
+    if(result){drawArtifactBag();toast("本命法器已装配，战斗增益即时生效")}
+    return
+   }
+   const box=e.target.closest("button[data-open-box]");
+   if(box&&!box.disabled){
+    const result=doCommand("OPEN_BOX",{id:box.dataset.openBox});
+    if(result)toast("开启宝箱："+result.reward.name+" ×"+result.reward.count);
+    return
+   }
+   const brew=e.target.closest("button[data-brew]");
+   if(brew&&!brew.disabled){
+    const result=doCommand("BREW",{id:brew.dataset.brew,count:1});
+    if(result)toast("炼制成功："+ITEMS.find(x=>x.id===result.item)?.name);
+    return
+   }
+   const prep=e.target.closest("button[data-prepare-item]");
+   if(prep&&!prep.disabled){
+    const result=doCommand("PREPARE_ITEM",{id:prep.dataset.prepareItem});
+    if(result)toast("已准备"+ITEMS.find(x=>x.id===result.id)?.name+"，在下一场战斗中生效");
+    return
+   }
    const gearSlot=e.target.closest("button[data-gear-slot]");
    if(gearSlot){openGear(gearSlot.dataset.gearSlot);return}
    const gearChoice=e.target.closest("button[data-select-gear]");
@@ -542,6 +569,20 @@ async function init(){
    const equip=e.target.closest("button[data-equip]");
    if(equip&&!equip.disabled){const slot=equip.dataset.equip;const result=doCommand(slot==="pet"?"EQUIP_PET":"EQUIP_TECH",{id:equip.dataset.card});
     if(result)toast("装配成功，下一次战斗即刻生效。");}
+  });
+  $("unlockAutoPotion").addEventListener("click",()=>{
+   const result=doCommand("UNLOCK_AUTO_POTION");
+   if(result)toast("已永久解锁回春自律 · 因果 -"+result.spent);
+  });
+  $("toggleAutoPotion").addEventListener("click",()=>{
+   const old=s.meta.autoPotion;
+   if(!old?.unlocked)return;
+   const result=doCommand("SET_AUTO_POTION",{enabled:!old.enabled,threshold:Number($("autoPotionThreshold").value)});
+   if(result)toast(result.enabled?"自动吃药已开启":"自动吃药已关闭");
+  });
+  $("autoPotionThreshold").addEventListener("change",event=>{
+   if(!s.meta.autoPotion?.unlocked)return;
+   doCommand("SET_AUTO_POTION",{enabled:s.meta.autoPotion.enabled,threshold:Number(event.target.value)});
   });
   $("autoFarm").addEventListener("click",startAuto);
   $("killMob").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"mob"})));
