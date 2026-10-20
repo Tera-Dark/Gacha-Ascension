@@ -37,8 +37,23 @@ async function start(){
   verify(d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active"),"Gacha cannot open through dock");
   d.querySelector('#gacha>summary').click();await sleep(140);
   verify(d.getElementById("detail-gacha").textContent.includes("概率"),"Gacha pool probability details absent");
+  const drawButton=d.querySelector('#packList button[data-draw="battle"][data-count="1"]');
+  verify(!!drawButton&&!drawButton.disabled,"Fresh save cannot afford first battle draw");
+  const before=JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  drawButton.click();await sleep(100);
+  const overlay=d.getElementById("revealOverlay");
+  verify(!overlay.hidden,"Gacha reveal stage failed to open");
+  const after=JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  verify(after.seq===before.seq+1,"Gacha reward was not committed exactly once before animation");
+  verify(after.run.cards.B001>=1,"Guaranteed first battle card was not granted");
+  d.getElementById("skipReveal").click();await sleep(40);
+  verify(!d.getElementById("closeReveal").hidden,"Reveal skip did not expose collect control");
+  d.getElementById("closeReveal").click();await sleep(40);
+  verify(overlay.hidden,"Gacha reveal did not close");
+  const preserved=JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  verify(preserved.seq===after.seq,"Skipping the gacha animation duplicated the draw");
   verify(d.documentElement.scrollWidth<=w.innerWidth+1,"Horizontal page overflow on mobile: "+d.documentElement.scrollWidth+" > "+w.innerWidth);
-  result.dataset.result="PASS";result.textContent="PASS: real mobile nav, accordion stats, gacha probability, cave and responsive touch layout";
+  result.dataset.result="PASS";result.textContent="PASS: mobile nav, foldable stats, card probability, safe gacha reveal, cave and responsive touch layout";
  }catch(err){
   result.dataset.result="FAIL";result.textContent="FAIL: "+err.message;
  }
