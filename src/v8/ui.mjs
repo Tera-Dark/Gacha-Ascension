@@ -395,7 +395,9 @@ function reportIdle(recovered){
 function schedule(){
  if(timer!==null)clearTimeout(timer);timer=null;
  if(!auto||document.hidden)return;
- const y=yields(s,c),delay=Math.max(900,Math.round(1550*(1-y.speedPct/100)));
+ const next=fight(s,c,"mob",{seed:s.seed});
+ const delay=Math.max(100,Math.ceil(next.timeMs-(s.run.idle?.carryMs||0)));
+ set("fightTimer","本场预计 "+(next.timeMs/1000).toFixed(2)+"秒 · 真实攻速结算");
  const fill=$("intervalFill");fill.classList.remove("running");void fill.offsetWidth;
  fill.style.setProperty("--interval-duration",delay+"ms");fill.classList.add("running");
  timer=setTimeout(()=>{
