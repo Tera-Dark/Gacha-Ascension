@@ -18,7 +18,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false,suggestedGearSlot=null;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false,suggestedGearSlot=null,manualTimer=null,manualResumeAuto=false;
 const NOVICE_SKIP_KEY="gacha-ascension-v8-novice-skip-v1";
 const QUICK_REVEAL_KEY="gacha-ascension-v8-quick-reveal-v1";
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
@@ -285,7 +285,7 @@ function clearLiveTimeline(){
  for(const id of liveTimers)clearTimeout(id);
  liveTimers=[];livePreview=false;
 }
-function startLiveTimeline(combat,plan){
+function startLiveTimeline(combat,plan,mode="auto"){
  clearLiveTimeline();
  const token=++playToken;
  livePreview=true;battleBusy=true;
@@ -293,17 +293,65 @@ function startLiveTimeline(combat,plan){
  const first=combat.waves?.[0]||combat.enemy;
  snapshot("enemyHP","enemyBar",first.hp,first.hp);
  set("enemyLabel",first.name);
- set("combatStatus","自动交锋进行中 · 每次命中即时显示伤害");
+ set("combatStatus",mode==="manual"?"战斗进行中 · 每次出手按真实间隔扣血":"自动交锋进行中 · 每次命中即时显示伤害");
  $("heroAttackBar").style.animationPlayState="running";
  $("enemyAttackBar").style.animationPlayState="running";
  // Seeking after resume or a build change does not repeat past damage pops.
  for(const event of plan.past)showHitEvent(event,combat,false);
  for(const event of plan.future){
   liveTimers.push(setTimeout(()=>{
-   if(token!==playToken||!auto||!s.run.idle?.active)return;
+   if(token!==playToken)return;
+   if(mode==="manual"&&!s.run.pendingBattle)return;
+   if(mode==="auto"&&(!auto||!s.run.idle?.active))return;
    showHitEvent(event,combat,true);
   },event.delayMs));
  }
+}
+/** A prepared encounter is replay-free. HP follows deterministic hit events
+ * while the persistent authoritative battle transaction remains uncommitted.
+ * Switching tabs or refreshing only seeks the same encounter clock.
+ */
+function finishManual(){
+ if(manualTimer!==null){clearTimeout(manualTimer);manualTimer=null}
+ const pending=s?.run?.pendingBattle;
+ if(!pending)return;
+ const remaining=pending.startedAt+pending.durationMs-Date.now();
+ if(remaining>0){manualTimer=setTimeout(finishManual,remaining+15);return}
+ const result=doCommand("FINISH_BATTLE");
+ if(!result){manualTimer=setTimeout(finishManual,180);return}
+ afterBattle(result,{replay:false});
+ set("fightTimer","战斗已按时间线完成 · 资源和掉落已结算");
+ const resume=manualResumeAuto;
+ manualResumeAuto=false;
+ if(resume){
+  if(!result.won){autoPush=false;toast("自动冲关失败，已关闭冲关，恢复安全刷怪。",true)}
+  startAuto();
+ }
+}
+function scheduleManual(){
+ if(manualTimer!==null){clearTimeout(manualTimer);manualTimer=null}
+ if(!s?.run?.pendingBattle||document.hidden)return;
+ const pending=s.run.pendingBattle;
+ const combat=fight(s,c,pending.kind,{seed:pending.seed});
+ if(Math.ceil(combat.timeMs)!==pending.durationMs){
+  toast("战斗数据与存档中的时间不符，已暂停结算以保护存档。",true);
+  return;
+ }
+ const timeline=combatTimeline(combat,Math.max(0,Date.now()-pending.startedAt));
+ if(!timeline.remainingMs){finishManual();return}
+ set("fightTimer","实时战斗 · "+(timeline.remainingMs/1000).toFixed(1)+"秒后结算");
+ startLiveTimeline(combat,timeline,"manual");
+ manualTimer=setTimeout(finishManual,timeline.remainingMs+20);
+}
+function startManualBattle(kind,resumeAuto=false){
+ if(s?.run?.pendingBattle||battleBusy&&!auto){
+  toast("一场战斗正在进行，请等当前攻击逐次结束。",true);return
+ }
+ if(auto)stopAuto();
+ const prepared=doCommand("PREPARE_BATTLE",{enemyType:kind});
+ if(!prepared)return;
+ manualResumeAuto=resumeAuto;
+ scheduleManual();
 }
 function settleLiveTimeline(result){
  const hadLive=livePreview;
@@ -454,9 +502,9 @@ function renderExplore(){
  $("checkpointTrack").innerHTML=Array.from({length:c.checkpointsPerMap},(_,i)=>
   '<div class="checkpoint-node '+(i<r.checkpoint?"passed":i===r.checkpoint?"current":"")+'">'+(i===c.checkpointsPerMap-1?"B":i+1)+'</div>').join("");
  const gate=pendingRealmGate(s,c);
- $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||!!gate;
- $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
- $("killMob").disabled=auto||battleBusy;
+ $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||!!gate||!!r.pendingBattle;
+ $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||!!r.pendingBattle;
+ $("killMob").disabled=auto||battleBusy||!!r.pendingBattle;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
  $("farmFocus").value=s.run.farmFocus||"balanced";
  set("farmFocusTip",farmTarget(s,c).desc);
@@ -473,7 +521,7 @@ function renderExplore(){
  set("wbEnemyTraits",foe.traits.join(" · "));
  $("enemySprite").querySelector("span").textContent=["🐺","🦉","🌿","👻"][r.mapIndex]||"妖";
  renderGear();renderArtifacts();renderMapDrawer();
- if(!battleBusy){
+ if(!battleBusy&&!r.pendingBattle){
   const e=live.enemy;
   set("enemyLabel",e.name);set("enemyStats","攻击 "+fmt(e.attack)+" · 防御 "+fmt(e.defense));
   snapshot("heroHP","heroBar",live.hero.hp,live.hero.hp);snapshot("enemyHP","enemyBar",e.hp,e.hp);
@@ -750,7 +798,7 @@ function schedule(){
 }
 function startAuto(){
  if(auto){stopAuto();return}
- if(battleBusy){toast("当前战斗演出尚未结束，不能重叠启动挂机。",true);return}
+ if(battleBusy||s.run.pendingBattle){toast("当前实时战斗尚未结束，不能重叠启动挂机。",true);return}
  const result=doCommand("START_IDLE");
  if(!result)return;
  auto=true;renderTop();schedule();toast("正在挂机刷当前关小怪；关闭页面后仅进行安全小怪离线结算");
