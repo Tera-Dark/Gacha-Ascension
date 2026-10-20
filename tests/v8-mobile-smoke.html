@@ -14,6 +14,18 @@ async function start(){
   for(let i=0;i<100&&!d.querySelector("#packList [data-draw]");i++)await sleep(50);
   verify(!!d.querySelector("#packList [data-draw]"),"No real card pack rendered");
   verify(!d.getElementById("explore").open,"Combat numerical detail should be initially folded");
+  verify(!!d.getElementById("analyzeBuild")&&!!d.getElementById("equipSuggestedBuild"),"Build advisor controls missing");
+  verify(!!d.getElementById("nextGoalTitle")&&!!d.getElementById("goalAction"),"Next-step guidance missing");
+  const unchanged=w.localStorage.getItem("gacha-ascension-v8-slice-v1");
+  d.getElementById("analyzeBuild").click();await sleep(100);
+  verify(d.getElementById("buildAdvice").textContent.includes("已比对"),"Owned build simulation did not render");
+  verify(w.localStorage.getItem("gacha-ascension-v8-slice-v1")===unchanged,"Read-only build advice changed save data");
+  const goal=d.getElementById("goalAction"),destination=goal.dataset.view,focus=goal.dataset.packId;
+  verify(["explore","gacha","cultivate","fate"].includes(destination),"Goal target is unknown");
+  goal.click();await sleep(80);
+  verify(d.querySelector('[data-view-panel="'+destination+'"]').classList.contains("is-active"),"Goal shortcut did not navigate to its real target");
+  if(focus)verify(!!d.querySelector('#packList [data-pack-id="'+focus+'"]'),"Recommended pack cannot be focused");
+  d.querySelector('.mobile-tabs button[data-view="explore"]').click();
   const nav=d.querySelector(".mobile-tabs");
   verify(w.getComputedStyle(nav).display!=="none","Mobile dock hidden on narrow screen");
   verify(nav.querySelectorAll("button").length===5,"Mobile dock should have 5 buttons");

@@ -7,6 +7,8 @@ import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from 
 import {RULES} from "./combat-depth.mjs";
 import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./artifacts.mjs";
 import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
+import {PAIR_SYNERGIES,activeSynergy} from "./synergy.mjs";
+import {recommendLoadout,nextStep} from "./advisor.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -14,7 +16,7 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null;
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -50,7 +52,7 @@ function doCommand(type,more={}){
  if(!s||!c)return null;
  try{
   const out=dispatch(s,c,{type,seq:s.seq+1,now:Date.now(),...more});
-  writeGame(out.state,c);s=out.state;render();
+  writeGame(out.state,c);s=out.state;buildAdvice=null;render();
   return out.result;
  }catch(error){toast(error.message,true);return null}
 }
@@ -197,7 +199,7 @@ function animateCombat(result){
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
  snapshot("enemyHP","enemyBar",combat.waves?.[0]?.hp||combat.enemy.hp,combat.waves?.[0]?.hp||combat.enemy.hp);
  set("enemyLabel",combat.waves?.[0]?.name||combat.enemy.name);
- set("combatStatus","逐次交锋 · 每次攻击独立扣血");
+ set("combatStatus",combat.synergy?"✦ 共鸣生效："+combat.synergy.name:"逐次交锋 · 每次攻击独立扣血");
  $("heroAttackBar").style.animationPlayState="running";
  $("enemyAttackBar").style.animationPlayState="running";
  const reduce=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -222,7 +224,13 @@ function animateCombat(result){
    if(toHero)snapshot("heroHP","heroBar",event.hp,event.max);
    else snapshot("enemyHP","enemyBar",event.hp,event.max);
    if(!reduce)damagePop(event);
-   set("combatStatus",event.actor==="miss"?"攻击落空":
+   const resonance=combat.synergy;
+   const resonanceHit=resonance&&(
+    event.actor==="hero"&&event.amount>0&&(resonance.strike||resonance.burst&&event.turn%3===0)||
+    event.actor==="pet"&&event.amount>0&&resonance.petDamage||
+    event.actor==="enemy"&&event.blocked>0&&resonance.shieldHp);
+   set("combatStatus",resonanceHit?"✦ "+resonance.name+" · 共鸣触发":
+    event.actor==="miss"?"攻击落空":
     event.actor==="potion"?"回春丹：紧急恢复气血":
     event.actor==="regen"?"敌方恢复":
     event.actor==="pet"?"灵宠协战":
@@ -277,6 +285,31 @@ function renderTop(){
  const label=$("autoFarm");label.textContent=auto?"Ⅱ 停止自动刷怪":"▶ 自动刷本关小怪";
  set("autoPush","自动冲关："+(autoPush?"开":"关"));
 }
+function renderBuildAdvice(){
+ const pair=activeSynergy(s),r=s.run;
+ set("synergyLabel",pair?"✦ "+pair.name:"尚无双修共鸣");
+ set("synergyHint",pair?pair.description:
+  "指定功法与灵宠出战可触发共鸣。打开功法或御兽面板查看每个组合及效果。");
+ const target=r.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
+ $("analyzeBuild").disabled=r.bossCleared||battleBusy;
+ const apply=$("equipSuggestedBuild");
+ apply.hidden=true;apply.disabled=true;
+ if(r.bossCleared){set("buildAdvice","四图已经通关，当前无需守关推演。");return}
+ if(!buildAdvice||buildAdvice.kind!==target){
+  set("buildAdvice","对已持有的功法和灵宠用相同的16组种子模拟守关；不消耗资源，也不会读取下一场实际战斗结果。");
+  return;
+ }
+ const {current,best,improved,caution,combinations}=buildAdvice;
+ const techName=best.technique?c.cards[best.technique].name:"无功法";
+ const petName=best.pet?c.cards[best.pet].name:"无灵宠";
+ const summary="已比对"+combinations+"套 · 当前 "+Math.round(current.score.rate*100)+
+  "% → 推荐 "+Math.round(best.score.rate*100)+"%（16次模拟）。";
+ if(improved){
+  set("buildAdvice",summary+" 推荐："+techName+" + "+petName+"。"+(caution||""));
+  apply.hidden=false;apply.disabled=battleBusy;
+  apply.textContent="一键装配推荐构筑";
+ }else set("buildAdvice",summary+" 当前配置在样本中已是较优选择。"+(caution||""));
+}
 function renderExplore(){
  const p=progress(s,c),r=s.run,h=heroStats(s,c),inc=incomePreview();
  set("mapTag","第"+(r.mapIndex+1)+"图 · "+majors[r.mapIndex<4?0:r.mapIndex] );
@@ -330,6 +363,13 @@ function renderExplore(){
    "当前构筑适合连续挑战"+(p.finalGuardian?"地图Boss":"守卫")+"。自动冲关将按风险判断执行。":
    "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
+ const step=nextStep(s,c,lastCombatAnalysis);
+ set("nextGoalTitle",step.title);set("nextGoalDesc",step.description);
+ set("rightGoal",step.description);
+ $("goalAction").dataset.view=step.view;
+ if(step.packId)$("goalAction").dataset.packId=step.packId;else delete $("goalAction").dataset.packId;
+ set("goalAction",step.action+" →");
+ renderBuildAdvice();
  if(r.lastBattle){set("combatReport",r.lastBattle.won?"上场"+(r.lastBattle.type==="mob"?"小怪":"挑战")+"胜利 · "+r.lastBattle.turns+"回合":"上场挑战失败 · 留在当前关刷小怪");
   set("rewardLabel","◆ +"+fmt(r.lastBattle.stones)+" · 修为 +"+fmt(r.lastBattle.qi));
   const loss=r.lastBattle.lostGear,loot=r.lastBattle.boxes||[];
@@ -358,7 +398,7 @@ function renderPacks(){
  const r=s.run;
  $("packList").innerHTML=c.packs.map(p=>{
   const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
-  return '<div class="pack"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
+  return '<div class="pack" data-pack-id="'+p.id+'"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+p.cards.length+'种卡</span></div>'+
   '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
   '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
   (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+'</div>'+
@@ -370,8 +410,11 @@ function renderInventory(listId,effect,slot){
  const cards=Object.values(c.cards).filter(x=>x.effect===effect);
  $(listId).innerHTML=cards.map(card=>{
   const n=s.run.cards[card.id]||0,active=slot?s.run[slot]===card.id:false;
+  const paired=PAIR_SYNERGIES.find(x=>effect==="technique"?x.technique===card.id:effect==="pet"&&x.pet===card.id);
+  const partner=paired?(effect==="technique"?paired.pet:paired.technique):null;
+  const pairing=partner?" · 共鸣「"+paired.name+"」搭配 "+c.cards[partner].name+"： "+paired.description:"";
   return '<div class="v8-item '+(active?"active":n?"":"missing")+'"><div class="v8-item-name">'+escapeHTML(card.name)+
-   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML(card.description||card.style||"卡牌效果实际参与战斗")+
+   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML((card.description||card.style||"卡牌效果实际参与战斗")+pairing)+
    '</div><div class="v8-item-meta">效果强度 +'+fmt(card.value*n)+(effect==="cave"?"%":"")+'</div>'+
    (slot?'<button data-equip="'+slot+'" data-card="'+card.id+'" '+(!n||active?"disabled":"")+">"+(active?"当前已装配":n?"装配出战":"尚未抽到")+'</button>':"")+'</div>';
  }).join("");
@@ -587,7 +630,17 @@ async function init(){
    const stageInfo=e.target.closest("button[data-stage-info]");
    if(stageInfo){const i=Number(stageInfo.dataset.stageInfo);toast(i===s.run.checkpoint?"当前第"+(i+1)+"关":i<s.run.checkpoint?"已通过的守卫关卡，当前无法回退刷关":"请先击败前面的守卫。");return}
    const nav=e.target.closest("button[data-view]");
-   if(nav){changeView(nav.dataset.view);return}
+   if(nav){
+     const goal=nav.id==="goalAction";
+     const pack=goal?nav.dataset.packId:null,action=goal?nav.textContent:"";
+     changeView(nav.dataset.view);
+     if(pack)document.querySelector('[data-pack-id="'+pack+'"]')?.scrollIntoView({behavior:"auto",block:"nearest"});
+     if(goal&&nav.dataset.view==="explore"){
+      const id=action.includes("前往挑战")?(s.run.checkpoint===c.checkpointsPerMap-1?"challengeBoss":"challenge"):
+       action.includes("战前推演")?"analyzeBuild":action.includes("刷怪")?"autoFarm":null;
+      if(id){$(id)?.scrollIntoView({behavior:"auto",block:"center"});$(id)?.focus({preventScroll:true})}
+     }
+     return}
    const draw=e.target.closest("button[data-draw]");
    if(draw&&!draw.disabled){drawPack(draw.dataset.draw,Number(draw.dataset.count));return}
    const equip=e.target.closest("button[data-equip]");
@@ -607,6 +660,20 @@ async function init(){
   $("autoPotionThreshold").addEventListener("change",event=>{
    if(!s.meta.autoPotion?.unlocked)return;
    doCommand("SET_AUTO_POTION",{enabled:s.meta.autoPotion.enabled,threshold:Number(event.target.value)});
+  });
+  $("analyzeBuild").addEventListener("click",()=>{
+   if(battleBusy||s.run.bossCleared)return;
+   const kind=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
+   buildAdvice=recommendLoadout(s,c,kind);
+   renderBuildAdvice();
+   toast("已模拟对比 "+buildAdvice.combinations+" 套已持有构筑");
+  });
+  $("equipSuggestedBuild").addEventListener("click",()=>{
+   if(!buildAdvice?.improved||battleBusy)return;
+   const chosen=buildAdvice.best;
+   if(auto)stopAuto();
+   const applied=doCommand("EQUIP_LOADOUT",{technique:chosen.technique,pet:chosen.pet});
+   if(applied)toast("功法与灵宠已联合装配，战斗增益即时生效");
   });
   $("autoFarm").addEventListener("click",startAuto);
   $("killMob").addEventListener("click",()=>afterBattle(doCommand("BATTLE",{enemyType:"mob"})));
