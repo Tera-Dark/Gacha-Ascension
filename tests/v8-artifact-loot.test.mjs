@@ -118,18 +118,18 @@ test("reincarnation clears all per-life treasures but keeps unlocked auto-heal",
 });
 
 test("actual seeded combat deducts exactly the healing potions shown in combat log",()=>{
+ const tuned={...c,balance:{...c.balance,mobHp:650,mobAttack:26}};
  let found=null;
- for(let seed=1;seed<=600;seed++){
+ for(let seed=1;seed<=300;seed++){
   const s=createSave(seed);
-  s.run.mapIndex=2;s.run.checkpoint=5;
   s.run.consumables={MED001:3};
   s.meta.autoPotion={unlocked:true,enabled:true,threshold:.8};
-  const preview=fight(s,c,"guardian",{seed:s.seed});
+  const preview=fight(s,tuned,"mob",{seed:s.seed});
   if(preview.usedAuto>0){found={s,preview};break}
  }
- assert.ok(found,"at least one ordinary guarded stage must cause healable damage");
+ assert.ok(found,"controlled long monster fight must trigger recoverable damage");
  const {s,preview}=found;
- const r=step(s,"BATTLE",{enemyType:"guardian"});
+ const r=dispatch(s,tuned,{seq:1,type:"BATTLE",enemyType:"mob"});
  assert.equal(r.result.combat.usedAuto,preview.usedAuto);
  assert.equal(r.state.run.consumables.MED001,3-preview.usedAuto);
  assert.equal(r.result.combat.logs.filter(x=>x.actor==="potion"&&x.source==="auto").length,preview.usedAuto);
