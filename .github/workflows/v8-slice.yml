@@ -70,6 +70,14 @@ jobs:
           fi
           "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --window-size=844,390 --screenshot=/tmp/v8-landscape.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
           test -s /tmp/v8-landscape.png
+          for SIZE in 740,360 667,375; do
+            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size="$SIZE" --dump-dom http://127.0.0.1:4173/tests/v8-landscape-smoke.html >"/tmp/v8-landscape-${SIZE}.html" 2>"/tmp/v8-landscape-${SIZE}.log"
+            if ! grep -q 'data-result="PASS"' "/tmp/v8-landscape-${SIZE}.html"; then
+              grep -o 'FAIL:[^<]*' "/tmp/v8-landscape-${SIZE}.html" || true
+              cat "/tmp/v8-landscape-${SIZE}.log"
+              exit 1
+            fi
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
