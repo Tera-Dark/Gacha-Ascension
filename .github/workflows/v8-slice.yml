@@ -17,6 +17,8 @@ on:
       - "tests/v8-live-combat-smoke.html"
       - "tests/v8-logic-smoke.html"
       - "tests/v8-novice-onboarding-smoke.html"
+      - "tests/v8-true-manual-combat-smoke.html"
+      - "tests/v8-auto-push-realtime-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/audit-newcomer-v094.mjs"
       - "scripts/verify-v8.mjs"
@@ -90,6 +92,27 @@ jobs:
           if ! grep -q 'data-result="PASS"' /tmp/v8-novice-journey.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-novice-journey.html || true
             cat /tmp/v8-novice-errors.log
+            exit 1
+          fi
+      - name: Verify real-time manual hits, deferred rewards, multiwave guardian and mid-fight reload
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=100000 --window-size=900,720 --dump-dom http://127.0.0.1:4173/tests/v8-true-manual-combat-smoke.html >/tmp/v8-real-manual.html 2>/tmp/v8-real-manual-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-real-manual.html; then
+            grep -o 'id="result"[^>]*>[^<]*' /tmp/v8-real-manual.html || true
+            grep -o 'data-phase="[^"]*"' /tmp/v8-real-manual.html || true
+            grep -o 'FAIL:[^<]*' /tmp/v8-real-manual.html || true
+            cat /tmp/v8-real-manual-errors.log
+            exit 1
+          fi
+      - name: Verify automatic push waits for full real-time guardian battle before stage progression
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=42000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-auto-push-realtime-smoke.html >/tmp/v8-auto-push-realtime.html 2>/tmp/v8-auto-push-realtime-errors.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-auto-push-realtime.html; then
+            grep -o 'id="result"[^>]*>[^<]*' /tmp/v8-auto-push-realtime.html || true
+            grep -o 'FAIL:[^<]*' /tmp/v8-auto-push-realtime.html || true
+            cat /tmp/v8-auto-push-realtime-errors.log
             exit 1
           fi
       - name: Validate actual landscape touch layout and equipment drawer in Chromium

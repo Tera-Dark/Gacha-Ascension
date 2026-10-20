@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Auto push real-time transaction smoke</title><style>body{margin:0;background:#12322b;color:white}output{display:block;padding:6px}iframe{width:100%;height:85vh;border:0}</style></head><body><output data-result="PENDING" id="result">RUNNING AUTO PUSH</output><iframe id="app" title="Auto push game"></iframe>
+<script type="module">
+import {createSave,loadCatalog,fight,combatAssessment} from "../src/v8/engine.mjs";
+import {writeGame} from "../src/v8/storage.mjs";
+const frame=document.getElementById("app"),out=document.getElementById("result"),pause=ms=>new Promise(r=>setTimeout(r,ms));
+const check=(yes,msg)=>{if(!yes)throw Error(msg)};
+const c=loadCatalog(await(await fetch("../data/realms-maps.v0.8.proposal.json")).json(),
+ await(await fetch("../data/v8-slice.json")).json());
+const fixture=createSave(20261020);fixture.run.cards.B001=20;
+writeGame(fixture,c,localStorage);
+frame.addEventListener("load",async()=>{
+ try{
+  const d=frame.contentDocument,w=frame.contentWindow,read=()=>JSON.parse(w.localStorage.getItem("gacha-ascension-v8-slice-v1"));
+  for(let i=0;i<80&&!d.querySelector('#packList [data-draw="battle"]');i++)await pause(45);
+  const initial=read();
+  check(combatAssessment(initial,c,"guardian",24).safeToAuto,"test guardian matchup not auto-safe");
+  const mob=fight(initial,c,"mob",{seed:initial.seed});
+  d.getElementById("autoPush").click();
+  d.getElementById("autoFarm").click();
+  await pause(mob.timeMs+350);
+  const pending=read();
+  check(pending.run.pendingBattle?.kind==="guardian","auto push skipped live guardian preparation");
+  check(pending.run.guardianWins===0&&pending.run.checkpoint===0,
+   "auto push granted guardian progress without elapsed real combat clock");
+  check(!pending.run.idle.active,"idle farming continued concurrently with live guardian");
+  out.dataset.phase="guardian-live";
+  const guardian=fight(pending,c,"guardian",{seed:pending.seed});
+  check(guardian.won,"test fixture should beat guardian");
+  await pause(guardian.timeMs+300);
+  const finished=read();
+  check(finished.run.guardianWins===1&&finished.run.checkpoint===1,
+   "auto push did not settle real guardian after completion");
+  check(!finished.run.pendingBattle,"pending guardian remained after full battle");
+  check(finished.run.idle.active,"auto farm did not resume after successful guard");
+  out.dataset.result="PASS";out.textContent="PASS: auto mob -> live guardian pending -> no early progress -> elapsed real guardian -> continued safe mob farm";
+ }catch(e){out.dataset.result="FAIL";out.textContent="FAIL: "+e.message}
+});
+frame.src="../preview-v0.8.html";
+</script></body></html>

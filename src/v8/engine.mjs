@@ -49,6 +49,13 @@ export function validateSave(s,c){
  if(r.farmFocus!==undefined&&!c.farmTargets.some(x=>x.id===r.farmFocus))throw Error("刷怪目标异常");
  if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
+ const pending=r.pendingBattle;
+ if(pending!==undefined&&pending!==null){
+  if(!["mob","guardian","boss"].includes(pending.kind)||
+    !nat(pending.startedAt)||!Number.isSafeInteger(pending.durationMs)||pending.durationMs<1||
+    pending.seed!==s.seed||!nat(pending.seed)||!pending.seed||r.idle?.active)
+   throw Error("进行中的战斗记录损坏");
+ }
  verifyEquipment(s,c);
  verifyArtifacts(s,c);validateInventory(s);
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
@@ -311,10 +318,39 @@ export function dispatch(current,c,cmd){
  const s=deep(current),r=s.run;let result;
  const idleCombat=(st,cat)=>battle(st,cat,"mob");
  const interval=(st,cat)=>battleIntervalMs(st,cat,yields,(x,y)=>fight(x,y,"mob",{seed:x.seed}));
+ // A manually started encounter owns the save until its real combat clock
+ // completes. No cards, equipment, drops or rewards can change mid-fight.
+ if(r.pendingBattle&&cmd.type!=="FINISH_BATTLE")throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
  // Resolve any past idle period before equipment, card or realm mutations.
  if(r.idle?.active&&Number.isSafeInteger(cmd.now)&&!["START_IDLE","CLAIM_IDLE","STOP_IDLE"].includes(cmd.type))
   claimIdle(s,c,cmd.now,idleCombat,interval);
  switch(cmd.type){
+ case "PREPARE_BATTLE":{
+  if(!Number.isSafeInteger(cmd.now)||cmd.now<0)throw Error("战斗开始时间异常");
+  const kind=cmd.enemyType;
+  if(!["mob","guardian","boss"].includes(kind))throw Error("无效战斗类型");
+  if(r.idle?.active)throw Error("先停止挂机，再开始手动战斗");
+  if(r.bossCleared&&kind!=="mob")throw Error("地图Boss已通关");
+  const isFinal=r.checkpoint===c.checkpointsPerMap-1;
+  if(kind==="boss"&&!isFinal)throw Error("请先击败该图全部守卫");
+  if(kind==="guardian"&&isFinal)throw Error("当前关卡应挑战地图Boss");
+  if(kind==="guardian"&&pendingRealmGate(s,c))
+   throw Error("当前境界不足，请先突破再挑战守卫");
+  const combat=fight(s,c,kind,{seed:s.seed});
+  r.pendingBattle={kind,startedAt:cmd.now,durationMs:Math.ceil(combat.timeMs),seed:s.seed};
+  result={kind:"battlePrepared",enemyType:kind,startedAt:cmd.now,combat};
+  break;
+ }
+ case "FINISH_BATTLE":{
+  const pending=r.pendingBattle;
+  if(!pending)throw Error("当前没有等待结算的战斗");
+  if(!Number.isSafeInteger(cmd.now)||cmd.now<pending.startedAt+pending.durationMs)
+   throw Error("战斗还未完成，不能提前结算");
+  if(s.seed!==pending.seed)throw Error("进行中的战斗随机种子发生变化");
+  delete r.pendingBattle;
+  result=battle(s,c,pending.kind);
+  break;
+ }
  case "DRAW":result=draw(s,c,cmd);break;
  case "BATTLE":{
   if(cmd.enemyType==="mob"&&Number.isSafeInteger(cmd.now)){
