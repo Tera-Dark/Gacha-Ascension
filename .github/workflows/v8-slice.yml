@@ -7,7 +7,7 @@ on:
       - "data/realms-maps.v0.8.proposal.json"
       - "preview-v0.8.html"
       - "v8.css"
-      - "tests/v8.test.mjs"
+      - "tests/v8*.test.mjs"
       - "scripts/verify-v8.mjs"
       - "package.json"
       - ".github/workflows/v8-slice.yml"
