@@ -17,8 +17,11 @@ test("all nine game systems offer closed-by-default accessible native numeric de
  assert.match(page,/<details class="v8-disclosure v8-route-disclosure">/);
  assert.match(page,/<details class="v8-disclosure v8-future-map">/);
  assert.match(page,/<details class="v8-disclosure v8-relic-inventory">/);
- assert.ok(page.indexOf('id="autoFarm"')<page.indexOf('<details class="v8-disclosure" id="explore">'),
-  "Combat controls should remain above optional detailed numbers");
+ assert.match(page,/<div class="battle-workbench">/);
+ assert.match(page,/<section class="wb-player wb-pane"/);
+ assert.match(page,/<section class="wb-enemy wb-pane"/);
+ assert.match(page,/id="equipmentGrid"/);
+ assert.match(page,/id="landscapeNavToggle"/);
  assert.doesNotMatch(page,/<details[^>]*\sopen(?:\s|=|>)/);
 });
 test("compact mobile dock holds four primary destinations plus expandable accessible system sheet",()=>{
