@@ -22,7 +22,7 @@ test("v0.7 catalog has 30 stages, 28 cards, four stances, six encounter override
  assert.equal(Object.keys(catalog.traitDefinitions).length,4);
  assert.equal(catalog.encounters[10].traitIds[0],"iron_shell");
  assert.throws(()=>loadM0Catalog(read("codex/codex.v0.5.json"),read("m0-packs.v0.7.json"),{version:"0.6"}));
- assert.throws(()=>loadM0Catalog(read("codex/codex.v0.5.json"),read("m0-packs.v0.6.json"),read("m0-encounters.v0.7.json")));
+ assert.throws(()=>loadM0Catalog(read("codex/codex.v0.5.json"),JSON.parse(readFileSync(new URL("./fixtures/m0-packs.v0.6.json",import.meta.url),"utf8")),read("m0-encounters.v0.7.json")));
 });
 test("fresh save has independent v3 key; battle first draw deterministically increases attack",()=>{
  const initial=createM0Save();
