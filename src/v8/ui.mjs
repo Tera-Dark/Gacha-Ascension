@@ -1,4 +1,4 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget} from "./engine.mjs";
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset,recoverInvalidSave} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
@@ -453,7 +453,8 @@ function renderExplore(){
  set("checkpointCount",r.bossCleared?"四图切片已通关":"第"+p.stage+"/"+c.checkpointsPerMap+"关");
  $("checkpointTrack").innerHTML=Array.from({length:c.checkpointsPerMap},(_,i)=>
   '<div class="checkpoint-node '+(i<r.checkpoint?"passed":i===r.checkpoint?"current":"")+'">'+(i===c.checkpointsPerMap-1?"B":i+1)+'</div>').join("");
- $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||r.realmIndex<r.mapIndex;
+ const gate=pendingRealmGate(s,c);
+ $("challenge").disabled=p.finalGuardian||r.bossCleared||(battleBusy&&!auto)||!!gate;
  $("challengeBoss").disabled=!p.finalGuardian||r.bossCleared||(battleBusy&&!auto);
  $("killMob").disabled=auto||battleBusy;
  set("mobStone","+"+fmt(inc.stones));set("mobQi","+"+fmt(inc.qi));
@@ -497,6 +498,16 @@ function renderExplore(){
    "当前构筑适合连续挑战"+(p.finalGuardian?"地图Boss":"守卫")+"。自动冲关将按风险判断执行。":
    "请在本关刷小怪、抽卡强化攻防与减伤，或装配克制敌人流派的功法；失败不会退关。");
  }
+ if(gate){
+  set("guardForecast","境界未达 · 暂停挑战");
+  set("combatAdvice","已经抵达新地图，但需先突破至"+gate.realm+"才能挑战守卫；当前地图小怪仍能继续刷取修为和灵石。");
+  set("goalHint","进入"+gate.map+"后，先完成"+gate.realm+"突破，再继续挑战守卫。积累修为和抽取悟道的入口不会锁死。");
+ }
+ if(r.mapIndex===3&&!r.bossCleared&&!r.pills.D004){
+  set("goalHint",gate?
+   "先突破至"+gate.realm+"，同时提前准备筑基丹：丹道宝匣最多还需"+Math.max(1,c.realmPillPity-r.pillPity)+"抽。":
+   "最终地图提示：击败Boss后筑基还需筑基丹，丹道宝匣保底最多还需"+Math.max(1,c.realmPillPity-r.pillPity)+"抽，可现在开始准备。");
+ }
  const step=nextStep(s,c,lastCombatAnalysis);
  set("nextGoalTitle",step.title);set("nextGoalDesc",step.description);
  set("rightGoal",step.description);
@@ -530,7 +541,7 @@ function renderCultivate(){
 }
 function renderPacks(){
  const r=s.run,step=nextStep(s,c,lastCombatAnalysis);
- const focus=step.packId||(!Object.values(r.draws).some(n=>n>0)?"battle":null);
+ const focus=step.packId||(r.mapIndex===3&&r.realmIndex===3&&!r.pills.D004?"elixir":!Object.values(r.draws).some(n=>n>0)?"battle":null);
  const labels={
   battle:"直接增加攻防气血 · 卡关时快速变强",
   wealth:"长期灵石收益 · 刷怪次数越多越划算",
