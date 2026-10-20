@@ -118,3 +118,21 @@ test("all dungeon phase headers survive event truncation in long fights",()=>{
  assert.deepEqual([...ids].sort((a,b)=>a-b),ids);
  assert.ok(result.logs.length<=25);
 });
+
+test("three monster farming targets trade stones against cultivation in the same checkpoint",()=>{
+ const fresh=createSave(4242);
+ const base=dispatch(fresh,catalog,{type:"BATTLE",enemyType:"mob",seq:1});
+ const choose=(id)=>{
+  const focused=dispatch(fresh,catalog,{type:"SET_FARM_FOCUS",id,seq:1});
+  assert.equal(focused.state.run.checkpoint,0);
+  assert.equal(focused.state.run.mapIndex,0);
+  return dispatch(focused.state,catalog,{type:"BATTLE",enemyType:"mob",seq:2});
+ };
+ const stone=choose("stones"),cultivation=choose("cultivation");
+ assert.equal(base.result.won,true);assert.equal(stone.result.won,true);assert.equal(cultivation.result.won,true);
+ assert.ok(stone.result.stones>base.result.stones);
+ assert.ok(stone.result.qi<base.result.qi);
+ assert.ok(cultivation.result.qi>base.result.qi);
+ assert.ok(cultivation.result.stones<base.result.stones);
+ assert.throws(()=>dispatch(fresh,catalog,{type:"SET_FARM_FOCUS",id:"ultra",seq:1}),/刷怪目标/);
+});
