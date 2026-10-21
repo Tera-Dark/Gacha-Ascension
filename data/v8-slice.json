@@ -172,7 +172,15 @@
           "effect": "technique",
           "style": "sword",
           "value": 23,
-          "description": "每次攻击追加剑气伤害"
+          "description": "每次攻击追加剑气伤害",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "blade"
+          ]
         },
         {
           "id": "T002",
@@ -181,7 +189,15 @@
           "effect": "technique",
           "style": "guard",
           "value": 23,
-          "description": "减少敌人的实际伤害"
+          "description": "减少敌人的实际伤害",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "ward"
+          ]
         },
         {
           "id": "T003",
@@ -190,7 +206,15 @@
           "effect": "technique",
           "style": "spirit",
           "value": 28,
-          "description": "增幅灵宠的独立攻击"
+          "description": "增幅灵宠的独立攻击",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "spirit"
+          ]
         },
         {
           "id": "T004",
@@ -199,7 +223,16 @@
           "effect": "technique",
           "style": "burst",
           "value": 40,
-          "description": "每三回合触发爆发斩击"
+          "description": "每三回合触发爆发斩击",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "blade",
+            "burst"
+          ]
         }
       ]
     },
@@ -216,7 +249,15 @@
           "effect": "cave",
           "style": "stone",
           "value": 25,
-          "description": "提高普通小怪战斗灵石收益"
+          "description": "提高普通小怪战斗灵石收益",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "supply"
+          ]
         },
         {
           "id": "H002",
@@ -225,7 +266,15 @@
           "effect": "cave",
           "style": "qi",
           "value": 27,
-          "description": "提高小怪战斗修为收益"
+          "description": "提高小怪战斗修为收益",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "spirit"
+          ]
         },
         {
           "id": "H003",
@@ -234,7 +283,15 @@
           "effect": "cave",
           "style": "speed",
           "value": 7,
-          "description": "缩短战斗间隔"
+          "description": "缩短战斗间隔",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "supply"
+          ]
         },
         {
           "id": "H004",
@@ -243,7 +300,15 @@
           "effect": "cave",
           "style": "pet",
           "value": 24,
-          "description": "提高灵宠伤害"
+          "description": "提高灵宠伤害",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "spirit"
+          ]
         }
       ]
     },
@@ -260,7 +325,16 @@
           "effect": "pet",
           "style": "attack",
           "value": 25,
-          "description": "每回合独立发动灵宠攻击"
+          "description": "每回合独立发动灵宠攻击",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "blade",
+            "spirit"
+          ]
         },
         {
           "id": "P002",
@@ -269,7 +343,15 @@
           "effect": "pet",
           "style": "ward",
           "value": 18,
-          "description": "每次战斗提供护主护盾"
+          "description": "每次战斗提供护主护盾",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "ward"
+          ]
         },
         {
           "id": "P003",
@@ -278,7 +360,16 @@
           "effect": "pet",
           "style": "pierce",
           "value": 38,
-          "description": "无视部分防御的独立攻击"
+          "description": "无视部分防御的独立攻击",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "spirit",
+            "pierce"
+          ]
         },
         {
           "id": "P004",
@@ -287,7 +378,15 @@
           "effect": "pet",
           "style": "qi",
           "value": 28,
-          "description": "提供灵气收益辅助"
+          "description": "提供灵气收益辅助",
+          "growthThresholds": [
+            1,
+            3,
+            6
+          ],
+          "tags": [
+            "spirit"
+          ]
         }
       ]
     },
@@ -311,7 +410,7 @@
           "rarity": "huang",
           "effect": "attackPct",
           "value": 10,
-          "description": "本世攻击永久提升10%"
+          "description": "本世攻击永久提升10%，并解锁护脉叶采集与护体散配方"
         },
         {
           "id": "D003",
@@ -319,7 +418,7 @@
           "rarity": "xuan",
           "effect": "hpPct",
           "value": 16,
-          "description": "本世气血永久提升16%"
+          "description": "本世气血永久提升16%，并解锁剑意花采集与剑意散配方"
         },
         {
           "id": "D004",
@@ -815,7 +914,7 @@
   ],
   "fate": {
     "price": 40,
-    "ultraChance": 0.000001,
+    "ultraChance": 1e-06,
     "rarities": {
       "huang": 50,
       "xuan": 28,
@@ -825,7 +924,7 @@
     },
     "pityAt": 25,
     "pityXianAt": 80,
-    "apexChance": 0.00001,
+    "apexChance": 1e-05,
     "maxFateRateBoost": 0,
     "uncappedPoolInvariant": true,
     "specialRules": "每个天命箱必得1件常规遗物；十万分之一太古、百万分之一鸿蒙是两次独立追加判定；常规满级物品退出卡池，无上限常规遗物始终存在；无稀有保底与充值加成。"
@@ -908,5 +1007,77 @@
       "herb": 0.65
     }
   },
-  "lootNotes": "装备箱只开黄/玄基础装备；药草箱只开三种药草（每次2-5）。法器、功法和绝大部分成长只由抽卡产生。"
+  "lootNotes": "基础装备箱仍限黄/玄装备；采药与回春丹基础配方始终可用，高级配方、建筑和核心构筑通过抽卡解锁。",
+  "management": {
+    "offlineCapMs": 86400000,
+    "gatherMs": 60000,
+    "meditateMs": 60000,
+    "meditateQi": 80,
+    "fieldMs": 180000,
+    "brewMs": 60000,
+    "herbCap": 300,
+    "potionCap": 100,
+    "queueSlots": 3,
+    "directedEvery": 20,
+    "realmQiFactor": 2000,
+    "relearnFactor": 0.6,
+    "groups": {
+      "battle": "基础成长",
+      "wealth": "基础成长",
+      "cultivation": "基础成长",
+      "technique": "战斗构筑",
+      "pet": "战斗构筑",
+      "equipment": "战斗构筑",
+      "artifact": "战斗构筑",
+      "cave": "洞府经营",
+      "elixir": "洞府经营"
+    },
+    "talents": [
+      {
+        "id": "meditate",
+        "branch": "悟道",
+        "name": "澄心",
+        "cost": 1,
+        "desc": "闭关修为产出提高25%"
+      },
+      {
+        "id": "insight",
+        "branch": "悟道",
+        "name": "宿慧",
+        "cost": 1,
+        "requires": "meditate",
+        "desc": "突破悟道需求减少1，最低1"
+      },
+      {
+        "id": "warehouse",
+        "branch": "营造",
+        "name": "灵仓",
+        "cost": 1,
+        "desc": "药草和丹药生产库存上限翻倍"
+      },
+      {
+        "id": "queue",
+        "branch": "营造",
+        "name": "分炉",
+        "cost": 1,
+        "requires": "warehouse",
+        "desc": "丹炉排程增加1格，炼丹速度提高25%"
+      },
+      {
+        "id": "inherit",
+        "branch": "传承",
+        "name": "薪火",
+        "cost": 1,
+        "desc": "传承卡开局获得2份，仍不继承旧叠层"
+      },
+      {
+        "id": "supplies",
+        "branch": "传承",
+        "name": "行囊",
+        "cost": 1,
+        "requires": "inherit",
+        "desc": "每世开局获得三种药草各30份、回春丹10颗"
+      }
+    ]
+  }
 }

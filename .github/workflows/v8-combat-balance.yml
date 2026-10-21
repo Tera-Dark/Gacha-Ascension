@@ -1,11 +1,15 @@
-name: v0.8 combat economy 300-seed full sweep
+name: Current combat and three-life progression balance
 on:
   push:
     paths:
       - "src/v8/combat-depth.mjs"
       - "src/v8/engine.mjs"
+      - "src/v8/activities.mjs"
+      - "src/v8/progression.mjs"
+      - "src/v8/idle.mjs"
       - "data/v8-slice.json"
       - "scripts/simulate-v8-combat.mjs"
+      - "scripts/simulate-v8-progression.mjs"
       - ".github/workflows/v8-combat-balance.yml"
   workflow_dispatch:
 permissions:
@@ -21,3 +25,5 @@ jobs:
           node-version: '22'
       - name: Run 300 real-seed playthroughs across combat, economy and tactical policies
         run: npm run simulate:v8:full
+      - name: Validate three routes across ten seeds and three consecutive lives
+        run: npm run simulate:v8:progression:full

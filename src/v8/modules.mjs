@@ -9,6 +9,10 @@ export const EFFECT_KEYS=Object.freeze([
  "insight","technique","cave","pet","pill","qiInstant","equipment","artifact"
 ]);
 export const MODULES=Object.freeze([
+ {id:"gather",name:"采药",scope:"run",source:"activity",status:"live",panel:"cave"},
+ {id:"meditate",name:"闭关",scope:"run",source:"activity",status:"live",panel:"cultivate"},
+ {id:"production",name:"洞府生产",scope:"run",source:"activity",status:"live",panel:"cave"},
+ {id:"lineage",name:"见闻与道统",scope:"meta",source:"milestone",status:"live",panel:"fate"},
  {id:"battle",name:"战力",scope:"run",source:"gacha",status:"live",panel:"gacha"},
  {id:"wealth",name:"聚财",scope:"run",source:"gacha",status:"live",panel:"gacha"},
  {id:"cultivation",name:"修炼",scope:"run",source:"gacha",status:"live",panel:"cultivate"},
@@ -29,6 +33,10 @@ const PACKS=new Set(MODULES.filter(m=>m.source==="gacha"&&m.status==="live").map
 export function validateContentContract(config){
  if(!config||!Array.isArray(config.packs)||!config.features?.unlockAtGlobalCheckpoint)throw Error("缺少系统解锁注册表");
  const effects=new Set(EFFECT_KEYS);
+ const management=config.management;
+ if(!management||["offlineCapMs","gatherMs","meditateMs","fieldMs","brewMs","meditateQi","herbCap","potionCap","queueSlots","directedEvery","realmQiFactor"].some(k=>!Number.isSafeInteger(management[k])||management[k]<1)||management.offlineCapMs!==86400000||management.relearnFactor!==.6)
+  throw Error("经营与跨世配置无效");
+ if(!Array.isArray(management.talents)||management.talents.length!==6||new Set(management.talents.map(x=>x.id)).size!==6||management.talents.some(x=>x.cost!==1||x.requires&&!management.talents.some(n=>n.id===x.requires)))throw Error("道统节点配置无效");
  for(const pack of config.packs){
   if(!PACKS.has(pack.id))throw Error("未知正式卡包系统 "+pack.id);
   if(!Number.isSafeInteger(pack.cost)||pack.cost<1)throw Error("卡包价格无效 "+pack.id);

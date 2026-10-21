@@ -2,8 +2,9 @@
 <title>V8 actual mobile interactive smoke</title>
 <style>body{margin:0;background:#101b18;color:#e6d5a0;font:14px sans-serif}#result{padding:12px}iframe{display:block;border:0;width:100%;height:80vh}</style></head>
 <body><output id="result" data-result="PENDING">RUNNING</output>
-<iframe id="app" src="../preview-v0.8.html" title="Game under interactive test"></iframe>
-<script>
+<iframe id="app" title="Game under interactive test"></iframe>
+<script type="module">
+import {createSave,SAVE_KEY} from "../src/v8/engine.mjs";
 const result=document.getElementById("result");
 const frame=document.getElementById("app");
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -30,6 +31,7 @@ async function start(){
   verify(w.getComputedStyle(nav).display!=="none","Mobile dock hidden on narrow screen");
   verify(nav.querySelectorAll("button").length===5,"Mobile dock should have 5 buttons");
   verify(nav.querySelector("button").getBoundingClientRect().height>=44,"Primary touch target too small");
+  d.querySelector('.view-header [data-module-help]').click();
   d.querySelector('#explore>summary').click();await sleep(160);
   verify(d.getElementById("explore").open,"Combat detail cannot expand");
   verify(d.querySelectorAll("#detail-explore .v8-data-row").length>=14,"Combat stat breakdown was not populated");
@@ -37,18 +39,33 @@ async function start(){
   verify(text.includes("攻击")&&text.includes("气血")&&text.includes("命中"),"Missing detailed hero combat numbers");
   d.querySelector('#explore>summary').click();await sleep(130);
   verify(!d.getElementById("explore").open,"Combat detail cannot close");
+  d.getElementById("closeModuleHelp").click();
   d.getElementById("moreSystems").click();
   verify(!d.getElementById("mobileSheet").hidden,"More sheet did not open");
   verify(d.getElementById("moreSystems").getAttribute("aria-expanded")==="true","More sheet accessibility state missing");
   d.querySelector('#mobileSheet button[data-view="cave"]').click();
   verify(d.getElementById("mobileSheet").hidden,"More sheet did not dismiss after navigating");
   verify(d.querySelector('[data-view-panel="cave"]').classList.contains("is-active"),"Cave page was not activated");
+  d.querySelector('[data-module-help="cave"]').click();
   d.querySelector('#cave>summary').click();await sleep(140);
   verify(d.getElementById("detail-cave").textContent.includes("洞府灵石贡献"),"Cave numerical data did not appear");
+  d.getElementById("closeModuleHelp").click();
+  for(const name of ["cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"]){
+   const direct=d.querySelector('.mobile-tabs button[data-view="'+name+'"]');
+   if(direct)direct.click();
+   else{d.getElementById('moreSystems').click();d.querySelector('#mobileSheet button[data-view="'+name+'"]').click()}
+   await sleep(40);
+   const panel=d.querySelector('[data-view-panel="'+name+'"]');
+   verify(panel.classList.contains('is-active'),name+' pixel screen cannot be opened');
+   verify(panel.querySelector('.px-system-banner h2')?.textContent.length>0,name+' screen title absent');
+   verify(d.documentElement.scrollWidth<=w.innerWidth+1,name+' causes mobile horizontal overflow');
+  }
   d.querySelector('.mobile-tabs button[data-view="gacha"]').click();
   verify(d.querySelector('[data-view-panel="gacha"]').classList.contains("is-active"),"Gacha cannot open through dock");
+  d.querySelector('[data-module-help="gacha"]').click();
   d.querySelector('#gacha>summary').click();await sleep(140);
   verify(d.getElementById("detail-gacha").textContent.includes("概率"),"Gacha pool probability details absent");
+  d.getElementById("closeModuleHelp").click();
   const drawButton=d.querySelector('#packList button[data-draw="battle"][data-count="1"]');
   verify(!!drawButton&&!drawButton.disabled,"Fresh save cannot afford first battle draw");
   const existing=w.localStorage.getItem("gacha-ascension-v8-slice-v1");
@@ -72,4 +89,9 @@ async function start(){
  }
 }
 frame.addEventListener("load",start);
+if(location.port==='4180'){
+ localStorage.setItem(SAVE_KEY,JSON.stringify(createSave(101)));
+ localStorage.removeItem('gacha-ascension-v8-novice-skip-v1');
+ frame.src='../preview-v0.8.html';
+}else{document.getElementById('result').dataset.result='SKIP';document.getElementById('result').textContent='SKIP: isolated port 4180 required'}
 </script></body></html>

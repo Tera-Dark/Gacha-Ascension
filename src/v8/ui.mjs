@@ -1,4 +1,6 @@
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
+import {mountBank,renderBank} from './bank.mjs';
+import {mountHelp} from './module-help.mjs';
+import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,reincarnationPreview,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset,recoverInvalidSave} from "./storage.mjs";
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
@@ -6,11 +8,14 @@ import {unlockedPack} from "./modules.mjs";
 import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from "./equipment.mjs";
 import {RULES} from "./combat-depth.mjs";
 import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./artifacts.mjs";
-import {BOXES,HERBS,ITEMS,inventory,AUTO_POTION_COST} from "./treasure.mjs";
-import {PAIR_SYNERGIES,activeSynergy} from "./synergy.mjs";
+import {ITEMS,AUTO_POTION_COST} from "./treasure.mjs";
+import {activeSynergy} from "./synergy.mjs";
 import {recommendLoadout,nextStep} from "./advisor.mjs";
-import {combatTimeline} from "./combat-timeline.mjs";
+import {combatTimeline,combatCues,attackPresentation} from "./combat-timeline.mjs";
 import {noviceStep} from "./onboarding.mjs";
+import {loadPixelAssets,renderPixelScene,renderPixelFrame,pixelBattleEvent} from "./pixel-scene.mjs";
+import {mountManagement,renderManagement,growthDescription} from "./management-ui.mjs";
+import {pixelIcon,packIcons,initPixelUI} from "./pixel-ui.mjs";
 const $=id=>document.getElementById(id),fmt=n=>{
  if(!Number.isFinite(n))return "—";
  const a=Math.abs(n);
@@ -18,10 +23,10 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveTimers=[],livePreview=false,suggestedGearSlot=null,manualTimer=null,manualResumeAuto=false;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveClock=null,settledPose=null,livePreview=false,suggestedGearSlot=null,manualTimer=null,manualResumeAuto=false;
 const NOVICE_SKIP_KEY="gacha-ascension-v8-novice-skip-v1";
 const QUICK_REVEAL_KEY="gacha-ascension-v8-quick-reveal-v1";
-const set=(id,text)=>{const e=$(id);if(e)e.textContent=text};
+const set=(id,text)=>{const e=$(id);if(e&&e.textContent!==String(text))e.textContent=text};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("visible"),3400);
@@ -81,6 +86,7 @@ function changeView(target){
  }
  const names={explore:"地图探索",cultivate:"境界突破",gacha:"机缘抽卡",technique:"功法",cave:"洞府经营",pet:"御兽灵契",items:"道具行囊",fate:"轮回天命",atlas:"世界图鉴",settings:"存档设置"};
  set("screenTitle",names[target]);
+ document.body.dataset.currentView=target;
  $("moreSystems").classList.toggle("is-active",["technique","cave","pet","items","atlas","settings"].includes(target));
  const panel=document.querySelector('[data-view-panel="'+target+'"]');if(panel)panel.scrollTop=0;
  render();
@@ -154,13 +160,7 @@ function openArtifact(slot){
  $("closeEquipment").focus();
 }
 function renderItems(){
- const r=s.run,boxes=r.boxes||{},herbs=r.herbs||{},items=r.consumables||{},prepared=r.prepared||{};
- $("boxInventory").innerHTML=BOXES.map(box=>'<div class="wb-inventory-item"><div><b>'+box.name+' ×'+(boxes[box.id]||0)+'</b><small>'+
- escapeHTML(box.desc)+'</small></div><button data-open-box="'+box.id+'" '+((boxes[box.id]||0)?"":"disabled")+'>开启</button></div>').join("");
- $("herbInventory").innerHTML=HERBS.map(herb=>'<div class="wb-inventory-item"><div><b>'+herb.name+' ×'+(herbs[herb.id]||0)+'</b><small>'+herb.desc+'</small></div>'+
- '<button data-brew="'+herb.id+'" '+((herbs[herb.id]||0)>=3?"":"disabled")+'>炼1颗药</button></div>').join("");
- $("consumableInventory").innerHTML=ITEMS.map(item=>'<div class="wb-inventory-item"><div><b>'+item.name+' ×'+(items[item.id]||0)+'</b><small>'+item.desc+' · 已备战'+(prepared[item.id]||0)+'</small></div>'+
- '<button data-prepare-item="'+item.id+'" '+((items[item.id]||0)&&((prepared[item.id]||0)<3)?"":"disabled")+'>下场备战</button></div>').join("");
+ renderBank(s,c,fmt);
  const a=s.meta.autoPotion;
  set("autoPotionStatus",a?.unlocked?(a.enabled?"自动吃药运行中 · 气血≤"+Math.round(a.threshold*100)+"%触发":"已解锁，当前关闭"):"尚未解锁 · 消耗 "+AUTO_POTION_COST+" 因果可永久获得");
  $("unlockAutoPotion").hidden=!!a?.unlocked;
@@ -193,7 +193,7 @@ function renderGear(){
  const upgrades=safeGearUpgrades();
  suggestedGearSlot=upgrades[0]?.slot||null;
  const slots=new Set(upgrades.map(x=>x.slot));
- set("openGearBag",slots.size?"打开背包 · "+slots.size+"槽可提升 ›":"打开背包 ›");
+ set("openGearBag",slots.size?"打开行囊 · "+slots.size+"槽可提升 ›":"打开行囊 ›");
  $("equipmentGrid").innerHTML=EQUIPMENT_SLOTS.map(slot=>{
   const id=equipment[slot.id],card=id?c.cards[id]:null;
   return '<button class="wb-gear-slot'+(card?" filled":"")+(slots.has(slot.id)?" can-upgrade":"")+'" type="button" data-gear-slot="'+slot.id+'" aria-label="'+
@@ -248,13 +248,12 @@ function damagePop(event){
  el.textContent=isMiss?"闪避":event.actor==="enemy"&&event.blocked>0&&event.amount===0?"格挡 "+fmt(event.blocked):(isHeal?"+":"−")+fmt(event.amount||0);
  el.style.left=(toHero? "21%":"68%");
  layer.append(el);setTimeout(()=>el.remove(),800);
- if(isMiss||isHeal)return;
- const src=$(toHero?"heroSprite":"enemySprite");
- src.classList.remove("impact");void src.offsetWidth;src.classList.add("impact");
- setTimeout(()=>src.classList.remove("impact"),220);
+ // Damage numbers provide impact feedback without flashing the whole sprite.
 }
 /** All combat modes share one chronological event-to-HP renderer. */
 function showHitEvent(event,combat,withEffects=true){
+ if(withEffects)pixelBattleEvent(event,s);
+ if(event.actor==="warning"){set("combatStatus",event.name);return}
  if(event.actor==="wave"){
   set("enemyLabel",event.name+" · 第"+event.stage+"/"+event.total+"波");
   set("wbWave","第"+event.stage+"/"+event.total+"波");
@@ -274,7 +273,9 @@ function showHitEvent(event,combat,withEffects=true){
   event.actor==="enemy"&&event.blocked>0&&resonance.shieldHp);
  set("combatStatus",resonanceHit?"✦ "+resonance.name+" · 共鸣触发":
   event.actor==="miss"?"攻击落空":
-  event.actor==="potion"?"回春丹：紧急恢复气血":
+  event.actor==="potion"?(event.source==="bond"?"灵契回春 · 恢复气血":"回春丹：紧急恢复气血"):
+  event.actor==="retaliation"?"玄甲反击 · 护盾转化伤害":
+  event.mechanic?event.mechanic:
   event.actor==="regen"?"敌方恢复":
   event.actor==="pet"?"灵宠协战":
   event.actor==="counter"?"敌方反震":
@@ -282,30 +283,40 @@ function showHitEvent(event,combat,withEffects=true){
   toHero?"敌方命中 · 气血减少":"我方命中 · 敌方气血减少");
 }
 function clearLiveTimeline(){
- for(const id of liveTimers)clearTimeout(id);
- liveTimers=[];livePreview=false;
+ liveClock=null;livePreview=false;
+ $("heroAttackBar").style.width="0%";$("enemyAttackBar").style.width="0%";
 }
-function startLiveTimeline(combat,plan,mode="auto"){
+function advanceLiveClock(){
+ const clock=liveClock;if(!clock)return null;
+ const elapsed=Math.min(clock.combat.timeMs,Math.max(0,Date.now()-clock.origin));
+ while(clock.cursor<clock.combat.logs.length&&clock.combat.logs[clock.cursor].timeMs<=elapsed)
+  showHitEvent(clock.combat.logs[clock.cursor++],clock.combat,true);
+ const motions={hero:attackPresentation(clock.cues.hero,elapsed),enemy:attackPresentation(clock.cues.enemy,elapsed)};
+ for(const owner of ["hero","enemy"]){
+  const bar=$(owner+"AttackBar");bar.style.width=(motions[owner].progress*100)+"%";
+ }
+ $("intervalFill").style.width=(100*elapsed/clock.combat.timeMs)+"%";
+ set("fightTimer","战斗剩余 "+(Math.max(0,clock.combat.timeMs-elapsed)/1000).toFixed(1)+"秒 · 最后一击后结算");
+ renderPixelFrame(motions);
+ return motions;
+}
+function presentationFrame(now){
+ if(!advanceLiveClock())renderPixelFrame(settledPose&&Date.now()<settledPose.until?settledPose.motions:null,now);
+ requestAnimationFrame(presentationFrame);
+}
+function startLiveTimeline(combat,plan,mode="auto",origin=Date.now()-plan.elapsedMs){
  clearLiveTimeline();
- const token=++playToken;
+ ++playToken;settledPose=null;
  livePreview=true;battleBusy=true;
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
  const first=combat.waves?.[0]||combat.enemy;
  snapshot("enemyHP","enemyBar",first.hp,first.hp);
  set("enemyLabel",first.name);
  set("combatStatus",mode==="manual"?"战斗进行中 · 每次出手按真实间隔扣血":"自动交锋进行中 · 每次命中即时显示伤害");
- $("heroAttackBar").style.animationPlayState="running";
- $("enemyAttackBar").style.animationPlayState="running";
  // Seeking after resume or a build change does not repeat past damage pops.
  for(const event of plan.past)showHitEvent(event,combat,false);
- for(const event of plan.future){
-  liveTimers.push(setTimeout(()=>{
-   if(token!==playToken)return;
-   if(mode==="manual"&&!s.run.pendingBattle)return;
-   if(mode==="auto"&&(!auto||!s.run.idle?.active))return;
-   showHitEvent(event,combat,true);
-  },event.delayMs));
- }
+ liveClock={combat,origin,cues:combatCues(combat),cursor:plan.past.length};
+ advanceLiveClock();
 }
 /** A prepared encounter is replay-free. HP follows deterministic hit events
  * while the persistent authoritative battle transaction remains uncommitted.
@@ -317,6 +328,7 @@ function finishManual(){
  if(!pending)return;
  const remaining=pending.startedAt+pending.durationMs-Date.now();
  if(remaining>0){manualTimer=setTimeout(finishManual,remaining+15);return}
+ advanceLiveClock();
  const result=doCommand("FINISH_BATTLE");
  if(!result){manualTimer=setTimeout(finishManual,180);return}
  afterBattle(result);
@@ -340,8 +352,8 @@ function scheduleManual(){
  const timeline=combatTimeline(combat,Math.max(0,Date.now()-pending.startedAt));
  if(!timeline.remainingMs){finishManual();return}
  set("fightTimer","实时战斗 · "+(timeline.remainingMs/1000).toFixed(1)+"秒后结算");
- startLiveTimeline(combat,timeline,"manual");
- manualTimer=setTimeout(finishManual,timeline.remainingMs+20);
+ startLiveTimeline(combat,timeline,"manual",pending.startedAt);
+ manualTimer=setTimeout(finishManual,Math.max(0,pending.startedAt+pending.durationMs-Date.now()));
 }
 function startManualBattle(kind,resumeAuto=false){
  if(s?.run?.pendingBattle||battleBusy&&!auto){
@@ -362,6 +374,8 @@ function refreshCombatButtons(){
 }
 function settleLiveTimeline(result){
  const hadLive=livePreview;
+ const motions=advanceLiveClock();
+ if(motions)settledPose={motions,until:Date.now()+180};
  clearLiveTimeline();
  if(hadLive)++playToken;
  battleBusy=false;
@@ -370,10 +384,7 @@ function settleLiveTimeline(result){
  snapshot("enemyHP","enemyBar",combat.enemyRemaining,combat.enemy.hp);
  set("enemyLabel",combat.enemy.name);
  set("combatStatus",result.won?"✓ 战斗胜利 · 每次攻击已即时呈现":combat.reason==="timeout"?"⌛ 战斗僵持 · 没有死亡掉装":"✕ 战斗失败 · 战斗结算已完成");
- if(result.won){
-  $("enemySprite").classList.add("defeated");
-  setTimeout(()=>$("enemySprite").classList.remove("defeated"),320);
- }
+ $("intervalFill").style.width="100%";
  refreshCombatButtons();
  // Give the player a moment to read the final hit and loot before restoring
  // the next target's full HP; never overwrite another fight's live timeline.
@@ -391,9 +402,10 @@ function incomePreview(){
 function renderTop(){
  const p=progress(s,c),h=heroStats(s,c),y=yields(s,c),r=s.run;
  set("headerStones",fmt(r.stones));set("headerRealm",h.name);
+ set("headerInsight",fmt(r.insight));set("headerFate",fmt(s.meta.fate));
  set("topRealm",h.name);set("topNextRealm",r.realmIndex===4?"本切片最高可达筑基初期":"下一阶段 "+c.realms[r.realmIndex+1].name);
  set("topStone",fmt(r.stones));set("topStoneRate","灵石收益 +"+fmt(y.stonePct)+"%");
- set("topQi",fmt(r.qi));set("topQiNeed","突破需 "+fmt(p.realm.nextQiCost));
+ set("topQi",fmt(r.qi));set("topQiNeed","突破需 "+fmt(breakthroughRequirements(s,c).qi));
  set("topMap",String(r.mapIndex+1).padStart(2,"0")+" / 04");
  set("topStage",p.map.name+" · 第"+p.stage+"关");
  set("heroLabel","修士·"+h.name);
@@ -412,22 +424,22 @@ function renderTop(){
  set("sideQi","+"+fmt(y.qiPct)+"%");
  set("rightGoal",r.bossCleared?"雾隐剑冢最终Boss已击败，可以突破筑基或选择轮回。":
    "第"+p.stage+"关小怪可无限刷取。守卫失败不退层，强化后再挑战"+(p.finalGuardian?"地图Boss。":"守卫。"));
- set("autoStatus",auto?"● 自动刷怪"+(autoPush?" · 允许推关":""):"○ 待命");
+ set("autoStatus",auto?"● 自动刷怪"+(autoPush?" · 允许推关":""):s.run.world.activity.kind==="gather"?"● 定向采药":s.run.world.activity.kind==="meditate"?"● 闭关修炼":"○ 待命");
  const label=$("autoFarm");label.textContent=auto?"Ⅱ 停止自动刷怪":"▶ 自动刷本关小怪";
  set("autoPush","自动冲关："+(autoPush?"开":"关"));
 }
 function renderBuildAdvice(){
- const pair=activeSynergy(s),r=s.run;
+ const pair=activeSynergy(s,false,c),r=s.run;
  set("synergyLabel",pair?"✦ "+pair.name:"尚无双修共鸣");
  set("synergyHint",pair?pair.description:
-  "指定功法与灵宠出战可触发共鸣。打开功法或御兽面板查看每个组合及效果。");
+  "尚无共鸣");
  const target=r.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
  $("analyzeBuild").disabled=r.bossCleared||battleBusy;
  const apply=$("equipSuggestedBuild");
  apply.hidden=true;apply.disabled=true;
  if(r.bossCleared){set("buildAdvice","四图已经通关，当前无需守关推演。");return}
  if(!buildAdvice||buildAdvice.kind!==target){
-  set("buildAdvice","对已持有的功法和灵宠用相同的16组种子模拟守关；不消耗资源，也不会读取下一场实际战斗结果。");
+  set("buildAdvice","");
   return;
  }
  const {current,best,improved,caution,combinations}=buildAdvice;
@@ -564,12 +576,13 @@ function renderPacks(){
  set("gachaDirection",focus?
   "当前推荐："+suggested.name+"。"+labels[focus]+"。其他卡包仍可自由抽取，合理搭配能减少后续重复刷怪。":
   "当前没有唯一最优卡包。战力帮助过关，聚财和洞府提高刷怪长期收益；悟道、筑基丹关系到境界突破。");
- const packs=[...c.packs].sort((a,b)=>Number(b.id===focus)-Number(a.id===focus));
+ const groups=["基础成长","战斗构筑","洞府经营"];
+ const packs=[...c.packs].sort((a,b)=>groups.indexOf(c.management.groups[a.id])-groups.indexOf(c.management.groups[b.id])||Number(b.id===focus)-Number(a.id===focus));
  $("packList").innerHTML=packs.map(p=>{
   const price=packCost(s,c,p.id),count=r.draws[p.id]||0,unlocked=unlockedPack(s,c,p.id),
   canSingle=unlocked&&r.stones>=price,canTen=unlocked&&r.stones>=price*10;
-  return '<div class="pack'+(p.id===focus?" is-recommended":"")+'" data-pack-id="'+p.id+'"><div class="packhead"><span class="packname">'+p.icon+" "+escapeHTML(p.name)+'</span><span class="packtag">'+(p.id===focus?"★ 当前推荐":p.cards.length+"种卡")+'</span></div>'+
-   '<div class="packpurpose">'+escapeHTML(labels[p.id])+'</div>'+
+  return '<div class="pack'+(p.id===focus?" is-recommended":"")+'" data-pack-id="'+p.id+'"><small class="v10-pack-group">'+c.management.groups[p.id]+'</small><div class="packhead"><span class="packname">'+escapeHTML(p.name)+'</span><span class="packtag">'+(p.id===focus?"★ 当前推荐":p.cards.length+"种卡")+'</span></div>'+
+   '<div class="px-pack-art" aria-hidden="true">'+pixelIcon(packIcons[p.id])+'<span>机缘 · '+String(c.packs.indexOf(p)+1).padStart(2,"0")+'</span></div><div class="packpurpose">'+escapeHTML(labels[p.id])+'</div>'+
    '<div class="packinfo">'+escapeHTML(p.cards.map(x=>x.name).join(" / "))+'</div>'+
    '<div class="packstats">'+(unlocked?"已抽"+count+"次":"达到全局关卡 "+c.features.unlockAtGlobalCheckpoint[p.id]+" 解锁")+' · 每抽 <span class="v8-packcost">'+fmt(price)+'灵石</span>'+
    (p.id==="elixir"?" · 筑基丹保底 "+Math.max(1,c.realmPillPity-r.pillPity)+"抽":"")+
@@ -578,18 +591,17 @@ function renderPacks(){
    '<button class="action-btn" data-draw="'+p.id+'" data-count="10" '+(canTen?"":"disabled")+'>十连 ◆'+fmt(price*10)+'</button></div></div>';
  }).join("");
 }
+const inventoryMarkup=new Map();
 function renderInventory(listId,effect,slot){
  const cards=Object.values(c.cards).filter(x=>x.effect===effect);
- $(listId).innerHTML=cards.map(card=>{
+ const content=cards.map(card=>{
   const n=s.run.cards[card.id]||0,active=slot?s.run[slot]===card.id:false;
-  const paired=PAIR_SYNERGIES.find(x=>effect==="technique"?x.technique===card.id:effect==="pet"&&x.pet===card.id);
-  const partner=paired?(effect==="technique"?paired.pet:paired.technique):null;
-  const pairing=partner?" · 共鸣「"+paired.name+"」搭配 "+c.cards[partner].name+"： "+paired.description:"";
-  return '<div class="v8-item '+(active?"active":n?"":"missing")+'"><div class="v8-item-name">'+escapeHTML(card.name)+
-   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML((card.description||card.style||"卡牌效果实际参与战斗")+pairing)+
-   '</div><div class="v8-item-meta">效果强度 +'+fmt(card.value*n)+(effect==="cave"?"%":"")+'</div>'+
+  return '<div class="v8-item '+(active?"active":n?"":"missing")+'" data-rarity="'+card.rarity+'"><div class="px-item-emblem">'+pixelIcon({technique:"book",pet:"fox",cave:"cave"}[effect])+'</div><div class="v8-item-name">'+escapeHTML(card.name)+
+   '<span>×'+n+'</span></div><div class="v8-item-desc">'+escapeHTML((card.description||card.style||"自动生效"))+
+   '</div>'+growthDescription(card,n)+'<div class="v8-item-meta">效果强度 +'+fmt(card.value*Math.min(n,6))+(effect==="cave"?"%":"")+'</div>'+
    (slot?'<button data-equip="'+slot+'" data-card="'+card.id+'" '+(!n||active?"disabled":"")+">"+(active?"当前已装配":n?"装配出战":"尚未抽到")+'</button>':"")+'</div>';
  }).join("");
+ if(inventoryMarkup.get(listId)!==content){$(listId).innerHTML=content;inventoryMarkup.set(listId,content)}
 }
 function renderFate(){
  set("reincarnations",fmt(s.meta.reincarnations));set("fatePoints",fmt(s.meta.fate));set("bestMap","第"+s.meta.bestMap+"图");
@@ -647,7 +659,7 @@ function render(){
  renderToken++;renderTop();renderExplore();renderNovice();renderCultivate();renderPacks();
  renderInventory("techniqueList","technique","technique");
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
- renderItems();renderFate();renderAtlas();renderDetailPanels();
+ renderItems();renderFate();renderAtlas();renderDetailPanels();renderPixelScene(s);renderManagement(s,c,fmt);
 }
 async function drawPack(packId,count){
  if(revealBusy)return;
@@ -674,6 +686,10 @@ function afterBattle(result){
  set("combatLootResult",result.lostGear?"☠ 战败遗失装备："+result.lostGear.name+"（已从持有量扣除）":
    boxDrops?"🎁 本次额外获得："+boxDrops+" · 前往道具行囊开箱":
    result.won?"本场仅获得灵石与修为；装备箱/药草箱为独立概率掉落":"挑战失败，未获得奖励");
+ if(!result.won){
+  const why=result.combat.reason==="timeout"?"输出不足：尝试剑意或灵契追击，或压制敌方回复。":result.combat.maxEnemyHit>=result.combat.hero.hp*.4?"承伤过高：准备护体散与回春丹，尝试体修护盾。":"续航或命中不足：检查战备、功法成长节点与流派克制。";
+  set("combatLootResult",$("combatLootResult").textContent+" · "+why);
+ }
  if(result.lostGear)toast("战败：遗失了 "+result.lostGear.name,true);
  settleLiveTimeline(result);
  if(result.won&&result.type==="boss")toast(result.bossCleared?"雾隐剑冢已通关！可以轮回或突破筑基。":"地图Boss已击败，下一张地图开放！");
@@ -703,7 +719,7 @@ function reportIdle(recovered){
  if(recovered.lostGear)found.push("☠ 遗失："+recovered.lostGear.name);
  if(found.length)set("combatLootResult","安全挂机记录："+found.join(" · "));
  if(recovered.attempts>1)toast("离线/后台安全刷怪 "+recovered.wins+"场，灵石 +"+fmt(recovered.stones)+"、修为 +"+fmt(recovered.qi));
- if(recovered.capped)toast("超过离线上限的时间未计入收益（首世15分钟，轮回后2小时）");
+ if(recovered.capped)toast("超过24小时离线上限的时间未计入收益");
  if(!recovered.active){auto=false;toast(recovered.failureReason==="timeout"?"战斗达到行动上限，挂机已暂停；没有死亡掉装。":recovered.lostGear?"挂机死亡 · 遗失 "+recovered.lostGear.name:"小怪挑战失败，安全挂机已暂停，进度没有倒退。",true)}
 }
 function schedule(){
@@ -722,11 +738,11 @@ function schedule(){
   timer=setTimeout(schedule,0);return;
  }
  set("fightTimer","本场 "+(next.timeMs/1000).toFixed(2)+"秒 · 攻击与扣血同步");
- const fill=$("intervalFill");fill.classList.remove("running");void fill.offsetWidth;
- fill.style.setProperty("--interval-duration",timeline.remainingMs+"ms");fill.classList.add("running");
- startLiveTimeline(next,timeline);
+ const origin=idle.at-(idle.carryMs||0);
+ startLiveTimeline(next,timeline,"auto",origin);
  timer=setTimeout(()=>{
   timer=null;if(!auto||document.hidden)return;
+  advanceLiveClock();
   const summary=doCommand("CLAIM_IDLE");
   if(!summary){stopAuto();return}
   if(summary.lastBattle)afterBattle(summary.lastBattle);
@@ -744,7 +760,7 @@ function schedule(){
    }
   }
   schedule();
- },Math.max(10,Math.ceil(timeline.remainingMs)));
+ },Math.max(1,Math.ceil(origin+timeline.totalMs-Date.now())));
 }
 function startAuto(){
  if(auto){stopAuto();return}
@@ -756,7 +772,7 @@ function startAuto(){
 function exportSave(){
  const b=new Blob([JSON.stringify(s,null,2)],{type:"application/json;charset=utf-8"});
  const url=URL.createObjectURL(b),link=document.createElement("a");link.href=url;
- link.download="gacha-ascension-v0.8-slice.json";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+ link.download="gacha-ascension-v0.10-save.json";document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
 async function init(){
  try{
@@ -768,8 +784,10 @@ async function init(){
   const loaded=readGame(c);
   if(loaded.status==="invalid"){offerInvalidSaveRecovery(loaded.raw,loaded.message);set("saveStatus",loaded.message);return}
   s=loaded.state;
+  const restored=dispatch(s,c,{type:"CLAIM_WORLD",seq:s.seq+1,now:Date.now()});
+  s=restored.state;writeGame(s,c);
   try{$("quickReveal").checked=localStorage.getItem(QUICK_REVEAL_KEY)==="1"}catch{}
-  set("saveStatus",loaded.status==="restored"?"已恢复v0.8独立存档":"全新v0.8独立存档已就绪");
+  set("saveStatus",loaded.status==="migrated"?"已升级至Schema 9，原Schema 8存档已完整备份："+loaded.backupKey:loaded.status==="restored"?"已恢复Schema 9独立存档":"全新Schema 9存档已就绪 · 首世目标一至三天");
   render();
   for(const detail of document.querySelectorAll("details.v8-disclosure")){
    detail.addEventListener("toggle",()=>{
@@ -779,9 +797,8 @@ async function init(){
   }
   $("moreSystems").addEventListener("click",toggleMobileSheet);
   $("landscapeNavToggle").addEventListener("click",()=>document.body.classList.contains("wb-nav-open")?closeLandscapeNav():openLandscapeNav());
-  $("openMapDrawer").addEventListener("click",openLandscapeNav);
   $("landscapeBackdrop").addEventListener("click",closeLandscapeNav);
-  $("openGearBag").addEventListener("click",()=>openGear(suggestedGearSlot||"weapon1"));
+  $("openGearBag").addEventListener("click",()=>changeView("items"));
   $("closeEquipment").addEventListener("click",closeGear);
   let swipe=null;
   document.addEventListener("touchstart",event=>{const t=event.touches[0];swipe=t.clientX<24?{x:t.clientX,y:t.clientY}:null},{passive:true});
@@ -814,6 +831,17 @@ async function init(){
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
   document.addEventListener("click",e=>{
+   const main=e.target.closest('button[data-main]');
+   if(main){
+    if(main.dataset.main==='explore'){if(!auto)startAuto()}
+    else{if(auto)stopAuto();doCommand('START_ACTIVITY',{activity:main.dataset.main,herb:main.closest('#productionPanel')?$('brewHerb').value:$('gatherHerb').value})}
+    return;
+   }
+   const task=e.target.closest('button[data-remove-task]');
+   if(task){doCommand('REMOVE_BREW',{index:Number(task.dataset.removeTask)});return}
+   const node=e.target.closest('button[data-learn-dao]');
+   if(node){doCommand('LEARN_DAO',{id:node.dataset.learnDao});return}
+
    const artifactSlot=e.target.closest("button[data-artifact-slot]");
    if(artifactSlot&&!artifactSlot.disabled){openArtifact(artifactSlot.dataset.artifactSlot);return}
    const artifactChoice=e.target.closest("button[data-select-artifact]");
@@ -832,7 +860,7 @@ async function init(){
    const brew=e.target.closest("button[data-brew]");
    if(brew&&!brew.disabled){
     const result=doCommand("BREW",{id:brew.dataset.brew,count:1});
-    if(result)toast("炼制成功："+ITEMS.find(x=>x.id===result.item)?.name);
+    if(result)toast("已加入丹炉排程，药草在实际炼制时消耗。");
     return
    }
    const prep=e.target.closest("button[data-prepare-item]");
@@ -872,6 +900,14 @@ async function init(){
    if(equip&&!equip.disabled){const slot=equip.dataset.equip;const result=doCommand(slot==="pet"?"EQUIP_PET":"EQUIP_TECH",{id:equip.dataset.card});
     if(result)toast("装配成功，下一次战斗即刻生效。");}
   });
+  $('toggleField').addEventListener('click',()=>doCommand('SET_FIELD',{enabled:!s.run.world.field.enabled,herb:$('fieldHerb').value}));
+  $('queueBrew').addEventListener('click',()=>doCommand('QUEUE_BREW',{herb:$('brewHerb').value,mode:$('brewMode').value,amount:Number($('brewAmount').value)}));
+  $('claimDirected').addEventListener('click',()=>{const r=doCommand('CLAIM_DIRECTED',{id:$('directedCard').value});if(r)toast('定向机缘已获得：'+r.card.name)});
+  $('inheritanceChoices').addEventListener('change',event=>{
+   const ids=[...document.querySelectorAll('[data-inherit]:checked')].map(x=>x.dataset.inherit);
+   if(!doCommand('SET_INHERITANCE',{ids}))event.target.checked=!event.target.checked;
+  });
+  setInterval(()=>{if(s&&!document.hidden&&!auto)doCommand('CLAIM_WORLD')},5000);
   $("unlockAutoPotion").addEventListener("click",()=>{
    const result=doCommand("UNLOCK_AUTO_POTION");
    if(result)toast("已永久解锁回春自律 · 因果 -"+result.spent);
@@ -913,7 +949,8 @@ async function init(){
   $("reincarnate").addEventListener("click",()=>{
    const earned=55+Math.max(0,s.run.realmIndex-3)*10;
    const alternative=s.run.realmIndex<4?"\n注意：先筑基再轮回能额外获得10因果，并凑足40因果遗物箱＋25因果自动服药。":"";
-   if(!window.confirm("确定轮回获得"+earned+"因果？当世地图、修为、灵石、装备和卡牌会全部清空；已拥有的永久遗物及因果保留。"+alternative))return;
+   const preview=reincarnationPreview(s,c);
+   if(!window.confirm("确定轮回获得"+earned+"因果？\n清空："+preview.cleared+"。\n保留："+preview.kept+"。\n传承："+(preview.inheritance.map(x=>x.name).join("、")||"未选择")+"，每张"+preview.copies+"份。\n已修过境界所需修为降至60%。"+alternative))return;
    stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
   $("openRelic").addEventListener("click",async()=>{
    if(revealBusy)return;
@@ -962,4 +999,10 @@ async function init(){
   }
  }catch(error){toast("初始化失败："+error.message,true);set("saveStatus",error.stack||error.message)}
 }
+loadPixelAssets().then(()=>{if(s)renderPixelScene(s)});
+initPixelUI();
+mountManagement();
+mountHelp(()=>view);
+mountBank({command:doCommand,navigate:changeView,notify:toast});
+requestAnimationFrame(presentationFrame);
 init();

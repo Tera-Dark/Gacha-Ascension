@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {loadCatalog,createSave,dispatch,fight,combatSnapshot} from "../src/v8/engine.mjs";
 import {ARTIFACT_SLOTS,artifactBonuses} from "../src/v8/artifacts.mjs";
-import {rollBoxDrop,openBox,brew,prepareItem,HERBS,ITEMS,AUTO_POTION_COST} from "../src/v8/treasure.mjs";
+import {rollBoxDrop,openBox,prepareItem,HERBS,ITEMS,AUTO_POTION_COST} from "../src/v8/treasure.mjs";
 import {simulateEncounter} from "../src/v8/combat-depth.mjs";
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json"));
@@ -44,16 +44,20 @@ test("published independent chest odds can be replaced with 100% for determinist
  assert.equal(s.run.boxes.gear,0);
  assert.equal(s.run.boxes.herb,0);
 });
-test("three herbs craft one combat item, preparation is queued and limited",()=>{
+test("three herbs craft one timed combat item, preparation is queued and limited",()=>{
  let s=createSave(99);s.run.herbs={H001:7};
- let result=step(s,"BREW",{id:"H001",count:2});s=result.state;
- assert.equal(s.run.herbs.H001,1);
- assert.equal(s.run.consumables.MED001,2);
- s=step(s,"PREPARE_ITEM",{id:"MED001"}).state;
- assert.equal(s.run.prepared.MED001,1);
- assert.equal(s.run.consumables.MED001,1);
- assert.throws(()=>step(s,"BREW",{id:"H001",count:1}),/不足/);
+ s=step(s,"BREW",{id:"H001",count:2,now:0}).state;
+ assert.equal(s.run.herbs.H001,7);
+ s=step(s,"CLAIM_WORLD",{now:120000}).state;
+ assert.equal(s.run.herbs.H001,1);assert.equal(s.run.consumables.MED001,2);
+ s=step(s,"PREPARE_ITEM",{id:"MED001",now:120000}).state;
+ assert.equal(s.run.prepared.MED001,1);assert.equal(s.run.consumables.MED001,1);
+ s=step(s,"BREW",{id:"H001",count:1,now:120000}).state;
+ s=step(s,"CLAIM_WORLD",{now:240000}).state;
+ assert.equal(s.run.consumables.MED001,1,"missing herbs pause production instead of creating free potions");
+ assert.match(s.run.world.lastReport.reasons.join(),/缺料/);
 });
+
 test("auto potion is not free or automatic: requires paid fate unlock and manual toggle",()=>{
  let s=createSave(11);s.meta.fate=AUTO_POTION_COST-1;
  assert.throws(()=>step(s,"UNLOCK_AUTO_POTION"),/不足/);

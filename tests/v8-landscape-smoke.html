@@ -2,8 +2,9 @@
 <title>v8 landscape workstation browser acceptance</title>
 <style>html,body{margin:0;background:#162522;color:#f2d89f;font:12px system-ui}#result{padding:3px}iframe{display:block;border:0;width:100vw;height:calc(100dvh - 22px)}</style></head><body>
 <output id="result" data-result="PENDING">RUNNING LANDSCAPE ACCEPTANCE</output>
-<iframe id="app" src="../preview-v0.8.html" title="Landscape battle workstation"></iframe>
-<script>
+<iframe id="app" title="Landscape battle workstation"></iframe>
+<script type="module">
+import {createSave,SAVE_KEY} from "../src/v8/engine.mjs";
 const output=document.getElementById("result"),frame=document.getElementById("app");
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const check=(v,message)=>{if(!v)throw Error(message)};
@@ -33,15 +34,17 @@ frame.addEventListener("load",async()=>{
   nav.click();await sleep(70);
   check(d.body.classList.contains("wb-nav-open"),"landscape side drawer not open");
   check(!d.getElementById("landscapeBackdrop").hidden,"drawer backdrop hidden");
+  d.getElementById("landscapeBackdrop").click();
+  d.getElementById("openMapDrawer").click();
+  check(d.getElementById("explorationMap").open,"exploration map dialog not open");
   check(d.getElementById("mapDrawerList").querySelectorAll("button").length===4,"map list not populated");
   check(d.getElementById("drawerCheckpointTrack").querySelectorAll("button").length===8,"stage list not populated");
-  d.getElementById("landscapeBackdrop").click();
+  d.getElementById("closeExplorationMap").click();
   check(!d.body.classList.contains("wb-nav-open"),"side drawer failed to close");
   d.querySelector('.system-sidebar [data-view="items"]').click();await sleep(80);
   check(d.querySelector('[data-view-panel="items"]').classList.contains("is-active"),"Items panel cannot open");
-  check(d.getElementById("boxInventory").querySelectorAll('[data-open-box]').length===2,"Box options missing");
-  check(d.getElementById("herbInventory").querySelectorAll('[data-brew]').length===3,"Herbs/crafting options missing");
-  check(d.getElementById("consumableInventory").querySelectorAll('[data-prepare-item]').length===3,"Combat medicine slots missing");
+  check(!!d.getElementById("bankGrid")&&!!d.getElementById("bankDetail"),"Unified bank grid/detail absent");
+  check(w.getComputedStyle(d.querySelector(".detail-rail")).display!=="none","Bank detail rail invisible in landscape");
   check(d.getElementById("unlockAutoPotion").disabled,"Auto potion must be gated behind reincarnation points");
   d.querySelector('.system-sidebar [data-view="explore"]').click();await sleep(70);
   check(d.getElementById("enemySprite").textContent.trim().length>0,"no monster representation");
@@ -51,4 +54,9 @@ frame.addEventListener("load",async()=>{
   output.dataset.result="PASS";output.textContent="PASS: 10 slots, landscape dual panes, interactive map drawer, inventory, attack bars, no x-overflow";
  }catch(error){output.dataset.result="FAIL";output.textContent="FAIL: "+error.message}
 });
+if(location.port==='4180'){
+ localStorage.setItem(SAVE_KEY,JSON.stringify(createSave(101)));
+ localStorage.removeItem('gacha-ascension-v8-novice-skip-v1');
+ frame.src='../preview-v0.8.html';
+}else{document.getElementById('result').dataset.result='SKIP';document.getElementById('result').textContent='SKIP: isolated port 4180 required'}
 </script></body></html>

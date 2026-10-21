@@ -1,7 +1,7 @@
 {
   "name": "gacha-ascension",
   "private": true,
-  "version": "0.9.5-preview",
+  "version": "0.10.0-preview",
   "type": "module",
   "description": "Current four-map idle/incremental/gacha preview with isolated historical M0 and codex",
   "scripts": {
@@ -12,9 +12,11 @@
     "build": "node --check src/m0/ui.mjs && node --check src/m0/presentation.mjs && node scripts/verify-m0-pages.mjs",
     "simulate:m0": "node scripts/simulate-m0.mjs",
     "test:v8": "node --test tests/v8*.test.mjs",
-    "check:v8": "node --check src/v8/engine.mjs && node --check src/v8/combat-depth.mjs && node --check src/v8/storage.mjs && node --check src/v8/ui.mjs && node scripts/verify-v8.mjs && node --test tests/v8*.test.mjs && npm run simulate:v8",
+    "check:v8": "node --check src/v8/engine.mjs && node --check src/v8/combat-depth.mjs && node --check src/v8/storage.mjs && node --check src/v8/ui.mjs && node --check src/v8/activities.mjs && node --check src/v8/progression.mjs && node --check src/v8/management-ui.mjs && node --check src/v8/bank.mjs && node --check src/v8/module-help.mjs && node scripts/verify-v8.mjs && node --test tests/v8*.test.mjs && npm run simulate:v8 && npm run simulate:v8:progression",
     "simulate:v8": "node scripts/simulate-v8-combat.mjs",
-    "simulate:v8:full": "node scripts/simulate-v8-combat.mjs --full"
+    "simulate:v8:full": "node scripts/simulate-v8-combat.mjs --full",
+    "simulate:v8:progression": "node scripts/simulate-v8-progression.mjs",
+    "simulate:v8:progression:full": "node scripts/simulate-v8-progression.mjs --full"
   },
   "engines": {
     "node": ">=20"

@@ -29,7 +29,8 @@ let bad=0, mode=process.argv.includes("--write")?"write":"check";
 for(const [path,expected] of output){
  if(mode==="write"){writeFileSync(file(path),expected);process.stdout.write("wrote "+path+"\n");continue;}
  let actual;try{actual=read(path);}catch{actual=null;}
- if(actual!==expected){process.stderr.write("DRIFT: "+path+"\n");bad++;}
+ // Git may check out CSVs as CRLF on Windows; content equality ignores that conversion.
+ if(actual?.replace(/\r\n/g,"\n")!==expected){process.stderr.write("DRIFT: "+path+"\n");bad++;}
 }
 if(bad)process.exit(1);
 process.stdout.write("Codex v0.5 synchronized: "+entries.length+" entries; "+output.length+" generated CSVs.\n");

@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "provider": "pixelmon-local-sdxl",
+  "status": "ready",
+  "reference": "concept-reference.png",
+  "provenance": "主角、狼妖、灵狐及山林背景由 pixelmon + ComfyUI + SDXL / Pixel Art XL 在本地生成；首版动作是基于同一角色原画的程序关键帧。其余地图暂复用首图美术。",
+  "backgrounds": [
+    "qingyun-background.png",
+    "qingyun-background.png",
+    "qingyun-background.png",
+    "qingyun-background.png"
+  ],
+  "hero": {
+    "portrait": "hero/portrait.png",
+    "motionMethod": "procedural-keyframes-from-generated-master",
+    "idle": {
+      "frames": [
+        "hero/idle-00.png",
+        "hero/idle-01.png",
+        "hero/idle-02.png",
+        "hero/idle-03.png",
+        "hero/idle-04.png",
+        "hero/idle-05.png"
+      ],
+      "fps": 6,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": [
+        96,
+        179
+      ]
+    },
+    "attack": {
+      "frames": [
+        "hero/attack-00.png",
+        "hero/attack-01.png",
+        "hero/attack-02.png",
+        "hero/attack-03.png",
+        "hero/attack-04.png",
+        "hero/attack-05.png"
+      ],
+      "fps": 14,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": [
+        96,
+        179
+      ]
+    }
+  },
+  "enemies": [
+    {
+      "portrait": "wolf/portrait.png",
+      "motionMethod": "procedural-keyframes-from-generated-master",
+      "idle": {
+        "frames": [
+          "wolf/idle-00.png",
+          "wolf/idle-01.png",
+          "wolf/idle-02.png",
+          "wolf/idle-03.png",
+          "wolf/idle-04.png",
+          "wolf/idle-05.png"
+        ],
+        "fps": 6,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      },
+      "attack": {
+        "frames": [
+          "wolf/attack-00.png",
+          "wolf/attack-01.png",
+          "wolf/attack-02.png",
+          "wolf/attack-03.png",
+          "wolf/attack-04.png",
+          "wolf/attack-05.png"
+        ],
+        "fps": 14,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      }
+    },
+    {
+      "portrait": "wolf/portrait.png",
+      "motionMethod": "procedural-keyframes-from-generated-master",
+      "idle": {
+        "frames": [
+          "wolf/idle-00.png",
+          "wolf/idle-01.png",
+          "wolf/idle-02.png",
+          "wolf/idle-03.png",
+          "wolf/idle-04.png",
+          "wolf/idle-05.png"
+        ],
+        "fps": 6,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      },
+      "attack": {
+        "frames": [
+          "wolf/attack-00.png",
+          "wolf/attack-01.png",
+          "wolf/attack-02.png",
+          "wolf/attack-03.png",
+          "wolf/attack-04.png",
+          "wolf/attack-05.png"
+        ],
+        "fps": 14,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      }
+    },
+    {
+      "portrait": "wolf/portrait.png",
+      "motionMethod": "procedural-keyframes-from-generated-master",
+      "idle": {
+        "frames": [
+          "wolf/idle-00.png",
+          "wolf/idle-01.png",
+          "wolf/idle-02.png",
+          "wolf/idle-03.png",
+          "wolf/idle-04.png",
+          "wolf/idle-05.png"
+        ],
+        "fps": 6,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      },
+      "attack": {
+        "frames": [
+          "wolf/attack-00.png",
+          "wolf/attack-01.png",
+          "wolf/attack-02.png",
+          "wolf/attack-03.png",
+          "wolf/attack-04.png",
+          "wolf/attack-05.png"
+        ],
+        "fps": 14,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      }
+    },
+    {
+      "portrait": "wolf/portrait.png",
+      "motionMethod": "procedural-keyframes-from-generated-master",
+      "idle": {
+        "frames": [
+          "wolf/idle-00.png",
+          "wolf/idle-01.png",
+          "wolf/idle-02.png",
+          "wolf/idle-03.png",
+          "wolf/idle-04.png",
+          "wolf/idle-05.png"
+        ],
+        "fps": 6,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      },
+      "attack": {
+        "frames": [
+          "wolf/attack-00.png",
+          "wolf/attack-01.png",
+          "wolf/attack-02.png",
+          "wolf/attack-03.png",
+          "wolf/attack-04.png",
+          "wolf/attack-05.png"
+        ],
+        "fps": 14,
+        "frameWidth": 192,
+        "frameHeight": 192,
+        "anchor": [
+          96,
+          179
+        ]
+      }
+    }
+  ],
+  "pet": {
+    "cardId": "P001",
+    "portrait": "fox/portrait.png",
+    "motionMethod": "procedural-keyframes-from-generated-master",
+    "idle": {
+      "frames": [
+        "fox/idle-00.png",
+        "fox/idle-01.png",
+        "fox/idle-02.png",
+        "fox/idle-03.png",
+        "fox/idle-04.png",
+        "fox/idle-05.png"
+      ],
+      "fps": 6,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": [
+        96,
+        179
+      ]
+    },
+    "attack": {
+      "frames": [
+        "fox/attack-00.png",
+        "fox/attack-01.png",
+        "fox/attack-02.png",
+        "fox/attack-03.png",
+        "fox/attack-04.png",
+        "fox/attack-05.png"
+      ],
+      "fps": 14,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "anchor": [
+        96,
+        179
+      ]
+    }
+  },
+  "icons": {},
+  "generation": {
+    "tool": "https://github.com/grymmjack/pixelmon",
+    "toolCommit": "e34a4cb385258852bd1d4465d8dfad5693bcccad",
+    "checkpoint": "stabilityai/stable-diffusion-xl-base-1.0",
+    "lora": "nerijs/pixel-art-xl",
+    "steps": 24,
+    "jobs": {
+      "background": {
+        "size": "384x128",
+        "res": 1152,
+        "seed": 2026102112,
+        "prompt": "pixel, panoramic Chinese mountain landscape, blue green karst peaks fading into morning mist, tall distant waterfall, sunlight in pale golden sky, pine branches framing upper left corner, a continuous flat horizontal mossy stone ledge across the entire bottom foreground, side view grassy level ground, open air landscape scene background for a side scrolling game, empty arena, refined detailed 16 bit pixel art, muted jade and celadon palette, no people, no creatures, no bridge, no buildings in foreground, no stairs"
+      },
+      "hero": {
+        "size": "96x128",
+        "res": 1024,
+        "seed": 2026102102,
+        "prompt": "pixel, one male Chinese wuxia swordsman, young adult, black hair in a high topknot, celadon green long hanfu robe, ivory inner robe, dark boots, holding one long silver straight jian sword, full body, side view facing right, neutral ready stance, feet on the same ground line, both feet and entire sword visible, isolated on pure solid white background, single character, clean readable silhouette, crisp detailed 16 bit pixel art, jade green ivory charcoal and aged gold palette"
+      },
+      "wolf": {
+        "size": "160x128",
+        "res": 1024,
+        "seed": 2026102103,
+        "prompt": "pixel, one fierce dark charcoal gray forest wolf spirit, quadruped, full body side view facing left, mouth open with ivory fangs, pointed ears, a long bushy tail, small jade green accents in fur, all four paws visible, isolated on pure solid white background, single creature, game battle monster, sharp clean silhouette, crisp detailed 16 bit pixel art, dark slate jade and warm gray palette"
+      },
+      "fox": {
+        "size": "128x96",
+        "res": 768,
+        "seed": 2026102104,
+        "prompt": "pixel, one small magical fox companion, white fur with pale celadon jade green tips on pointed ears and fluffy tail, full body side view facing right, standing on all four paws, alert gentle expression, isolated on pure solid white background, single animal, crisp clean 16 bit pixel art, readable silhouette"
+      }
+    },
+    "negativePrompt": "photograph, photorealistic, 3d render, blurry, text, watermark, signature, frame, border, grid, sprite sheet, multiple views, duplicate character, cropped, cut off feet, extra limbs, extra fingers"
+  }
+}

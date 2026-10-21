@@ -1,6 +1,7 @@
 /** Cosmetic-only gacha reveal. Transaction MUST settle before show; never mutate the save here.
  * All packs have individual motion identities; high rarity extends light accents, not probabilities.
  */
+import {pixelIcon,packIcons} from "./pixel-ui.mjs";
 const FLAVORS={
  battle:["⚔","杀伐剑意，破境而来。"],wealth:["◆","灵石聚散，财运天降。"],
  cultivation:["☯","一缕明悟，自识海点亮。"],technique:["✦","万千经文，在此刻凝成。"],
@@ -31,7 +32,7 @@ export async function showReveal({packId="battle",items=[],title="机缘已至"}
  stage.dataset.pack=key;stage.dataset.phase="charge";
  stage.dataset.maxRarity=take[0]?.rarity||"huang";
  titleEl.textContent=title;subtitle.textContent=key==="fate"?"永恒遗物 · 跨世传承":"机缘降临 · "+take.length+"道灵光";
- sigil.textContent=identity[0];flavor.textContent=identity[1];cards.replaceChildren();
+ sigil.innerHTML=pixelIcon(packIcons[key]||"fate");flavor.textContent=identity[1];cards.replaceChildren();
  close.hidden=true;skip.hidden=false;overlay.hidden=false;
  const previous=document.activeElement;skip.focus();
  const getCards=()=>take.map((x,index)=>

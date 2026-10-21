@@ -8,6 +8,8 @@ import {loadCatalog,createSave,dispatch,heroStats,combatAssessment,breakthroughR
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json"));
 
+// Combat-only fixture: progression pacing is tested separately with real clocks.
+c.management.realmQiFactor=1;
 export function play(seed,policy="battle",limit=3600){
  let s=createSave(seed),battles=0,draws=0,mobFailures=0,
   guardianFailures=0,upgrades=0,byMap=[],pulls={};

@@ -1,9 +1,7 @@
-/** Offline-only safe monster farming. Reuses the same live battle reducer.
- * No Boss / guardian / draw / breakthrough / reincarnation executes offline.
- * Local client timestamps are NOT tamper-proof; future cloud saves need server time.
- */
-export const MAX_FIRST_LIFE_MS=15*60*1000;
-export const MAX_REBORN_MS=2*60*60*1000;
+/** Exploration start and duration helpers. All chronological reward settlement
+ * is owned by activities.mjs; no parallel offline reward loop lives here. */
+export const MAX_FIRST_LIFE_MS=24*60*60*1000;
+export const MAX_REBORN_MS=24*60*60*1000;
 export function battleIntervalMs(s,c,yields,peekNextCombat){
  // Online and offline use exactly the same seeded mob-fight duration.
  // The callback is a pure preview and may NOT advance the save RNG.
@@ -22,39 +20,4 @@ export function startIdle(s,now){
  if(s.run.idle.active)return {kind:"idleStart",alreadyActive:true};
  s.run.idle.active=true;s.run.idle.at=now;s.run.idle.carryMs=0;
  return {kind:"idleStart"};
-}
-export function claimIdle(s,c,now,makeBattle,getInterval){
- clock(now);
- const active=s.run.idle;
- if(!active?.active)return {kind:"idleClaim",attempts:0,wins:0,stones:0,qi:0,elapsedMs:0,capped:false,lastBattle:null,active:false};
- const diff=Math.max(0,now-active.at);
- const cap=s.meta.reincarnations>0?MAX_REBORN_MS:MAX_FIRST_LIFE_MS;
- const limited=Math.min(diff,cap);
- let left=limited+(active.carryMs||0),battles=0,wins=0,stones=0,qi=0,lastBattle=null,gearBoxes=0,herbBoxes=0,lostGear=null,potionsUsed=0;
- // Timestamp advance and remaining fractional interval share one atomic transaction.
- for(let n=0;n<10000;n++){
-  const interval=getInterval(s,c);
-  if(left<interval)break;
-  left-=interval;
-  const result=makeBattle(s,c,"mob");
-  battles++;lastBattle=result;
-  for(const box of result.boxes||[]){if(box.id==="gear")gearBoxes++;if(box.id==="herb")herbBoxes++}
-  potionsUsed+=(result.potionUses?.auto||0)+(result.potionUses?.prepared||0);
-  if(!result.won){active.active=false;left=0;lostGear=result.lostGear||null;break}
-  wins++;stones+=result.stones;qi+=result.qi;
- }
- active.carryMs=left;active.at=now;
- if(lastBattle)s.run.lastBattle={type:lastBattle.type,won:lastBattle.won,turns:lastBattle.combat.turns,
-  stones:lastBattle.stones,qi:lastBattle.qi,boxes:lastBattle.boxes||[],lostGear:lastBattle.lostGear||null,potionUses:lastBattle.potionUses,
-   failureReason:lastBattle.failureReason||null};
- const summary={kind:"idleClaim",attempts:battles,wins,stones,qi,elapsedMs:limited,
-  gearBoxes,herbBoxes,lostGear,potionsUsed,failureReason:lastBattle?.failureReason||null,
-  capped:diff>cap,lastBattle,active:active.active};
- active.lastReport={...summary,lastBattle:undefined};
- return summary;
-}
-export function stopIdle(s,c,now,makeBattle,getInterval){
- const summary=claimIdle(s,c,now,makeBattle,getInterval);
- if(s.run.idle)s.run.idle.active=false;
- return {...summary,kind:"idleStop",active:false};
 }

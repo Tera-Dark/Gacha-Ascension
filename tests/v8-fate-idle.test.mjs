@@ -101,16 +101,16 @@ test("offline farms only monsters, never runs boss, gacha, breakthrough or reinc
  assert.equal(res.state.meta.reincarnations,0);
  assert.equal(Object.keys(res.state.run.cards).length,0);
 });
-test("offline time cap is 15 minutes first life, 2 hours after reincarnation",()=>{
+test("offline time cap is 24 hours in every life",()=>{
  let s=exec(createSave(3),"START_IDLE",{now:1}).state;
- const first=exec(s,"CLAIM_IDLE",{now:1+10*3600*1000});
- assert.equal(first.result.elapsedMs,15*60*1000);
+ const first=exec(s,"CLAIM_IDLE",{now:1+30*3600*1000});
+ assert.equal(first.result.elapsedMs,24*60*60*1000);
  assert.equal(first.result.capped,true);
  // Verify the invariant on a fresh reincarnated account; 2h remains the maximum.
  s=createSave(3);s.meta.reincarnations=1;
  s=exec(s,"START_IDLE",{now:1}).state;
- const second=exec(s,"CLAIM_IDLE",{now:1+10*3600*1000});
- assert.equal(second.result.elapsedMs,2*60*60*1000);
+ const second=exec(s,"CLAIM_IDLE",{now:1+30*3600*1000});
+ assert.equal(second.result.elapsedMs,24*60*60*1000);
  assert.equal(second.result.capped,true);
 });
 test("stop action settles first, then disables farm; upgrade commands settle old farm session first",()=>{

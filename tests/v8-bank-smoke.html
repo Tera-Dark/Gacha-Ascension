@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bank and contextual help acceptance</title><style>body{margin:0;background:#102723;color:#e5d5a2;font:12px sans-serif}output{display:block;padding:5px}iframe{border:0;width:100vw;height:calc(100dvh - 30px)}</style></head><body><output id="result" data-result="PENDING">RUNNING</output><iframe id="app" title="Bank game"></iframe><script type="module">
+import {createSave,SAVE_KEY} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(v,m)=>{if(!v)throw Error(m)};
+if(location.port!=='4180'){out.dataset.result='SKIP';out.textContent='SKIP: isolated port 4180 required'}else{
+ const s=createSave(7021);Object.assign(s.run.cards,{E001:2,F001:1,T001:3,P001:1,H001:1,B001:2});s.run.equipment.weapon1='E001';s.run.technique='T001';s.run.realmIndex=4;s.run.herbs.H001=9;s.run.consumables.MED001=2;s.run.prepared.MED001=1;s.run.boxes.gear=1;s.run.pills.D004=1;s.meta.relics.R001=2;
+ localStorage.setItem(SAVE_KEY,JSON.stringify(s));localStorage.setItem('gacha-ascension-v8-novice-skip-v1','1');
+ frame.addEventListener('load',async()=>{try{
+  const d=frame.contentDocument,w=frame.contentWindow,read=()=>JSON.parse(localStorage.getItem(SAVE_KEY)),nav=v=>d.querySelector('.system-sidebar [data-view="'+v+'"]').click(),click=q=>{const el=d.querySelector(q);check(!!el,'missing '+q);el.click()};
+  for(let i=0;i<100&&!d.querySelector('#bankGrid button');i++)await wait(50);
+  check(!d.querySelector('.system-sidebar #mapDrawerList'),'maps leaked into sidebar');
+  click('#openMapDrawer');check(d.getElementById('explorationMap').open,'map dialog did not open');check(d.querySelectorAll('#mapDrawerList button').length===4,'map choices missing');click('#closeExplorationMap');
+  const before=localStorage.getItem(SAVE_KEY);
+  for(const v of ['explore','cultivate','gacha','technique','cave','pet','items','fate','atlas','settings']){
+   nav(v);click(v==='explore'?(w.matchMedia('(max-width:850px) and (orientation:landscape)').matches?'.explore-local-help':'.view-header [data-module-help]'):'[data-view-panel="'+v+'"] [data-module-help]');check(d.getElementById('moduleHelp').open,v+' help did not open');
+   check(d.querySelector('[data-help-section="'+v+'"] #'+v),v+' detailed reference missing');click('#'+v+'>summary');for(let i=0;i<30&&!d.querySelector('#detail-'+v).children.length;i++)await wait(30);check(d.querySelector('#detail-'+v).children.length,v+' numeric reference empty');click('#closeModuleHelp');await wait(35);
+  }
+  check(localStorage.getItem(SAVE_KEY)===before,'help changed save');
+  nav('items');check(w.getComputedStyle(d.querySelector('.detail-rail')).display!=='none','bank detail rail invisible');
+  click('[data-bank-item="card:E001"]');check(d.getElementById('bankDetail').textContent.includes('攻击 +8'),'gear effect absent');click('[data-bank-action="equip"][data-slot="weapon2"]');check(read().run.equipment.weapon2==='E001','second copy equip failed');check(d.querySelector('[data-bank-item="card:E001"]').textContent.includes('2'),'equipment count lost');
+  click('[data-bank-action="unequip"][data-slot="weapon1"]');check(!read().run.equipment.weapon1,'unequip failed');
+  click('[data-bank-item="card:F001"]');click('[data-bank-action="artifact"][data-slot="foundation"]');check(read().run.artifacts.foundation==='F001','artifact equip failed');
+  click('[data-bank-item="medicine:MED001"]');click('[data-bank-action="prepare"]');check(read().run.prepared.MED001===2&&read().run.consumables.MED001===1,'medicine was not prepared atomically');
+  click('[data-bank-item="box:gear"]');click('[data-bank-action="open"]');check(read().run.boxes.gear===0,'box not opened');check(!d.querySelector('[data-bank-item="box:gear"]'),'consumed final box still in bank');check(d.getElementById('bankDetail').textContent.includes('已用完'),'empty selection not explained');
+  const search=d.getElementById('bankSearch');search.value='回春草';search.dispatchEvent(new Event('input',{bubbles:true}));check(d.querySelectorAll('#bankGrid button').length===1,'bank search failed');check(d.getElementById('bankDetail').textContent.includes('回春草'),'search selection stale');
+  click('[data-bank-action="brew"]');check(d.querySelector('[data-view-panel="cave"]').classList.contains('is-active')&&d.getElementById('brewHerb').value==='H001','herb did not navigate to real production');check(read().run.herbs.H001===9,'view herb consumed materials');
+  search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));nav('items');click('[data-bank-category="relic"]');click('[data-bank-item="relics:R001"]');check(d.getElementById('bankDetail').textContent.includes('基础攻击 +4'),'permanent relic effect absent');
+  for(const v of ['items','cultivate','gacha','technique','cave','pet','fate','atlas','settings','explore']){nav(v);check(d.documentElement.scrollWidth<=w.innerWidth+2,v+' horizontal overflow')}
+  nav('items');click('[data-bank-category="all"]');click('[data-bank-item="card:E001"]');
+  const detailIcon=d.querySelector('#bankDetail>.bank-detail-icon');click('[data-main="none"]');check(d.querySelector('#bankDetail>.bank-detail-icon')===detailIcon,'unchanged item detail was rebuilt');
+  nav('technique');click('#techniqueList .v10-growth summary');check(d.querySelector('#techniqueList .v10-growth').open,'growth detail did not open');click('[data-main="none"]');check(d.querySelector('#techniqueList .v10-growth').open,'state refresh closed growth detail');nav('items');
+  out.dataset.result='PASS';out.textContent='PASS: 10 contextual help modules, exploration-only maps, unified bank, real gear/artifact/potion/box actions, search, herb navigation, no overflow';
+ }catch(e){out.dataset.result='FAIL';out.textContent='FAIL: '+e.message}});
+ frame.src='../preview-v0.8.html';
+}
+</script></body></html>

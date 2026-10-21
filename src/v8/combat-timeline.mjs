@@ -21,3 +21,29 @@ export function combatTimeline(combat,elapsedMs=0){
  return {totalMs:total,elapsedMs:elapsed,remainingMs:Math.max(0,total-elapsed),
   past,future};
 }
+
+/** Presentation cues use actual attacks, including misses and wave resets.
+ * A strike's contact frame is frame 3; damage is never moved off its log time.
+ */
+export function combatCues(combat){
+ const tracks={hero:[],enemy:[]};
+ let waveStart=0;
+ for(const event of combat.logs){
+  if(event.actor==="wave"){waveStart=event.timeMs;continue}
+  const owner=event.actor==="miss"?event.owner:event.actor;
+  if(tracks[owner])tracks[owner].push({timeMs:event.timeMs,waveStart,stage:event.stage});
+ }
+ return tracks;
+}
+export function attackPresentation(track,elapsedMs,fps=14){
+ let lo=0,hi=track.length;
+ while(lo<hi){const mid=(lo+hi)>>>1;if(track[mid].timeMs<=elapsedMs)lo=mid+1;else hi=mid}
+ const previous=track[lo-1],next=track[lo],frameMs=1000/fps;
+ const start=next?Math.max(next.waveStart,previous?.stage===next.stage?previous.timeMs:next.waveStart):0;
+ const progress=next?Math.max(0,Math.min(1,(elapsedMs-start)/(next.timeMs-start||1))):0;
+ if(previous&&elapsedMs-previous.timeMs<3*frameMs)
+  return {progress,animation:"attack",frame:Math.min(5,3+Math.floor((elapsedMs-previous.timeMs)/frameMs)),contact:elapsedMs-previous.timeMs<80};
+ if(next&&elapsedMs>=next.timeMs-3*frameMs)
+  return {progress,animation:"attack",frame:Math.max(0,Math.floor(3-(next.timeMs-elapsedMs)/frameMs)),contact:false};
+ return {progress,animation:"idle",frame:null,contact:false};
+}
