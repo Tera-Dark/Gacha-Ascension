@@ -2,11 +2,13 @@
 <title>V8 audit smoke: invalid save and overlapping battle guard</title>
 <style>body{background:#102420;color:#f8dfb6;font:14px sans-serif;margin:0}output{padding:10px;display:block}iframe{width:100%;height:70vh;border:0}</style></head>
 <body><output id="result" data-result="PENDING">RUNNING</output><iframe id="game" title="Game under audit test"></iframe>
-<script>
-const KEY="gacha-ascension-v8-slice-v1";
+<script type="module">
+import {SCHEMA,SAVE_KEY} from '../src/v8/engine.mjs';
+const KEY=SAVE_KEY;
 const output=document.getElementById("result"),frame=document.getElementById("game");
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const check=(yes,msg)=>{if(!yes)throw Error(msg)};
+if(location.port!=='4180'){output.dataset.result='SKIP';output.textContent='SKIP: isolated port 4180 required'}else{
 let loads=0;
 localStorage.setItem(KEY,'{"invalid":true');
 frame.addEventListener("load",async()=>{
@@ -25,7 +27,7 @@ frame.addEventListener("load",async()=>{
   for(let i=0;i<90&&!d.querySelector('#packList [data-draw="battle"]');i++)await sleep(40);
   check(!!d.querySelector('#packList [data-draw="battle"]'),"recovered app did not initialize");
   const s=JSON.parse(localStorage.getItem(KEY));
-  check(s.schemaVersion===8,"recovered save is not schema8");
+  check(s.schemaVersion===SCHEMA,"recovered save is not the current schema");
   const backups=Object.keys(localStorage).filter(k=>k.startsWith(KEY+"-invalid-recovery"));
   check(backups.some(k=>localStorage.getItem(k)==='{"invalid":true'),"invalid source bytes not preserved");
   d.getElementById("killMob").click();
@@ -42,4 +44,5 @@ frame.addEventListener("load",async()=>{
  }catch(e){output.dataset.result="FAIL";output.textContent="FAIL: "+e.message}
 });
 frame.src="../preview-v0.8.html";
+}
 </script></body></html>

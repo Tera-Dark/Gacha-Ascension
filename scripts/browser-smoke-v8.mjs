@@ -39,7 +39,8 @@ try{
     if(await page.locator('#result').getAttribute('data-result')!=='PASS')throw Error(result);
     console.log(name+': '+result);
    }else{
-    await page.locator('#packList [data-draw]').first().waitFor();
+    // Card packs initialize offscreen while exploration is the active view.
+    await page.locator('#packList [data-draw]').first().waitFor({state:'attached'});
     await page.locator('#heroArt canvas').waitFor();
     if(await page.locator('#mapName').textContent()!=='青云山麓')throw Error('Initial map did not render');
     if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow');
