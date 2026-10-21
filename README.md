@@ -71,7 +71,7 @@ npm run simulate:v8:progression:full # 3流派×10种子×连续3世正式节奏
 python -m http.server 4180 --bind 127.0.0.1
 ```
 
-打开 `tests/v8-mobile-smoke.html`、`tests/v8-landscape-smoke.html`、`tests/v8-bank-smoke.html`、`tests/v8-management-smoke.html`。测试页会创建或修改该端口的测试档；切勿在此端口经营真实进度。战斗时序、损坏存档和新手流程另有 `tests/v8-*-smoke.html`，由 CI 运行。
+打开 `tests/v8-mobile-smoke.html`、`tests/v8-landscape-smoke.html`、`tests/v8-bank-smoke.html`、`tests/v8-management-smoke.html`。测试页会创建或修改该端口的测试档；切勿在此端口经营真实进度。战斗时序、损坏存档和新手流程另有 `tests/v8-*-smoke.html`。CI 额外安装固定版 `playwright-core@1.64.1`，运行 `scripts/browser-smoke-v8.mjs`，以真实 Chromium 时钟逐项等待结果并保留截图，避免虚拟时钟跳过动画帧。运行浏览器脚本需设置 `CHROME_BIN` 或在 PATH 中提供 Chromium。
 
 `.github/workflows/v8-slice.yml` 负责现行逻辑与 Chromium 验收；`v8-combat-balance.yml` 负责完整战斗／三世模拟；`pages.yml` 仅由 `main` 推送或手动触发发布。需核验成功的 deploy 状态后才能称已上线。
 
