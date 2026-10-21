@@ -63,14 +63,6 @@ export function openBox(s,c,id,roll){
  r.herbs[herb.id]=(r.herbs[herb.id]||0)+count;
  return {kind:"boxOpen",box:id,reward:{id:herb.id,name:herb.name,count,type:"herb"}};
 }
-export function brew(s,herbId,count=1){
- const herb=HERBS.find(x=>x.id===herbId),r=inventory(s);
- if(!herb||!Number.isSafeInteger(count)||count<1||count>1000)throw Error("无效的炼药配方");
- if((r.herbs[herbId]||0)<3*count)throw Error("药草不足，每颗药需要3份草药");
- r.herbs[herbId]-=3*count;
- r.consumables[herb.potion]=(r.consumables[herb.potion]||0)+count;
- return {kind:"brew",item:herb.potion,count};
-}
 export function prepareItem(s,id){
  const r=inventory(s),item=ITEMS.find(x=>x.id===id);
  if(!item)throw Error("未知丹药");

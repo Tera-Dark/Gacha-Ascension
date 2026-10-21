@@ -13,7 +13,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const fmt=n=>!Number.isFinite(n)?"—":Math.abs(n)>=1e12?(n/1e12).toFixed(2)+"兆":Math.abs(n)>=1e8?(n/1e8).toFixed(2)+"亿":Math.abs(n)>=1e4?(n/1e4).toFixed(2)+"万":Math.round(n*100)/100+"";
 const pct=n=>(Math.round(n*10)/10)+"%";
 const qty=(r,c,key)=>Object.values(c.cards).reduce((a,x)=>a+(x.effect===key?(r.cards[x.id]||0)*x.value:0),0);
-const cave=(r,c,style)=>Object.values(c.cards).reduce((a,x)=>a+(x.effect==="cave"&&x.style===style?(r.cards[x.id]||0)*x.value:0),0);
+const cave=(r,c,style)=>Object.values(c.cards).reduce((a,x)=>a+(x.effect==="cave"&&x.style===style?Math.min(6,r.cards[x.id]||0)*x.value:0),0);
 const relic=(s,c,key)=>c.relics.reduce((a,x)=>a+(x.stat===key?(s.meta.relics[x.id]||0)*x.value:0),0);
 const section=(title,rows,note="")=>({title,rows,note});
 const row=(label,value,note="")=>({label,value:String(value),note});
@@ -94,7 +94,7 @@ export function detailModel(s,c,analysis=null){
    row("守卫胜率估计",analysis?pct(analysis.winRate*100)+"（"+analysis.wins+"/"+analysis.samples+"）":"尚未挑战")
   ],"每次命中还会随机浮动伤害；胜率使用独立样本模拟，不窥视实际随机种子。")
  ];
- const qiNext=realm.nextQiCost;
+ const qiNext=req.qi;
  details.cultivate=[
   section("本阶段的突破账单",[
    row("当前 / 下一阶段",realm.name+" → "+nextName),
@@ -108,7 +108,7 @@ export function detailModel(s,c,analysis=null){
    row("下一次修为费用",fmt(qiNext),"当前阶段成本，非全部境界累计费用")
   ],"每次修为造化抽卡至少获得1点悟道；突破会消耗当前所需修为与悟道，成功后进入下个小阶段。"),
   section("指数成长与修炼效率",[
-   row("修为增长规则","ceil(100 × 2.35^境界序号)"),
+   row("修为增长规则","基础境界费用 × "+c.management.realmQiFactor+"；重修已达境界 × 60%"),
    row("悟道增长规则","ceil(1 × 1.26^境界序号)"),
    row("本阶段序号",r.realmIndex+" / 19"),
    row("修为卡牌加成",pct(qiBonus)),row("洞府修为加成",pct(caveQi*caveMultiplier)),
@@ -143,7 +143,7 @@ export function detailModel(s,c,analysis=null){
   section("装配功法真实战斗计算",[
    row("当前主修",r.technique?c.cards[r.technique].name:"无"),
    row("功法流派",STYLE_LABELS[combatStyle(t)]),
-   row("生效总强度",pct(t.power),"功法基础效果 × 重复数量 × 大道书(如有)"),
+   row("生效总强度",pct(t.power),"功法基础效果 × 最多6份 × 大道书(如有)"),
    row("功法重复份数",r.technique?(r.cards[r.technique]||0):0),
    row("鸿蒙大道书",s.meta.ultras.U004?"功法正面效果 ×2.5":"未获得"),
    row("剑势", "克制灵势，弱于守势","流云剑经逐击剑气，九霄破军诀每3次出手爆发"),

@@ -1,0 +1,52 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Management and inheritance acceptance</title><style>body{margin:0;background:#102723;color:#e5d5a2;font:12px sans-serif}output{display:block;padding:5px}iframe{border:0;width:100vw;height:calc(100dvh - 30px)}</style></head><body><output id="result" data-result="PENDING">RUNNING</output><iframe id="app" title="Management game"></iframe><script type="module">
+import {createSave,SAVE_KEY} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
+if(location.port!=='4180'){out.textContent='SKIP: use the isolated test server on port 4180';out.dataset.result='SKIP'}else{
+ const original=localStorage.getItem(SAVE_KEY),s=createSave(20261020);s.schemaVersion=8;
+ delete s.run.world;delete s.run.recipes;delete s.run.mastery;delete s.meta.knowledge;delete s.meta.dao;delete s.meta.inheritance;delete s.meta.directed;
+ s.run.cards.H001=3;s.run.herbs.H001=9;s.run.stones+=10000;s.run.totalEarned+=10000;
+ const legacy=JSON.stringify(s);localStorage.setItem(SAVE_KEY,legacy);
+ let phase=0;
+ frame.addEventListener('load',async()=>{
+  try{
+   const d=frame.contentDocument,w=frame.contentWindow,read=()=>JSON.parse(localStorage.getItem(SAVE_KEY));
+   for(let i=0;i<150&&!d.querySelector('#packList [data-draw]');i++)await wait(40);
+   check(!!d.querySelector('#productionPanel'),'management panel missing');
+   const nav=view=>d.querySelector('.system-sidebar [data-view="'+view+'"]').click();
+   if(phase===0){
+    check(read().schemaVersion===9,'legacy save did not migrate');
+    check(Object.keys(localStorage).some(k=>k.includes('schema8-backup')&&localStorage.getItem(k)===legacy),'exact legacy backup missing');
+    d.querySelector('[data-main="gather"]').click();await wait(60);check(read().run.world.activity.kind==='gather','gather does not start');
+    nav('cave');d.getElementById('brewMode').value='target';d.getElementById('brewAmount').value='1';d.getElementById('queueBrew').click();await wait(60);
+    check(read().run.world.queue.length===1,'queue did not persist');check(!read().run.consumables.MED001,'queue produced instant medicine');
+    const saved=read();saved.run.world.at-=180000;localStorage.setItem(SAVE_KEY,JSON.stringify(saved));phase=1;w.location.reload();return;
+   }
+   if(phase===1){
+    check(read().run.consumables.MED001===1,'offline timed medicine was not produced');
+    check(d.getElementById('worldReport').textContent.includes('炼成回春丹'),'offline report does not explain production');
+    nav('gacha');
+    for(let i=0;i<2;i++){
+     d.querySelector('[data-draw="battle"][data-count="10"]').click();await wait(80);d.getElementById('skipReveal').click();d.getElementById('closeReveal').click();await wait(60);
+    }
+    check(read().meta.directed.draws===20,'ordinary draws did not earn directed progress');
+    d.getElementById('directedCard').value='T003';d.getElementById('claimDirected').click();await wait(60);
+    check(read().run.cards.T003===1,'directed core card absent');
+    nav('fate');d.querySelector('[data-inherit="T003"]').click();d.querySelector('[data-inherit="H001"]').click();await wait(60);
+    check(read().meta.inheritance.length===2,'inheritance selection not persisted');
+    d.querySelector('[data-learn-dao="inherit"]').click();await wait(60);check(read().meta.dao.nodes.inherit,'dao unlock absent');
+    const saved=read();saved.run.world.activity.kind='none';saved.run.bossCleared=true;saved.run.realmIndex=3;saved.run.mapIndex=3;saved.run.checkpoint=7;
+    localStorage.setItem(SAVE_KEY,JSON.stringify(saved));phase=2;w.location.reload();return;
+   }
+   nav('fate');check(d.getElementById('reincarnationPreview').textContent.includes('每张2份'),'inheritance preview wrong');
+   w.confirm=()=>true;d.getElementById('reincarnate').click();await wait(80);
+   const final=read();check(final.meta.reincarnations===1,'rebirth did not commit');
+   check(final.run.cards.T003===2&&final.run.cards.H001===2,'inherited copies wrong');check(!final.run.cards.B001,'ordinary stats survived reset');
+   check(final.meta.directed.draws===20&&final.meta.knowledge.cards.B001,'permanent progress lost');
+   check(!final.run.herbs.H001&&final.run.world.queue.length===0,'old inventory or queue survived');
+   check(d.documentElement.scrollWidth<=w.innerWidth+2,'management UI overflows horizontally');
+   out.dataset.result='PASS';out.textContent='PASS: exact Schema8 backup, offline production, 20-pull directed choice, DAO unlock, two-slot inheritance, correct reset and permanent knowledge';
+  }catch(e){out.dataset.result='FAIL';out.textContent='FAIL: '+e.message}
+ });
+ frame.src='../preview-v0.8.html';
+}
+</script></body></html>

@@ -1,14 +1,16 @@
 import {simulateEncounter,assessEncounter,encounterWaves,MAP_STYLES,STYLE_LABELS,combatStyle} from "./combat-depth.mjs";
 import {pullFate,permanentEffect,ownedApex} from "./relic-pool.mjs";
-import {startIdle,claimIdle,stopIdle,battleIntervalMs} from "./idle.mjs";
+import {startIdle,battleIntervalMs} from "./idle.mjs";
 import {validateContentContract,unlockedPack} from "./modules.mjs";
 import {EQUIPMENT_SLOTS,validateEquipmentCards,verifyEquipment,equipmentStats,equipItem} from "./equipment.mjs";
 import {ARTIFACT_SLOTS,validateArtifacts,verifyArtifacts,equipArtifact,artifactBonuses} from "./artifacts.mjs";
-import {inventory,validateInventory,rollBoxDrop,openBox,brew,prepareItem,unlockAutoPotion,setAutoPotion} from "./treasure.mjs";
+import {inventory,validateInventory,rollBoxDrop,openBox,prepareItem,unlockAutoPotion,setAutoPotion} from "./treasure.mjs";
+import {createWorld,settleWorld,addTask,setActivity,setField,validateWorld} from "./activities.mjs";
+import {ensureProgression,recordProgress,discover,cappedCopies,growth,coreCard,selectInheritance,learnDao,validateProgression} from "./progression.mjs";
 import {activeSynergy} from "./synergy.mjs";
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
-export const SCHEMA=8;
+export const SCHEMA=9;
 const deep=x=>structuredClone(x), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const nat=n=>Number.isSafeInteger(n)&&n>=0;
@@ -32,11 +34,13 @@ export function loadCatalog(world,slice){
 }
 export function createSave(seed=20261020){
  if(!nat(seed)||seed===0||seed>0xffffffff)throw Error("随机种子错误");
- return {schemaVersion:SCHEMA,seed,seq:0,receipts:{},receiptOrder:[],
+ const state={schemaVersion:SCHEMA,seed,seq:0,receipts:{},receiptOrder:[],
   meta:{fate:0,reincarnations:0,bestMap:1,bestCheckpoint:1,relics:{},ultras:{},apex:{},pity:0,pityXian:0,totalFateChests:0},
   run:createRun()};
+ ensureProgression(state);return state;
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
+ world:createWorld(),recipes:{H001:true},mastery:{gather:0,meditate:0,brew:0},
  stones:110,farmFocus:"balanced",equipment:{},artifacts:{},boxes:{gear:0,herb:0},herbs:{},consumables:{},prepared:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
  victories:0,mobKills:0,guardianWins:0,bossWins:0,losses:0,
  totalEarned:0,totalSpent:0,lastBattle:null};}
@@ -50,12 +54,15 @@ export function validateSave(s,c){
  if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
  const pending=r.pendingBattle;
+ const snapshotValid=snap=>snap&&[snap.hero,snap.enemy,...(snap.waves||[])].every(x=>x&&finite(x.hp)&&x.hp>0&&finite(x.attack)&&x.attack>0&&finite(x.defense)&&x.defense>=0)&&Array.isArray(snap.waves)&&snap.waves.length>0&&snap.waves.length<=3&&snap.tech&&finite(snap.tech.power)&&snap.pet&&finite(snap.pet.power)&&finite(snap.heroSpeedPct);
  if(pending!==undefined&&pending!==null){
   if(!["mob","guardian","boss"].includes(pending.kind)||
     !nat(pending.startedAt)||!Number.isSafeInteger(pending.durationMs)||pending.durationMs<1||
     pending.seed!==s.seed||!nat(pending.seed)||!pending.seed||r.idle?.active)
    throw Error("进行中的战斗记录损坏");
+  if(pending.snapshot&&!snapshotValid(pending.snapshot))throw Error("进行中的战斗快照损坏");
  }
+ if(r.idle?.encounter&&(r.idle.encounter.seed!==s.seed||!snapshotValid(r.idle.encounter.snapshot)))throw Error("探索战斗快照损坏");
  verifyEquipment(s,c);
  verifyArtifacts(s,c);validateInventory(s);
  for(const k of ["technique","pet"])if(r[k]!==null&&(!r.cards[r[k]]||c.cards[r[k]].effect!==k))throw Error("未持有的装备");
@@ -63,6 +70,7 @@ export function validateSave(s,c){
  if(m.apex&&Object.keys(m.apex).some(id=>!c.apex.some(x=>x.id===id)))throw Error("未知太古异宝");
  if(m.pityXian!==undefined&&!nat(m.pityXian))throw Error("仙阶保底进度损坏");
  if(Object.keys(m.ultras).some(id=>!c.ultras.some(x=>x.id===id)))throw Error("未知鸿蒙遗物");
+ validateProgression(s,c);validateWorld(s,c);
  return s;
 }
 function roll(s){let x=s.seed>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;s.seed=(x>>>0)||0x9e3779b9;return s.seed/4294967296}
@@ -70,7 +78,7 @@ function relicCount(s,key){return s.meta.relics[key]||0}
 function metaPct(s,c,stat){return permanentEffect(s,c,stat)}
 function cardCount(s,id){return s.run.cards[id]||0}
 function sumEffect(s,c,key){return Object.values(c.cards).reduce((a,card)=>a+(card.effect===key?cardCount(s,card.id)*card.value:0),0)}
-function cave(s,c,style){return Object.values(c.cards).reduce((n,x)=>n+(x.effect==="cave"&&x.style===style?cardCount(s,x.id)*x.value:0),0)}
+function cave(s,c,style,legacy=false){return Object.values(c.cards).reduce((n,x)=>n+(x.effect==="cave"&&x.style===style?(legacy?cardCount(s,x.id):cappedCopies(s,x.id))*x.value:0),0)}
 const hasUltra=(s,id)=>!!s.meta.ultras[id];
 const applyPct=(x,pct)=>x*(1+clamp(pct,0,1500)/100);
 export function heroStats(s,c){
@@ -84,12 +92,12 @@ export function heroStats(s,c){
  const defense=Math.max(1,Math.round(applyPct(12*realmFactor+gear.defense,all+sumEffect(s,c,"defPct"))));
  return {name:realm.name,attack,hp,defense,realmFactor};
 }
-export function yields(s,c){
+export function yields(s,c,legacy=false){
  const caveMult=hasUltra(s,"U003")?3:1;
- const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone")*caveMult,0,600)+metaPct(s,c,"stonePct");
- const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi")*caveMult,0,600)+metaPct(s,c,"qiPct");
- const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed")+equipmentStats(s,c).speedPct,0,60);
- return {stonePct,qiPct,speedPct,petPct:cave(s,c,"pet")+metaPct(s,c,"petPct")};
+ const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone",legacy)*caveMult,0,600)+metaPct(s,c,"stonePct");
+ const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi",legacy)*caveMult,0,600)+metaPct(s,c,"qiPct");
+ const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed",legacy)+equipmentStats(s,c).speedPct,0,60);
+ return {stonePct,qiPct,speedPct,petPct:cave(s,c,"pet",legacy)+metaPct(s,c,"petPct")};
 }
 export function progress(s,c){
  const r=s.run,m=c.maps[r.mapIndex];
@@ -98,7 +106,10 @@ export function progress(s,c){
   realm:c.realms[r.realmIndex],nextRealm:c.realms[Math.min(r.realmIndex+1,19)]};
 }
 export function breakthroughRequirements(s,c){
- const i=s.run.realmIndex,r=c.realms[i],qi=r.nextQiCost,insight=r.nextInsightCost;
+ const i=s.run.realmIndex,r=c.realms[i];
+ const relearn=s.meta.reincarnations>0&&i<s.meta.knowledge.realms;
+ const qi=Math.round(r.nextQiCost*c.management.realmQiFactor*(relearn?c.management.relearnFactor:1));
+ const insight=Math.max(1,r.nextInsightCost-(s.meta.dao.nodes.insight?1:0));
  const needsPill=i===3,needBoss=needsPill&&!s.run.bossCleared;
  const needMapMilestone=i<3&&s.run.mapIndex<=i;
  return {qi,insight,needsPill,needBoss,needMapMilestone,pillName:needsPill?"筑基丹":null,
@@ -133,31 +144,31 @@ function enemy(s,c,kind){
   traits:boss?tags:["mob"],type:kind};
 }
 export function enemyPreview(s,c,kind="mob"){return enemy(s,c,kind)}
-function technique(s,c){
+function technique(s,c,legacy=false){
  const id=s.run.technique,card=id?c.cards[id]:null;
  if(!card)return {style:"none",power:0};
- const level=cardCount(s,id);
- return {style:card.style,power:card.value*level*(hasUltra(s,"U004")?2.5:1)};
+ const level=legacy?cardCount(s,id):cappedCopies(s,id);
+ return {style:card.style,power:card.value*level*(hasUltra(s,"U004")?2.5:1),...(legacy?{}:{tier:growth(level),tags:card.tags})};
 }
-function pet(s,c){
+function pet(s,c,legacy=false){
  const id=s.run.pet,card=id?c.cards[id]:null;
  if(!card)return {style:"none",power:0};
- const base=card.value*cardCount(s,id)*(1+yields(s,c).petPct/100)*(ownedApex(s,"A002")?1.8:1);
- return {style:card.style,power:base*(hasUltra(s,"U002")?4:1)};
+ const base=card.value*(legacy?cardCount(s,id):cappedCopies(s,id))*(1+yields(s,c,legacy).petPct/100)*(ownedApex(s,"A002")?1.8:1);
+ return {style:card.style,power:base*(hasUltra(s,"U002")?4:1),...(legacy?{}:{tier:growth(cardCount(s,id)),tags:card.tags,spiritCare:growth(s.run.cards.H004)})};
 }
 /** Preview is a seeded *sample* disconnected from the actual next battle RNG.
  * Live battle explicitly supplies state.seed and advances that seed once.
  */
-export function combatSnapshot(s,c,kind){
- const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c),p=pet(s,c),index=s.run.mapIndex;
+export function combatSnapshot(s,c,kind,legacy=false){
+ const h=heroStats(s,c),f=enemy(s,c,kind),t=technique(s,c,legacy),p=pet(s,c,legacy),index=s.run.mapIndex;
  const a=artifactBonuses(s,c),prepared=s.run.prepared||{},auto=s.meta.autoPotion;
  h.attack=Math.max(1,Math.round(h.attack*(1+(a.strike+(prepared.MED003?15:0))/100)));
  h.defense=Math.max(0,Math.round(h.defense*(1+(a.ward+(prepared.MED002?15:0))/100)));
  f.attack=Math.max(1,Math.round(f.attack*(1-a.curse/100)));
  const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
   available:s.run.consumables?.MED001||0,prepared:prepared.MED001||0};
- return {hero:h,enemy:f,tech:t,pet:p,synergy:activeSynergy(s),heroUltra:hasUltra(s,"U001"),
-  kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c).speedPct+a.blessing),
+ return {hero:h,enemy:f,tech:t,pet:p,synergy:activeSynergy(s,legacy,c),modern:!legacy,heroUltra:hasUltra(s,"U001"),
+  kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c,legacy).speedPct+a.blessing),
   apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
   waves:encounterWaves(f,kind,index)};
 }
@@ -170,7 +181,8 @@ export function combatLabels(s,c,kind){
   waveCount:data.waves.length,special:data.waves.at(-1).special};
 }
 export function fight(s,c,kind,options={}){
- const snap=combatSnapshot(s,c,kind);
+ const frozen=options.seed===s.seed?(s.run.pendingBattle?.kind===kind?s.run.pendingBattle:s.run.idle?.active&&kind==="mob"?s.run.idle.encounter:null):null;
+ const snap=frozen?.snapshot||combatSnapshot(s,c,kind);
  return simulateEncounter(snap,options.seed??0x10b0ca13);
 }
 export function packCost(s,c,packId){
@@ -191,6 +203,7 @@ function weightedCard(s,c,pack){
  return pool[Math.floor(roll(s)*pool.length)];
 }
 function gainCard(s,c,card){
+ discover(s,card);
  const run=s.run;
  if(card.effect==="pill"){run.pills[card.id]=(run.pills[card.id]||0)+1;return}
  if(card.effect==="qiInstant"){run.qi+=card.value;return}
@@ -223,12 +236,13 @@ function draw(s,c,{packId,count}){
   if(packId==="elixir")s.run.pillPity=card.id==="D004"?0:s.run.pillPity+1;
   if(packId==="cultivation")s.run.insight+=1; // Every cultivation draw provides deterministic enlightenment.
   s.run.draws[packId]=(s.run.draws[packId]||0)+1;
+  s.meta.directed.draws++;
   gainCard(s,c,card);
   items.push({...card,copies:s.run.cards[card.id]??s.run.pills[card.id]??1});
  }
  return {kind:"draw",items,cost:price,packId};
 }
-function battle(s,c,kind){
+function battle(s,c,kind,committedCombat=null){
  if(!["mob","guardian","boss"].includes(kind))throw Error("无效战斗类型");
  const r=s.run;
  if(r.bossCleared&&kind!=="mob")throw Error("四张地图Boss已通关，可以继续刷当前小怪、轮回或突破筑基");
@@ -239,7 +253,8 @@ function battle(s,c,kind){
   const gate=pendingRealmGate(s,c);
   if(gate)throw Error("先突破至"+gate.realm+"，才能挑战"+gate.map+"的守卫。仍可在本关刷小怪积累灵石和修为");
  }
- const result=fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
+ const result=committedCombat||fight(s,c,kind,{seed:s.seed}),k=r.checkpoint,m=r.mapIndex;
+ s.meta.knowledge.enemies[m+":"+kind]=true;
  s.seed=result.nextSeed;
  const items=inventory(s);
  items.consumables.MED001=Math.max(0,(items.consumables.MED001||0)-(result.usedAuto||0));
@@ -306,24 +321,36 @@ function breakthrough(s,c){
  r.realmIndex++;
  return {kind:"breakthrough",name:c.realms[r.realmIndex].name,spentQi:needs.qi,spentInsight:needs.insight,spentPill:needs.needsPill};
 }
-function reincarnate(s,c){
+export function reincarnationPreview(s,c){
+ return {canReincarnate:s.run.bossCleared,earned:55+Math.max(0,s.run.realmIndex-3)*10,inheritance:s.meta.inheritance.map(id=>c.cards[id]),copies:s.meta.dao.nodes.inherit?2:1,cleared:"境界、材料、丹药、装备、本世卡牌叠层、生产排程与熟练度",kept:"见闻、道统、定向进度、因果与天命遗物",relearnFactor:c.management.relearnFactor};
+}
+function reincarnate(s,c,now){
  if(!s.run.bossCleared)throw Error("击败第四张地图Boss后才能首次轮回");
  const old=s.run,earned=55+Math.max(0,old.realmIndex-3)*10;
  s.meta.fate+=earned;s.meta.reincarnations++;
- s.run=createRun();return {kind:"reincarnate",earned,fate:s.meta.fate,round:s.meta.reincarnations};
+ s.run=createRun();s.run.world.at=Number.isSafeInteger(now)?now:null;
+ for(const id of s.meta.inheritance)for(let i=0;i<(s.meta.dao.nodes.inherit?2:1);i++)gainCard(s,c,c.cards[id]);
+ if(s.meta.dao.nodes.supplies){s.run.herbs={H001:30,H002:30,H003:30};s.run.consumables.MED001=10}
+ return {kind:"reincarnate",earned,fate:s.meta.fate,round:s.meta.reincarnations};
 }
 function openRelic(s,c){return pullFate(s,c,()=>roll(s))}
 export function dispatch(current,c,cmd){
  if(!cmd||cmd.seq!==current.seq+1||typeof cmd.type!=="string")throw Error("交易序号异常");
+ if(["START_ACTIVITY","CLAIM_WORLD","START_IDLE","CLAIM_IDLE","STOP_IDLE","SET_FIELD","QUEUE_BREW","REMOVE_BREW"].includes(cmd.type)&&(!Number.isSafeInteger(cmd.now)||cmd.now<0))throw Error("修行活动需要有效的毫秒时间戳");
  const s=deep(current),r=s.run;let result;
- const idleCombat=(st,cat)=>battle(st,cat,"mob");
+ const encounter=()=>{
+  if(!r.idle.encounter)r.idle.encounter={seed:s.seed,snapshot:combatSnapshot(s,c,"mob")};
+  const combat=simulateEncounter(r.idle.encounter.snapshot,r.idle.encounter.seed);
+  return {combat,durationMs:Math.max(900,Math.ceil(combat.timeMs))};
+ };
+ const settle=()=>settleWorld(s,c,cmd.now,{encounter,battle:combat=>battle(s,c,"mob",combat)});
  const interval=(st,cat)=>battleIntervalMs(st,cat,yields,(x,y)=>fight(x,y,"mob",{seed:x.seed}));
  // A manually started encounter owns the save until its real combat clock
  // completes. No cards, equipment, drops or rewards can change mid-fight.
- if(r.pendingBattle&&cmd.type!=="FINISH_BATTLE")throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
- // Resolve any past idle period before equipment, card or realm mutations.
- if(r.idle?.active&&Number.isSafeInteger(cmd.now)&&!["START_IDLE","CLAIM_IDLE","STOP_IDLE"].includes(cmd.type))
-  claimIdle(s,c,cmd.now,idleCombat,interval);
+ if(r.pendingBattle&&!["FINISH_BATTLE","CLAIM_WORLD"].includes(cmd.type))throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
+ // Settle the old activity and production before any mutation of its rules.
+ let worldReport=null;
+ if(Number.isSafeInteger(cmd.now))worldReport=settle();
  switch(cmd.type){
  case "PREPARE_BATTLE":{
   if(!Number.isSafeInteger(cmd.now)||cmd.now<0)throw Error("战斗开始时间异常");
@@ -336,8 +363,9 @@ export function dispatch(current,c,cmd){
   if(kind==="guardian"&&isFinal)throw Error("当前关卡应挑战地图Boss");
   if(kind==="guardian"&&pendingRealmGate(s,c))
    throw Error("当前境界不足，请先突破再挑战守卫");
-  const combat=fight(s,c,kind,{seed:s.seed});
-  r.pendingBattle={kind,startedAt:cmd.now,durationMs:Math.ceil(combat.timeMs),seed:s.seed};
+  setActivity(s,"none");
+  const snapshot=combatSnapshot(s,c,kind),combat=simulateEncounter(snapshot,s.seed);
+  r.pendingBattle={kind,startedAt:cmd.now,durationMs:Math.ceil(combat.timeMs),seed:s.seed,snapshot};
   result={kind:"battlePrepared",enemyType:kind,startedAt:cmd.now,combat};
   break;
  }
@@ -347,8 +375,9 @@ export function dispatch(current,c,cmd){
   if(!Number.isSafeInteger(cmd.now)||cmd.now<pending.startedAt+pending.durationMs)
    throw Error("战斗还未完成，不能提前结算");
   if(s.seed!==pending.seed)throw Error("进行中的战斗随机种子发生变化");
+  const combat=simulateEncounter(pending.snapshot||combatSnapshot(s,c,pending.kind),pending.seed);
   delete r.pendingBattle;
-  result=battle(s,c,pending.kind);
+  result=battle(s,c,pending.kind,combat);
   break;
  }
  case "DRAW":result=draw(s,c,cmd);break;
@@ -378,18 +407,37 @@ export function dispatch(current,c,cmd){
  case "EQUIP_ITEM":result=equipItem(s,c,cmd.slot,cmd.id);break;
  case "EQUIP_ARTIFACT":result=equipArtifact(s,c,cmd.slot,cmd.id);break;
  case "OPEN_BOX":result=openBox(s,c,cmd.id,()=>roll(s));break;
- case "BREW":result=brew(s,cmd.id,cmd.count||1);break;
+ case "BREW":result=addTask(s,c,{herb:cmd.id,mode:"count",amount:cmd.count??1});break;
  case "PREPARE_ITEM":result=prepareItem(s,cmd.id);break;
  case "UNLOCK_AUTO_POTION":result=unlockAutoPotion(s);break;
  case "SET_AUTO_POTION":result=setAutoPotion(s,cmd.enabled,cmd.threshold);break;
  case "EQUIP_PET":{
   const id=cmd.id;if(id!==null&&(c.cards[id]?.effect!=="pet"||!r.cards[id]))throw Error("灵宠未拥有");
   r.pet=id;result={kind:"equip",slot:"pet",id};break}
- case "REINCARNATE":result=reincarnate(s,c);break;
+ case "REINCARNATE":result=reincarnate(s,c,cmd.now);break;
  case "OPEN_RELIC":result=openRelic(s,c);break;
- case "START_IDLE":result=startIdle(s,cmd.now);break;
- case "CLAIM_IDLE":result=claimIdle(s,c,cmd.now,idleCombat,interval);break;
- case "STOP_IDLE":result=stopIdle(s,c,cmd.now,idleCombat,interval);break;
+ case "START_IDLE":setActivity(s,"none");result=startIdle(s,cmd.now);encounter();break;
+ case "CLAIM_IDLE":result={...worldReport,kind:"idleClaim"};break;
+ case "STOP_IDLE":if(r.idle){r.idle.active=false;delete r.idle.encounter}result={...worldReport,kind:"idleStop",active:false};break;
+ case "CLAIM_WORLD":result=worldReport;break;
+ case "START_ACTIVITY":{
+  if(r.idle){r.idle.active=false;r.idle.carryMs=0;delete r.idle.encounter}
+  result=setActivity(s,cmd.activity,cmd.herb);break;
+ }
+ case "SET_FIELD":result=setField(s,cmd.enabled,cmd.herb);break;
+ case "QUEUE_BREW":result=addTask(s,c,cmd);break;
+ case "REMOVE_BREW":{
+  if(!Number.isInteger(cmd.index)||cmd.index<0||cmd.index>=r.world.queue.length)throw Error("未知排程");
+  r.world.queue.splice(cmd.index,1);if(cmd.index===0)r.world.brewCarryMs=0;result={kind:"queueRemoved"};break;
+ }
+ case "SET_INHERITANCE":result=selectInheritance(s,c,cmd.ids);break;
+ case "LEARN_DAO":result=learnDao(s,c,cmd.id);break;
+ case "CLAIM_DIRECTED":{
+  const card=c.cards[cmd.id],d=s.meta.directed;
+  if(!coreCard(card)||!unlockedPack(s,c,card.pack))throw Error("该核心卡不在当前已开放定向池");
+  if(Math.floor(d.draws/c.management.directedEvery)<=d.claimed)throw Error("定向进度不足20抽");
+  d.claimed++;gainCard(s,c,card);result={kind:"directed",card};break;
+ }
  case "SET_FARM_FOCUS":{
   if(!c.farmTargets.some(x=>x.id===cmd.id))throw Error("不支持的刷怪目标");
   r.farmFocus=cmd.id;result={kind:"farmFocus",id:cmd.id};break;
@@ -398,6 +446,26 @@ export function dispatch(current,c,cmd){
  }
  s.seq=cmd.seq;
  if(result.kind==="battle"){s.run.lastBattle={type:result.type,won:result.won,turns:result.combat.turns,stones:result.stones,qi:result.qi,boxes:result.boxes,lostGear:result.lostGear||null,potionUses:result.potionUses,failureReason:result.failureReason||null}}
+ if(r.idle?.active&&["DRAW","CLAIM_DIRECTED","OPEN_BOX","EQUIP_TECH","EQUIP_PET","EQUIP_LOADOUT","EQUIP_ITEM","EQUIP_ARTIFACT","BREAKTHROUGH","PREPARE_ITEM","SET_FARM_FOCUS","OPEN_RELIC"].includes(cmd.type)){
+  delete r.idle.encounter;r.idle.carryMs=0;r.idle.at=cmd.now??r.idle.at;
+ }
+ recordProgress(s,c);
  validateSave(s,c);
- return {state:s,result};
+ return {state:s,result,worldReport};
+}
+
+/** Schema 8 -> 9 is explicit and lossless for known holdings. No invented draws. */
+export function migrateSave(old,c){
+ if(old?.schemaVersion===SCHEMA)return {state:validateSave(old,c),migrated:false};
+ if(old?.schemaVersion!==8)throw Error("不支持的存档版本");
+ const s=structuredClone(old);s.schemaVersion=SCHEMA;ensureProgression(s);
+ s.run.world=createWorld(s.run.idle?.at??null);
+ if(s.run.pendingBattle&&!s.run.pendingBattle.snapshot)
+  s.run.pendingBattle.snapshot=combatSnapshot(s,c,s.run.pendingBattle.kind,true);
+ if(s.run.idle?.active)s.run.idle.encounter={seed:s.seed,snapshot:combatSnapshot(s,c,"mob",true)};
+ for(const herb of ["H002","H003"]){
+  const item=herb==="H002"?"MED002":"MED003";
+  if((s.run.consumables?.[item]||0)>0||(s.run.prepared?.[item]||0)>0){s.run.recipes[herb]=true;s.meta.knowledge.recipes[herb]=true}
+ }
+ recordProgress(s,c);validateSave(s,c);return {state:s,migrated:true};
 }

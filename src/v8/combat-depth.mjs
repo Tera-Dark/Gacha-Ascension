@@ -94,7 +94,7 @@ export function assessEncounter(snapshot,samples=24){
 }
 export function simulateEncounter(input,startSeed){
  const {hero,enemy,tech,pet,heroUltra=false,apexDamageMultiplier=1,kind,mapIndex,
-  heroSpeedPct=0,healing=null,synergy=null}=input;
+  heroSpeedPct=0,healing=null,synergy=null,modern=false}=input;
  if(!Number.isSafeInteger(startSeed)||startSeed<1||startSeed>0xffffffff)throw Error("Invalid combat seed");
  const waves=input.waves||encounterWaves(enemy,kind,mapIndex);
  const heroStyle=combatStyle(tech),heroInterval=RULES.heroIntervalMs/(1+cap(heroSpeedPct,0,60)/100);
@@ -102,6 +102,7 @@ export function simulateEncounter(input,startSeed){
  let rng=startSeed,heroHp=hero.hp,shield=pet.style==="ward"?
   Math.round(hero.hp*cap(pet.power/200,0,.50)):0;
  shield+=Math.round(hero.hp*cap(synergy?.shieldHp||0,0,.15));
+ if(modern&&tech.style==="guard")shield+=Math.round(hero.hp*.18);
  let heroDealt=0,petDealt=0,blocked=0,turns=0,maxEnemyHit=0,misses=0,
   enemyRemaining=waves[0].hp,timeMs=0,completedWaves=0,activeWave=waves[0];
  const logs=[];
@@ -117,7 +118,7 @@ export function simulateEncounter(input,startSeed){
   const matchup=styleMatchup(heroStyle,foe.style);
   const dr=mitigation(hero.defense,tech.style==="guard"?tech.power:0);
   let enemyHp=foe.hp,heroAt=heroInterval,enemyAt=enemyInterval;
-  let heroAttacks=0,enemyAttacks=0,lastActionAt=0;
+  let heroAttacks=0,enemyAttacks=0,lastActionAt=0,guardShred=false;
   const emergencyHeal=()=>{
    if(heroHp<=0||heroHp/hero.hp>threshold||heroHp===hero.hp)return;
    let source;
@@ -129,17 +130,23 @@ export function simulateEncounter(input,startSeed){
    log({actor:"potion",at:lastActionAt,owner:"hero",stage:idx+1,amount:restored,hp:heroHp,max:hero.hp,source});
   };
   log({actor:"wave",at:0,stage:idx+1,total:waves.length,name:foe.name,max:foe.hp,hp:foe.hp,style:foe.style});
+  if(modern&&pet.style==="qi"&&pet.tier>=3&&heroHp<hero.hp){
+   const healed=Math.min(hero.hp-heroHp,Math.round(hero.hp*.05));heroHp+=healed;
+   log({actor:"potion",source:"bond",at:0,stage:idx+1,amount:healed,hp:heroHp,max:hero.hp});
+  }
   for(let steps=0;steps<RULES.maxActionsPerWave&&enemyHp>0&&heroHp>0;steps++){
    lastActionAt=Math.min(heroAt,enemyAt);
    if(heroAt<=enemyAt){
     heroAttacks++;turns++;
-    const hit=random()<ratings.heroHitChance;
+    const swordRelease=modern&&tech.style==="sword"&&heroAttacks%(tech.tier>=3?2:3)===0;
+    const hit=random()<Math.min(.97,ratings.heroHitChance+(modern&&tech.style==="burst"&&tech.tier>=2&&heroAttacks%3===0?.15:0));
     let amount=0;
     if(hit){
      const rolled=RULES.minHitRoll+(1-RULES.minHitRoll)*random();
-     const armor=100/(100+foe.defense);
+     const armor=100/(100+foe.defense*(guardShred?.65:1));
      let raw=hero.attack*rolled*armor*matchup.damage;
      if(tech.style==="sword")raw*=1+cap(tech.power/100,0,5);
+     if(swordRelease)raw*=1.7+(pet.tier>=2&&pet.style==="attack"?.2:0);
      if(tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(tech.power/100,0,5);
       if(synergy?.strike)raw*=1+cap(synergy.strike,0,.15);
       if(synergy?.burst&&tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(synergy.burst,0,.25);
@@ -149,22 +156,29 @@ export function simulateEncounter(input,startSeed){
      enemyHp=Math.max(0,enemyHp-amount);heroDealt+=amount;
     }else misses++;
     log({actor:hit?"hero":"miss",owner:"hero",at:lastActionAt,stage:idx+1,turn:heroAttacks,
-     amount,hp:enemyHp,max:foe.hp});
+     amount,hp:enemyHp,max:foe.hp,mechanic:swordRelease?"剑意释放":undefined});
     heroAt+=heroInterval;
+    if(modern&&tech.style==="guard"&&tech.tier>=2&&heroAttacks%3===0)shield=Math.min(Math.round(hero.hp*.7),shield+Math.round(hero.hp*.08));
     if(enemyHp<=0)break;
     if(pet.style!=="none"&&pet.style!=="ward"){
-     const petHit=random()<cap(ratings.heroHitChance+.08,.34,.96);
+     const petHit=random()<cap(ratings.heroHitChance+.08+(modern&&pet.style==="pierce"&&pet.tier>=3?.1:0),.34,.96);
      if(petHit){
       const petArmor=100/(100+foe.defense*(pet.style==="pierce"?.45:1));
+      const bond=modern&&tech.style==="spirit"&&heroAttacks%(tech.tier>=3?1:2)===0;
       const extra=Math.max(1,Math.round(hero.attack*cap(pet.power/100,0,15)*petArmor*.82*
        (tech.style==="spirit"?1+cap(tech.power/100,0,5):1)*
+       (bond?1.8:1)*(swordRelease&&pet.style==="attack"&&pet.tier>=3?1.4:1)*
         (1+cap(synergy?.petDamage||0,0,.20))));
       enemyHp=Math.max(0,enemyHp-extra);petDealt+=extra;
-      log({actor:"pet",at:lastActionAt,stage:idx+1,turn:heroAttacks,amount:extra,hp:enemyHp,max:foe.hp});
+      log({actor:"pet",at:lastActionAt,stage:idx+1,turn:heroAttacks,amount:extra,hp:enemyHp,max:foe.hp,mechanic:bond?"灵契追击":undefined});
+      if(bond&&tech.tier>=2&&heroHp<hero.hp){
+       const heal=Math.min(hero.hp-heroHp,Math.round(hero.hp*(.02+(pet.style==="qi"&&pet.tier>=2?.02:0)+(pet.spiritCare>=3?.02:0))));
+       heroHp+=heal;log({actor:"potion",source:"bond",at:lastActionAt,stage:idx+1,amount:heal,hp:heroHp,max:hero.hp});
+      }
      }
     }
     if(enemyHp<=0)break;
-    if(foe.special==="swordstorm"){
+    if(foe.special==="swordstorm"&&!(modern&&tech.style==="burst"&&tech.tier>=3&&heroAttacks%3===0)){
      // 18% of the unmitigated successful sword hit is reflected by the boss.
      const counter=Math.round(amount*.12);
      if(counter){heroHp=Math.max(0,heroHp-counter);
@@ -187,14 +201,24 @@ export function simulateEncounter(input,startSeed){
     }else misses++;
     log({actor:hit?"enemy":"miss",owner:"enemy",at:lastActionAt,stage:idx+1,turn:enemyAttacks,
      amount,blocked:absorb,hp:heroHp,max:hero.hp});
+    if(modern&&tech.style==="guard"&&absorb>0){
+     const counter=Math.max(1,Math.round(absorb*((tech.tier>=3?1.3:.8)+(pet.style==="ward"&&pet.tier>=3?.4:0))+hero.attack*.3));
+     if(tech.tier>=3)guardShred=true;
+     enemyHp=Math.max(0,enemyHp-counter);heroDealt+=counter;
+     log({actor:"retaliation",at:lastActionAt,stage:idx+1,amount:counter,hp:enemyHp,max:foe.hp,mechanic:"玄甲反击"});
+    }
     enemyAt+=enemyInterval;
+    if(modern&&pet.style==="ward"&&pet.tier>=2&&shield===0&&enemyAttacks===1)shield=Math.round(hero.hp*.06);
+    if(enemyHp<=0)break;
     if(heroHp<=0)break;
     emergencyHeal();
     if(foe.special==="regeneration"&&enemyAttacks%2===0){
-      const recovered=Math.min(foe.hp-enemyHp,Math.max(1,Math.round(foe.hp*.035)));
+      const suppressed=modern&&(tech.style==="sword"&&tech.tier>=2||pet.style==="pierce"&&pet.tier>=2);
+      const recovered=Math.min(foe.hp-enemyHp,Math.max(1,Math.round(foe.hp*.035*(suppressed?.25:1))));
       enemyHp+=recovered;
       if(recovered)log({actor:"regen",at:lastActionAt,stage:idx+1,amount:recovered,hp:enemyHp,max:foe.hp});
     }
+    if(modern&&foe.special==="howl"&&enemyAttacks%4===3)log({actor:"warning",at:lastActionAt,stage:idx+1,name:"下一次敌方出手：狂啸爆发，可用护盾和护体散应对"});
    }
   }
   enemyRemaining=enemyHp;

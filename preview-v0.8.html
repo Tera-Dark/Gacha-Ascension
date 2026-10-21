@@ -1,30 +1,28 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#111c1a"/>
-<title>抽卡修仙传 v0.9.5 · 真正逐击实时战斗</title>
+<title>抽卡修仙传 · 经营与传承 v0.10</title>
 <link rel="stylesheet" href="./assets/css/workbench.css"/><link rel="stylesheet" href="./assets/css/preview.css"/></head>
-<body><main class="game-shell">
-<header class="app-header"><div class="brand"><div class="brand-seal">仙</div><div><div class="brand-kicker">GACHA ASCENSION · LANDSCAPE COMBAT v0.9.5</div><h1>抽卡修仙传</h1></div></div>
+<body class="pixel-theme"><main class="game-shell">
+<header class="app-header"><div class="brand"><div class="brand-seal">仙</div><div><div class="brand-kicker">GACHA ASCENSION <span>v0.10 · 经营与传承</span></div><h1>抽卡修仙传</h1></div></div>
 <button id="landscapeNavToggle" class="landscape-nav-toggle" type="button" aria-controls="landscapeNav" aria-expanded="false" aria-label="展开系统导航">☰ 系统</button>
-<div class="top-shortcuts"><span class="chip">◆ <strong id="headerStones">110</strong> 灵石</span><span class="chip" id="headerRealm">炼气·初期</span></div></header>
+<div class="top-shortcuts"><span class="chip"><i class="px-resource-glyph">◆</i><span><small>灵石</small><strong id="headerStones">110</strong></span></span><span class="chip"><i class="px-resource-glyph qi">◈</i><span><small>悟道</small><strong id="headerInsight">0</strong></span></span><span class="chip"><i class="px-resource-glyph fate">☯</i><span><small>因果</small><strong id="headerFate">0</strong></span></span><span class="chip realm-chip" id="headerRealm">炼气·初期</span></div></header>
 <div class="app-frame">
 <nav class="system-sidebar" id="landscapeNav" aria-label="玩法系统导航">
 <div class="sidebar-heading">当前活动</div>
-<button class="nav-item is-active" data-view="explore"><span class="nav-glyph">⚔</span><span>地图探索<small>打怪积累 / 守卫 / Boss</small></span></button>
-<button class="nav-item" data-view="cultivate"><span class="nav-glyph">☯</span><span>境界突破<small>五境四阶段 · 无数字等级</small></span></button>
-<button class="nav-item" data-view="gacha"><span class="nav-glyph">✦</span><span>机缘抽卡<small>所有能力的获取来源</small></span></button>
+<button class="nav-item is-active" data-view="explore"><span class="nav-glyph">⚔</span><span>地图探索</span></button>
+<button class="nav-item" data-view="cultivate"><span class="nav-glyph">☯</span><span>境界突破</span></button>
+<button class="nav-item" data-view="gacha"><span class="nav-glyph">✦</span><span>机缘抽卡</span></button>
 <div class="sidebar-heading spaced">成长系统</div>
-<button class="nav-item" data-view="technique"><span class="nav-glyph">⚡</span><span>功法<small>装配主动战斗效果</small></span></button>
-<button class="nav-item" data-view="cave"><span class="nav-glyph">⌂</span><span>洞府<small>经营效率与抽卡投资</small></span></button>
-<button class="nav-item" data-view="pet"><span class="nav-glyph">♧</span><span>灵宠<small>独立攻击 / 护主</small></span></button>
+<button class="nav-item" data-view="technique"><span class="nav-glyph">⚡</span><span>功法</span></button>
+<button class="nav-item" data-view="cave"><span class="nav-glyph">⌂</span><span>洞府</span></button>
+<button class="nav-item" data-view="pet"><span class="nav-glyph">♧</span><span>灵宠</span></button>
 <div class="sidebar-heading spaced">长线追求</div>
-<button class="nav-item" data-view="items"><span class="nav-glyph">🎒</span><span>道具行囊<small>宝箱 / 炼药 / 自动服药</small></span></button>
-<button class="nav-item" data-view="fate"><span class="nav-glyph">✧</span><span>轮回天命<small>跨世遗物 / 因果</small></span></button>
-<button class="nav-item" data-view="atlas"><span class="nav-glyph">◈</span><span>世界图鉴<small>24张地图 · 20个境界</small></span></button>
-<button class="nav-item" data-view="settings"><span class="nav-glyph">⚙</span><span>存档设置<small>独立预览档 / 备份</small></span></button>
-<div class="sidebar-bottom">首四张地图可玩，后20张保留为规划。<br/>所有主要卡包暂时开放，待体验后再确定解锁顺序。</div>
-
-<div class="wb-drawer-map"><div class="sidebar-heading">区域选择 · 已解锁</div><div id="mapDrawerList" class="wb-drawer-map-list"></div><div class="sidebar-heading">当前关卡节点</div><div id="drawerCheckpointTrack" class="wb-drawer-stage-list"></div><p class="wb-drawer-note">已通关的地图可回顾；当前可战斗关卡由进度决定。失败后不会退层。</p></div>
+<button class="nav-item" data-view="items"><span class="nav-glyph">🎒</span><span>道具行囊</span></button>
+<button class="nav-item" data-view="fate"><span class="nav-glyph">✧</span><span>轮回天命</span></button>
+<button class="nav-item" data-view="atlas"><span class="nav-glyph">◈</span><span>世界图鉴</span></button>
+<button class="nav-item" data-view="settings"><span class="nav-glyph">⚙</span><span>存档设置</span></button>
+<div class="sidebar-bottom"><span class="px-nav-landscape" aria-hidden="true"></span></div>
 </nav>
 <div class="app-main">
 <div class="overview-strip">
@@ -35,26 +33,27 @@
 </div>
 <div class="work-area">
 <div class="work-column">
-<div class="view-header"><div><small>V0.9.5 / LIVE COMBAT</small><h2 id="screenTitle">地图探索</h2></div><span class="live-status" id="autoStatus">● 待命</span></div>
+<div class="view-header"><div><div class="module-title"><h2 id="screenTitle">地图探索</h2><button type="button" class="module-help" data-module-help="" aria-label="查看当前模块说明">?</button></div></div><span class="live-status" id="autoStatus">● 待命</span></div>
 <div class="views">
 <section class="view is-active" data-view-panel="explore">
+<dialog id="explorationMap" class="module-dialog map-dialog" aria-labelledby="explorationMapTitle"><div class="module-dialog-head"><h3 id="explorationMapTitle">地图与关卡</h3><button id="closeExplorationMap" type="button" aria-label="关闭地图">✕</button></div><h4>区域</h4><div id="mapDrawerList" class="wb-drawer-map-list"></div><h4>当前关卡</h4><div id="drawerCheckpointTrack" class="wb-drawer-stage-list"></div></dialog>
 <div class="battle-workbench">
  <section class="wb-player wb-pane" aria-label="修士战斗配置">
-  <div class="wb-heading"><span class="eyebrow">修士 · 当前战斗配置</span><strong id="heroLabel">炼气·初期</strong></div>
-  <div class="wb-health-head"><b>气血 <span id="heroHP">260 / 260</span></b><small id="heroAttackSpeed">每次攻击 2.45秒</small></div>
-  <div class="track health-track"><div class="track-fill hero-health" id="heroBar"></div></div>
-  <div class="track wb-attack-track" aria-label="修士出手进度"><div class="wb-attack-fill" id="heroAttackBar"></div></div>
+  <div class="wb-heading"><span class="eyebrow">本世修士</span><strong id="heroLabel">炼气·初期</strong></div>
+  <div class="px-loadout">
   <div class="wb-portrait">
-   <div class="sprite hero-sprite" id="heroSprite"><span>仙</span></div>
-   <div><h3>本世修士</h3><p id="heroStats">攻击29 · 防御12</p><div class="wb-stats-mini" id="playerStatsCompact">命中 · 减伤 · 攻速</div></div>
+   <div class="px-portrait-art" id="cultivatorPortrait" role="img" aria-label="青衣剑修概念立绘"></div>
+   <div class="px-portrait-caption"><small>一剑入青云</small><h3>青衣散修</h3><p id="heroStats">攻击29 · 防御12</p><div class="wb-stats-mini" id="playerStatsCompact">命中 · 减伤 · 攻速</div></div>
   </div>
-  <div class="wb-subheading"><strong>法器与装备</strong><button id="openGearBag" type="button" class="wb-text-link">打开背包 ›</button></div>
+  <div class="px-gear-column">
+  <div class="wb-subheading"><strong>法器与装备</strong><button id="openGearBag" type="button" class="wb-text-link">打开行囊 ›</button></div>
   <div class="wb-gear-grid" id="equipmentGrid" aria-label="十个装备槽位"></div>
-  <div class="wb-subheading"><strong>本命法器 · 大境界逐阶解锁</strong><small id="artifactSlotsInfo">筑基起解锁</small></div>
+  </div></div>
+  <div class="wb-subheading"><strong>本命法器</strong><small id="artifactSlotsInfo">筑基起解锁</small></div>
   <div class="wb-artifact-grid" id="artifactGrid" aria-label="独立法器槽位"></div>
   <div class="wb-quicklines">
-   <div><span>主修功法</span><strong id="wbTechnique">尚未习得</strong></div>
-   <div><span>出战灵宠</span><strong id="wbPet">暂无</strong></div>
+   <div><i class="px-small-icon technique" aria-hidden="true"></i><span>主修功法</span><strong id="wbTechnique">尚未习得</strong></div>
+   <div><i class="px-small-icon pet" aria-hidden="true"></i><span>出战灵宠</span><strong id="wbPet">暂无</strong></div>
   </div>
   <div class="wb-advisor" aria-label="战前构筑推演">
    <div class="wb-advisor-head"><strong>战前构筑推演</strong><span id="synergyLabel">尚无双修共鸣</span></div>
@@ -74,22 +73,38 @@
   </details>
  </section>
  <section class="wb-enemy wb-pane" aria-label="怪物与地图战斗">
-  <div class="wb-heading"><div><span class="eyebrow" id="mapTag">第一卷 · 炼气</span><strong id="mapName">青云山麓</strong></div><button id="openMapDrawer" class="wb-text-link" type="button">地图与选关 ☰</button></div>
+  <div class="wb-heading"><div><span class="eyebrow" id="mapTag">第一卷 · 炼气</span><div class="module-title"><strong id="mapName">青云山麓</strong><button type="button" class="module-help explore-local-help" data-module-help="explore" aria-label="查看地图探索说明">?</button></div></div><button id="openMapDrawer" class="wb-text-link" type="button">地图与关卡 ☰</button></div>
   <section class="novice-guide" id="noviceGuide" hidden aria-label="首次修行指引" aria-live="polite">
    <div><small id="noviceStep">新手修行 · 1/3</small><strong id="noviceTitle">先抽一张机缘</strong><p id="noviceDescription">第一张战力卡将强化攻击。</p></div>
    <div class="novice-guide-actions"><button id="noviceAction" type="button">开始修行 →</button><button id="noviceSkip" type="button" aria-label="跳过新手引导">跳过</button></div>
   </section>
   <div class="wb-map-flavor"><span id="mapFlavor">第1关</span><span id="mapBoss">Boss</span></div>
-  <div class="wb-health-head"><b id="enemyLabel">山野妖兽</b><b id="enemyHP">65 / 65</b></div>
-  <div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div>
-  <div class="track wb-attack-track enemy-attack-track" aria-label="敌人出手进度"><div class="wb-attack-fill enemy-attack-fill" id="enemyAttackBar"></div></div>
-  <div class="wb-enemy-rate"><span id="enemyAttackSpeed">每次攻击 2.65秒</span><span id="wbWave">小怪 · 单波</span></div>
   <div class="wb-monster-stage" id="combatTheatre">
-    <div class="sprite enemy-sprite wb-monster-icon" id="enemySprite"><span>妖</span></div>
+    <div class="px-scene-backdrop" id="pixelBackdrop" aria-hidden="true"></div>
+    <div class="px-scene-vignette" aria-hidden="true"></div>
+    <div class="px-scene-caption"><span>青山不改 · 剑意长存</span><small id="sceneChapter">青云山麓 / 晨雾</small></div>
+    <div class="px-combat-health px-hero-health">
+     <div class="wb-health-head"><b>修士</b><b id="heroHP">260 / 260</b></div>
+     <div class="track health-track"><div class="track-fill hero-health" id="heroBar"></div></div>
+     <div class="track wb-attack-track" aria-label="修士出手进度"><div class="wb-attack-fill" id="heroAttackBar"></div></div>
+     <small id="heroAttackSpeed">每次攻击 2.45秒</small>
+    </div>
+    <div class="px-combat-health px-enemy-health">
+     <div class="wb-health-head"><b id="enemyLabel">山野妖兽</b><b id="enemyHP">65 / 65</b></div>
+     <div class="track health-track"><div class="track-fill enemy-health" id="enemyBar"></div></div>
+     <div class="track wb-attack-track enemy-attack-track" aria-label="敌人出手进度"><div class="wb-attack-fill enemy-attack-fill" id="enemyAttackBar"></div></div>
+     <small id="enemyAttackSpeed">每次攻击 2.65秒</small>
+    </div>
+    <div class="sprite hero-sprite px-scene-hero" id="heroSprite"><span class="px-sr-only">青衣剑修</span><div class="px-actor-art px-hero-art" id="heroArt"></div></div>
+    <div class="sprite enemy-sprite wb-monster-icon" id="enemySprite"><span class="px-sr-only">妖</span><div class="px-actor-art px-enemy-art" id="enemyArt"></div></div>
+    <div class="px-pet-art" id="pixelPet" hidden aria-hidden="true"></div>
+    <div class="px-sword-trail" id="swordTrail" aria-hidden="true"></div>
+    <div class="px-scene-motes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="clash-sigil" id="clashSigil">⚔</div>
     <div class="damage-layer" id="damageLayer"></div>
     <div class="wb-fight-status" id="combatStatus">准备战斗</div>
   </div>
+  <div class="wb-enemy-rate"><span id="wbWave">小怪 · 单波</span><span class="px-scene-note">青云行记 · 当前关卡</span></div>
   <div class="wb-enemy-summary">
     <span id="enemyStats">攻击 13 · 防御 4</span>
     <span id="wbEnemyTraits">普通妖兽</span>
@@ -99,6 +114,7 @@
     <div class="wb-compact"><span>修为 / 战</span><strong id="mobQi">+12</strong></div>
     <div class="wb-compact"><span>守卫胜率</span><strong id="guardForecast">模拟中</strong></div>
   </div>
+  <div class="checkpoint-wrap"><div class="checkpoint-title"><b>守关进度</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
   <div class="wb-farm-row"><label for="farmFocus">刷怪目标</label>
    <select id="farmFocus" aria-label="刷怪目标"><option value="balanced">均衡小怪</option><option value="stones">灵石优先</option><option value="cultivation">修为优先</option></select>
    <small id="farmFocusTip">只掉基础资源</small></div>
@@ -117,58 +133,55 @@
   <div class="battle-feedback"><span class="result-bullet" id="combatReport">守卫失败不退关</span><span class="last-earn" id="rewardLabel">◆ 0 / 修为 0</span></div>
   <div class="wb-loot-flash" id="combatLootResult" aria-live="polite">击败怪物有机会获得装备箱、药草箱；死亡可能损失穿戴装备。</div>
   <details class="v8-disclosure wb-drop-panel"><summary><span><strong>本关奖励与挑战详情</strong><small>守卫波次 · 首通资格 · 刷怪策略</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="wb-drop-info"><p id="goalHint">继续积累灵石和修为，抽卡培养。</p><button class="text-action" data-view="gacha">前往抽卡 →</button></div></details>
-  <div class="checkpoint-wrap"><div class="checkpoint-title"><b>关卡推进</b><span id="checkpointCount">第1/8关</span></div><div class="checkpoint-track" id="checkpointTrack"></div></div>
+  <div class="px-battle-journal"><div><div class="px-section-label">战斗记录 <span>随剑而行</span></div><ol id="pixelCombatLog" aria-label="最近战斗记录"><li>山风拂衣，静候出剑。</li></ol></div><div class="px-current-loot"><div class="px-section-label">本次收获</div><strong id="pixelLootSummary">尚未结算</strong><small>每场战斗结束后入账</small></div></div>
  </section>
 </div>
 </section>
 <section class="view" data-view-panel="cultivate">
-<div class="v8-panel"><div class="section-kicker">DAO / CULTIVATION</div><h3 id="realmName">炼气 · 初期</h3><p>取消数值等级，每个境界都经过初期、中期、后期、圆满。战斗积累修为；抽修为造化获得悟道；跨大境界还要特定丹药与地图Boss资格。</p>
+<div class="v8-panel"><div class="section-kicker">DAO / CULTIVATION</div><h3 id="realmName">炼气 · 初期</h3>
 <div class="v8-resource"><div><small>已积累修为</small><strong id="currentQi">0</strong></div><div><small>所需修为</small><strong id="neededQi">100</strong></div></div><div class="track xp-track"><div class="track-fill xp-fill" id="qiProgress" style="width:0%"></div></div>
 <div class="v8-resource"><div><small>当前悟道</small><strong id="currentInsight">0</strong></div><div><small>所需悟道</small><strong id="neededInsight">1</strong></div></div><div class="track xp-track"><div class="track-fill xp-fill" id="insightProgress" style="width:0%"></div></div>
 <div class="v8-gate" id="realmGate">小境界突破无需丹药。</div><button class="action-btn primary-action v8-primary-wide" id="breakthrough">尝试突破</button><details class="v8-disclosure" id="cultivate"><summary><span><strong>修炼与突破详细数值</strong><small>指数费用 · 悟道 · 丹药 · 修为效率</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-cultivate"></div></details>
 </div><details class="v8-disclosure v8-route-disclosure"><summary><span><strong>五大境界 · 20阶段总览</strong><small>展开查看全部境界，默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="realm-route" id="realmRoute"></div></details>
 </section>
-<section class="view" data-view-panel="gacha"><div class="view-intro">每一抽都会直接改变本世养成。建议先体验战力，再视守卫弱点选择功法、灵宠或经营收益；境界突破需要悟道，筑基还要筑基丹。</div>
+<section class="view" data-view-panel="gacha">
 <div class="v8-gacha-direction" id="gachaDirection" aria-live="polite">正在分析目前最适合的卡包……</div>
-<label class="v8-quick-reveal"><input id="quickReveal" type="checkbox"/> 重复抽卡快捷揭晓 <small>第一次与高品质机缘仍保留完整演出，结果始终先存档</small></label><details class="v8-disclosure" id="gacha"><summary><span><strong>卡池数值与全部掉落概率</strong><small>单抽与十连价格 · 实际品质概率 · 具体卡牌与库存</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-gacha"></div></details><div class="packs v8-packs" id="packList"></div><div class="compact-card"><h3>抽卡结果</h3><div id="drawResults" class="v8-draw-results">抽卡以后会显示新能力与实际成长变化。</div></div></section>
-<section class="view" data-view-panel="technique"><div class="v8-panel"><h3>主修功法</h3><p>不同功法真正改变战斗：剑气追击、减伤、灵宠协同和三回合爆发。最多装配一门，免费切换；同名功法重复抽中会提高强度。</p><div id="techniqueList" class="v8-inventory"></div><details class="v8-disclosure" id="technique"><summary><span><strong>功法技能详情</strong><small>流派克制 · 功法倍率 · 功法库存与重复叠加</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-technique"></div></details></div></section>
-<section class="view" data-view-panel="cave"><div class="v8-panel"><h3>洞府经营</h3><p>抽到的建筑会自动投入运营。灵田增加每场灵石，聚灵阵增加修为，行云台缩短战斗间隔，蕴兽台增强灵宠；不能花灵石直接点升级。</p><div id="caveList" class="v8-inventory"></div><details class="v8-disclosure" id="cave"><summary><span><strong>洞府收益计算明细</strong><small>建筑叠加 · 洞府增量 · 收益加算上限</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-cave"></div></details></div></section>
-<section class="view" data-view-panel="pet"><div class="v8-panel"><h3>御兽契约</h3><p>最多出战一只灵宠。青狐持续输出、玄龟护主、雷隼破甲、灵鹿助修；能力通过实际逐回合战斗结算。</p><div id="petList" class="v8-inventory"></div><details class="v8-disclosure" id="pet"><summary><span><strong>灵宠战斗参数详情</strong><small>实际技能强度 · 护盾与破甲 · 灵宠库存</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-pet"></div></details></div></section>
+<label class="v8-quick-reveal"><input id="quickReveal" type="checkbox"/> 重复抽卡快捷揭晓 </label><details class="v8-disclosure" id="gacha"><summary><span><strong>卡池数值与全部掉落概率</strong><small>单抽与十连价格 · 实际品质概率 · 具体卡牌与库存</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-gacha"></div></details><div class="packs v8-packs" id="packList"></div><div class="compact-card"><h3>抽卡结果</h3><div id="drawResults" class="v8-draw-results">暂无抽卡记录</div></div></section>
+<section class="view" data-view-panel="technique"><div class="v8-panel"><h3>主修功法</h3><div id="techniqueList" class="v8-inventory"></div><details class="v8-disclosure" id="technique"><summary><span><strong>功法技能详情</strong><small>流派克制 · 功法倍率 · 功法库存与重复叠加</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-technique"></div></details></div></section>
+<section class="view" data-view-panel="cave"><div class="v8-panel"><h3>洞府经营</h3><div id="caveList" class="v8-inventory"></div><details class="v8-disclosure" id="cave"><summary><span><strong>洞府收益计算明细</strong><small>建筑叠加 · 洞府增量 · 收益加算上限</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-cave"></div></details></div></section>
+<section class="view" data-view-panel="pet"><div class="v8-panel"><h3>御兽契约</h3><div id="petList" class="v8-inventory"></div><details class="v8-disclosure" id="pet"><summary><span><strong>灵宠战斗参数详情</strong><small>实际技能强度 · 护盾与破甲 · 灵宠库存</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-pet"></div></details></div></section>
 <section class="view" data-view-panel="fate">
-<div class="v8-panel"><div class="section-kicker">SAMSARA / FATE</div><h3>轮回天命</h3><p>击败第四张地图最终Boss以后可自愿轮回。轮回清空当前世修炼、卡牌和地图，保留因果与已抽到的永久遗物。首四图切片已具备真正的跨世记录。</p><div class="v8-resource"><div><small>轮回次数</small><strong id="reincarnations">0</strong></div><div><small>持有因果</small><strong id="fatePoints">0</strong></div><div><small>最大地图</small><strong id="bestMap">第1图</strong></div></div><div class="v8-gate" id="reincarnationHint">完成雾隐剑冢后可以选择轮回。</div><div id="reincarnationChoice" class="v8-fate-choice">轮回前可预览本次因果和永久遗物收益。</div>
+<div class="v8-panel"><div class="section-kicker">SAMSARA / FATE</div><h3>轮回天命</h3><div class="v8-resource"><div><small>轮回次数</small><strong id="reincarnations">0</strong></div><div><small>持有因果</small><strong id="fatePoints">0</strong></div><div><small>最大地图</small><strong id="bestMap">第1图</strong></div></div><div class="v8-gate" id="reincarnationHint">完成雾隐剑冢后可以选择轮回。</div><div id="reincarnationChoice" class="v8-fate-choice">轮回前可预览本次因果和永久遗物收益。</div>
 <button class="action-btn primary-action v8-primary-wide" id="reincarnate">自愿轮回（本世进度清零）</button>
 </div>
-<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><p>本切片已实行五阶常规遗物、含基础攻击/气血/修为/灵石的无上限永久叠层。每箱另有十万分之一的太古奇珍与百万分之一的鸿蒙异宝，两层独立追加、均不保底；正式完整图鉴后续扩充。</p><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
+<div class="v8-panel"><h3>天命遗物箱 <span class="section-kicker">40因果 / 箱</span></h3><button class="action-btn" id="openRelic">开启天命遗物箱</button><div id="relicResult" class="v8-draw-results"></div>
 <details class="v8-disclosure v8-relic-inventory"><summary><span><strong>查看永久遗物图鉴</strong><small>无上限常规遗物、太古奇珍及鸿蒙异宝 · 默认收起</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="relicList" class="v8-inventory"></div></details><details class="v8-disclosure" id="fate"><summary><span><strong>轮回账本与遗物概率</strong><small>因果结算 · 永久效果 · 鸿蒙独立稀有度</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-fate"></div></details></div>
 </section>
 <section class="view" data-view-panel="items">
-<div class="v8-panel"><h3>🎒 道具行囊 · 战利品与丹药</h3>
-<p>怪物有概率掉落装备箱和药草箱；开箱由固定公开池决定，稀有装备和本命法器主要通过机缘抽卡获得。</p>
-<div class="wb-items-panel"><h4>战利品宝箱</h4><div id="boxInventory" class="wb-item-inventory"></div>
-<h4>药草与炼药</h4><div id="herbInventory" class="wb-item-inventory"></div>
-<h4>战斗消耗品</h4><div id="consumableInventory" class="wb-item-inventory"></div>
-</div>
-<div class="wb-auto-potion"><h4>回春自律 · 轮回解锁</h4><p>首次解锁消耗25因果，永久保留。开启后，战斗中生命降低到设定比例且身上有回春丹时，才会自动消耗丹药。</p>
+<div class="v8-panel bank-panel"><div class="bank-toolbar"><label class="bank-search"><span>查找</span><input id="bankSearch" type="search" placeholder="物品名称" aria-label="搜索行囊物品" autocomplete="off"></label><span id="bankCount"></span></div>
+<div id="bankFilters" class="bank-filters" role="group" aria-label="物品分类"></div>
+<div id="bankGrid" class="bank-grid" aria-label="行囊物品"></div>
+<details class="wb-auto-potion"><summary>自动服药</summary>
 <div id="autoPotionStatus" class="v8-gate">尚未解锁</div>
 <div class="wb-auto-row">
 <button id="unlockAutoPotion" class="action-btn">消耗25因果解锁</button>
 <label for="autoPotionThreshold">气血阈值</label>
 <select id="autoPotionThreshold" aria-label="自动补血阈值"><option value="0.2">20%</option><option value="0.35">35%</option><option value="0.5">50%</option><option value="0.7">70%</option></select>
 <button id="toggleAutoPotion" class="action-btn">开启自动吃药</button>
-</div></div>
+</div></details>
 <details class="v8-disclosure" id="items"><summary><span><strong>掉落率及固定池说明</strong><small>每场独立概率 · 装备箱品质限制 · 药草数量</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-items"></div></details>
 </div></section>
-<section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><p>前四张可游玩、其余二十张已录入世界设定与Boss名称，后续接入同一套地图/境界模块即可扩展。</p><div id="mapAtlas" class="v8-atlas"></div>
+<section class="view" data-view-panel="atlas"><div class="v8-panel"><h3>大千世界 · 24张地图</h3><div id="mapAtlas" class="v8-atlas"></div>
 <details class="v8-disclosure v8-future-map"><summary><span><strong>查看未开放的20张地图</strong><small>地图规划数据，尚未实装关卡</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div id="mapAtlasFuture" class="v8-atlas"></div></details>
 <details class="v8-disclosure" id="atlas"><summary><span><strong>世界地图与指数曲线</strong><small>地图强度倍率 · Boss属性 · 开放范围</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-atlas"></div></details></div></section>
-<section class="view" data-view-panel="settings"><div class="v8-panel"><h3>独立预览存档</h3><p>v0.8 使用全新存档命名空间，旧版 v0.7.1 / M0.1 / v0.1 的记录不会被覆盖。可导出JSON，重开前自动备份。</p>
-<button class="action-btn" id="exportSave">导出当前存档</button> <button class="action-btn danger-btn" id="resetSave">备份并重开</button><div class="v8-gate" id="saveStatus">等待加载中……</div><p class="v8-legacy-link">开发者资料：<a href="./m0.html">历史版本 M0 演示（独立存档）</a></p><details class="v8-disclosure" id="settings"><summary><span><strong>存档与资源统计明细</strong><small>Schema · 交易记录 · 灵石流水 · 战斗战绩</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-settings"></div></details></div></section>
+<section class="view" data-view-panel="settings"><div class="v8-panel"><h3>独立预览存档</h3><p id="artSourceStatus">美术预览：本地像素素材加载中。</p>
+<button class="action-btn" id="exportSave">导出当前存档</button> <button class="action-btn danger-btn" id="resetSave">备份并重开</button><div class="v8-gate" id="saveStatus">等待加载中……</div><details class="v8-disclosure" id="settings"><summary><span><strong>存档与资源统计明细</strong><small>Schema · 交易记录 · 灵石流水 · 战斗战绩</small></span><span class="v8-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="v8-detail-content" id="detail-settings"></div></details></div></section>
 </div>
 </div>
-<aside class="detail-rail"><div class="rail-card character-card"><div class="rail-heading"><h3>修士战力</h3><span>由境界与抽卡组成</span></div><div class="portrait-avatar">仙</div>
+<aside class="detail-rail"><section class="rail-card bank-detail-card" aria-label="选中物品详情"><div class="rail-heading"><h3>物品详情</h3></div><div id="bankDetail" aria-live="polite"></div></section><div class="rail-card character-card"><div class="rail-heading"><h3>修士战力</h3></div><div class="portrait-avatar">仙</div>
 <div class="stat-pair"><span>攻击</span><strong id="sideAtk">29</strong></div><div class="stat-pair"><span>气血</span><strong id="sideHp">260</strong></div><div class="stat-pair"><span>防御</span><strong id="sideDef">12</strong></div><div class="rail-divider"></div>
 <div class="stat-pair"><span>主修功法</span><strong id="sideTech">尚未习得</strong></div><div class="stat-pair"><span>出战灵宠</span><strong id="sidePet">暂无</strong></div><div class="stat-pair"><span>灵石效率</span><strong id="sideStone">+0%</strong></div><div class="stat-pair"><span>修为效率</span><strong id="sideQi">+0%</strong></div></div>
-<div class="rail-card rail-goal"><div class="rail-heading"><h3>当前任务</h3><span>随时积累</span></div><p id="rightGoal">本关小怪可以反复刷取。</p><button class="rail-cta" data-view="gacha">前往抽卡 →</button></div></aside>
+<div class="rail-card rail-goal"><div class="rail-heading"><h3>当前任务</h3></div><p id="rightGoal">本关小怪可以反复刷取。</p><button class="rail-cta" data-view="gacha">前往抽卡 →</button></div></aside>
 </div></div></div>
 <nav class="mobile-tabs" aria-label="手机快捷导航">
 <button class="is-active" data-view="explore" aria-label="地图探索"><span aria-hidden="true">⚔</span>探索</button>
@@ -210,6 +223,7 @@
   <button id="closeReveal" type="button" class="v8-reveal-close" hidden>收下机缘</button>
  </div>
 </div>
+<dialog id="moduleHelp" class="module-dialog" aria-labelledby="moduleHelpTitle"><div class="module-dialog-head"><h2 id="moduleHelpTitle">模块说明</h2><button id="closeModuleHelp" type="button" aria-label="关闭模块说明">✕</button></div><div id="moduleHelpText"></div><div id="moduleHelpSections"></div></dialog>
 <div class="v8-toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module" src="./src/v8/ui.mjs"></script>
 </main></body></html>

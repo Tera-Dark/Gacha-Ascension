@@ -66,18 +66,18 @@ test("first battle pack draw boosts hero automatically, cultivation always gains
 });
 test("small breakthroughs require previous map Boss as well as Qi and insight",()=>{
  let s=createSave(1);
- s.run.qi=100000;s.run.insight=100;
+ s.run.qi=1000000;s.run.insight=100;
  let needed=breakthroughRequirements(s,c);
  assert.equal(needed.needMapMilestone,true);assert.equal(needed.canBreak,false);
  assert.throws(()=>execute(s,"BREAKTHROUGH"),/地图Boss/);
  s.run.mapIndex=1;
  const result=execute(s,"BREAKTHROUGH");
  assert.equal(result.state.run.realmIndex,1);
- assert.equal(result.state.run.qi,100000-c.realms[0].nextQiCost);
+ assert.equal(result.state.run.qi,1000000-breakthroughRequirements(s,c).qi);
 });
 test("major breakthrough after fourth map requires qi, insight and a gacha-sourced pill",()=>{
  const s=createSave();s.run.mapIndex=3;s.run.checkpoint=7;s.run.bossCleared=true;
- s.run.realmIndex=3;s.run.qi=3000;s.run.insight=20;
+ s.run.realmIndex=3;s.run.qi=3000000;s.run.insight=20;
  assert.throws(()=>execute(s,"BREAKTHROUGH"),/筑基丹/);
  s.run.pills.D004=1;
  const r=execute(s,"BREAKTHROUGH");

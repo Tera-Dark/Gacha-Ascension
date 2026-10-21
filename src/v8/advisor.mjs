@@ -60,9 +60,10 @@ export function nextStep(s,c,forecast=null){
   if(!req.hasInsight&&r.stones<packCost(s,c,"cultivation"))
    return {title:"先攒悟道抽卡灵石",description:"即将突破至"+gate.realm+"，修为造化单抽还差"+(packCost(s,c,"cultivation")-r.stones)+"灵石。先刷当前小怪，再去抽悟道。",view:"explore",action:"前往自动刷怪"};
   if(!req.hasInsight)return pick("cultivation","突破前补悟道","已抵达"+gate.map+"，进入下一关守卫需要"+gate.realm+"。悟道还差"+(req.insight-r.insight)+"点；修为造化每抽至少获得1点悟道。","抽修为造化");
-  if(!req.hasQi)return {title:"突破前补修为",description:"已抵达"+gate.map+"，先刷小怪积累"+(req.qi-r.qi)+"修为，便可突破至"+gate.realm+"并挑战守卫。",view:"explore",action:"前往自动刷怪"};
+  if(!req.hasQi)return {title:"突破前补修为",description:"已抵达"+gate.map+"，可闭关修炼，或刷小怪积累"+(req.qi-r.qi)+"修为，便可突破至"+gate.realm+"并挑战守卫。",view:"explore",action:"前往自动刷怪"};
   return {title:"境界突破在即",description:"已到达下一图的境界门槛，去修炼页面检查突破要求。",view:"cultivate",action:"前往突破"};
  }
+ if(r.guardianWins>0&&!r.mastery.brew&&!(r.consumables.MED001>0))return {title:"开第一炉丹",description:"采集三份回春草，在洞府加入一颗回春丹的炼制排程。采药是主活动，丹炉独立生产；可替代单纯重复刷怪。",view:"cave",action:"安排采药与炼丹"};
  if(req.canBreak&&r.realmIndex<4)return {title:"突破条件已齐",description:"境界条件已满足。先突破可获得新的基础属性，再继续探索。",view:"cultivate",action:"前往突破"};
  if(r.bossCleared){
   if(r.realmIndex>=4)return {title:"本世圆满",description:"四图和筑基境界均已达成，可选择轮回取得永久天命。筑基完成比提前轮回多获得10因果。",view:"fate",action:"查看轮回"};

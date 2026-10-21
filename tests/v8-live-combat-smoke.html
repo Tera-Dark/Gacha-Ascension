@@ -10,7 +10,7 @@ const check=(truth,msg)=>{if(!truth)throw Error(msg)};
 d.addEventListener("load",async()=>{
  try{
   const doc=d.contentDocument,w=d.contentWindow;
-  for(let i=0;i<100&&!doc.getElementById("autoFarm");i++)await wait(30);
+  for(let i=0;i<150&&(!doc.querySelector('#packList [data-draw="battle"]')||!doc.querySelector('#heroArt canvas'));i++)await wait(30);
   const c=loadCatalog(await (await fetch("../data/realms-maps.v0.8.proposal.json")).json(),
     await (await fetch("../data/v8-slice.json")).json());
   check(!!doc.querySelector('#packList [data-draw="battle"]'),"game data did not render");
@@ -22,17 +22,35 @@ d.addEventListener("load",async()=>{
   const predicted=fight(state,c,"mob",{seed:state.seed});
   const first=predicted.logs.find(e=>e.actor==="hero"&&e.amount>0&&e.timeMs<predicted.timeMs-100);
   check(!!first,"test mob did not have a visible mid-encounter hit");
-  await wait(first.timeMs+130);
+  const canvas=doc.querySelector('#heroArt canvas'),enemyCanvas=doc.querySelector('#enemyArt canvas');
+  check(canvas&&enemyCanvas,"decoded sprite canvases missing");
+  const origin=state.run.idle.at;
+  await wait(Math.max(0,origin+first.timeMs-100-Date.now()));
+  check(doc.getElementById('heroArt').dataset.motion==='attack',"sword did not wind up BEFORE the damage timestamp");
+  check(Number(doc.getElementById('heroArt').dataset.frame)<3,"contact frame shown before damage");
+  const progress=parseFloat(doc.getElementById('heroAttackBar').style.width);
+  check(progress>90&&progress<100,"attack bar does not track the current encounter: "+progress);
+  check(w.getComputedStyle(doc.getElementById('heroAttackBar')).animationName==='none',"independent looping attack bar still active");
+  await wait(210);
   const shown=doc.getElementById("enemyHP").textContent;
   check(shown.startsWith(first.hp+" /"),"HP did not change at the predicted attack: "+shown+" vs "+first.hp);
   check(read().run.lastBattle===null,"battle reward/receipt settled before the countdown finished");
-  const balance=Math.max(0,predicted.timeMs-first.timeMs-130);
-  await wait(balance+350);
+  const contact=doc.getElementById('heroArt');
+  check(contact.dataset.motion==='attack'&&Number(contact.dataset.frame)>=3,"contact/recovery pose is not aligned with HP");
+  check(doc.querySelector('#heroArt canvas')===canvas,"sprite surface recreated during attack");
+  check(w.getComputedStyle(contact).backgroundImage==='none',"sprite still swaps CSS background URLs");
+  const opaque=canvas.getContext('2d').getImageData(0,0,192,192).data.some((v,i)=>i%4===3&&v>0);
+  check(opaque,"sprite canvas flashed empty");
+  let observedAt=null;
+  const deadline=origin+predicted.timeMs;
+  while(!read().run.lastBattle&&Date.now()<deadline+600){await wait(16)}
+  observedAt=Date.now();
   check(!!read().run.lastBattle,"combat did not settle at completion");
+  check(observedAt-deadline<250,"settlement lagged final contact by "+(observedAt-deadline)+"ms");
   check(read().run.victories>=1,"battle victory was not persisted");
   doc.getElementById("autoFarm").click();
   check(!read().run.idle.active,"auto mode did not stop cleanly");
-  out.dataset.result="PASS";out.textContent="PASS: visible early hit, receipt only at encounter completion, deterministic rewards and safe stop";
+  out.dataset.result="PASS";out.textContent="PASS: retained decoded sprites, windup/contact/HP and bars share one clock, settlement lag "+(observedAt-deadline)+"ms, deterministic rewards and safe stop";
  }catch(error){out.dataset.result="FAIL";out.textContent="FAIL: "+error.message}
 });
 </script></body></html>

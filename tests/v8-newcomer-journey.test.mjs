@@ -10,7 +10,7 @@ const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json")
 const exec=(s,type,other={})=>dispatch(s,c,{seq:s.seq+1,type,...other});
 test("brand new players get a clear three-step journey instead of a 96% first guardian",()=>{
  let s=createSave(20261020);
- assert.equal(SCHEMA,8);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
+ assert.equal(SCHEMA,9);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
  assert.equal(noviceStep(s).index,1);
  assert.equal(nextStep(s,c,combatAssessment(s,c,"guardian",24)).packId,"battle");
  assert.equal(nextStep(s,c,null).view,"gacha");
@@ -58,7 +58,7 @@ test("advice does not send a resource-poor player to a disabled realm breakthrou
  const funded=nextStep(s,c,{winRate:1});
  assert.equal(funded.packId,"cultivation");
  assert.match(funded.title,/悟道/);
- s.run.insight=10;s.run.qi=100;
+ s.run.insight=10;s.run.qi=breakthroughRequirements(s,c).qi;
  assert.equal(nextStep(s,c,null).view,"cultivate");
 });
 test("boss clears before or after the final major breakthrough have explicitly different rebirth yields",()=>{

@@ -1,4 +1,4 @@
-name: v0.8 playable slice acceptance
+name: Current game logic and browser acceptance
 on:
   push:
     paths:
@@ -11,6 +11,8 @@ on:
       - "AGENTS.md"
       - "codex.html"
       - "assets/css/preview.css"
+      - "assets/pixel/**"
+      - "docs/**"
       - "tests/v8*.test.mjs"
       - "tests/v8-mobile-smoke.html"
       - "tests/v8-landscape-smoke.html"
@@ -19,6 +21,8 @@ on:
       - "tests/v8-novice-onboarding-smoke.html"
       - "tests/v8-true-manual-combat-smoke.html"
       - "tests/v8-auto-push-realtime-smoke.html"
+      - "tests/v8-bank-smoke.html"
+      - "tests/v8-management-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
       - "scripts/audit-newcomer-v094.mjs"
       - "scripts/verify-v8.mjs"
@@ -38,30 +42,28 @@ jobs:
           node-version: '22'
       - name: Validate prototype mechanics, world data, save and UI
         run: npm run check:v8
-      - name: Ensure actual guided new accounts naturally break realms before new map Bosses
-        run: node scripts/audit-newcomer-v094.mjs
       - name: Serve preview for real browser smoke
         run: |
-          python3 -m http.server 4173 >/tmp/v8-site.log 2>&1 &
+          python3 -m http.server 4180 >/tmp/v8-site.log 2>&1 &
           echo $! >/tmp/v8-server.pid
           sleep 2
       - name: Verify rendered desktop and phone HTML
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           test -n "$CHROME"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4000 --window-size=1440,900 --dump-dom http://127.0.0.1:4173/preview-v0.8.html >/tmp/v8-desktop-dom.html 2>/tmp/v8-browser.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4000 --window-size=1440,900 --dump-dom http://127.0.0.1:4180/preview-v0.8.html >/tmp/v8-desktop-dom.html 2>/tmp/v8-browser.log
           grep -q 'data-view-panel="explore"' /tmp/v8-desktop-dom.html
           grep -q 'data-draw="battle"' /tmp/v8-desktop-dom.html
           grep -q 'data-draw="elixir"' /tmp/v8-desktop-dom.html
           grep -q 'id="mapName">青云山麓' /tmp/v8-desktop-dom.html
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3000 --window-size=1440,900 --screenshot=/tmp/v8-desktop.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/v8-phone.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3000 --window-size=1440,900 --screenshot=/tmp/v8-desktop.png http://127.0.0.1:4180/preview-v0.8.html >/dev/null 2>&1
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3000 --window-size=390,844 --screenshot=/tmp/v8-phone.png http://127.0.0.1:4180/preview-v0.8.html >/dev/null 2>&1
           test -s /tmp/v8-desktop.png
           test -s /tmp/v8-phone.png
       - name: Click mobile accordions and More system drawer in Chromium
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=9000 --window-size=390,844 --dump-dom http://127.0.0.1:4173/tests/v8-mobile-smoke.html >/tmp/v8-mobile-functional.html 2>/tmp/v8-mobile-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=9000 --window-size=390,844 --dump-dom http://127.0.0.1:4180/tests/v8-mobile-smoke.html >/tmp/v8-mobile-functional.html 2>/tmp/v8-mobile-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-mobile-functional.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-mobile-functional.html || true
             cat /tmp/v8-mobile-errors.log
@@ -70,7 +72,7 @@ jobs:
       - name: Verify visible HP damage before auto combat settles
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=14000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-live-combat-smoke.html >/tmp/v8-live-combat.html 2>/tmp/v8-live-combat-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=14000 --window-size=900,700 --dump-dom http://127.0.0.1:4180/tests/v8-live-combat-smoke.html >/tmp/v8-live-combat.html 2>/tmp/v8-live-combat-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-live-combat.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-live-combat.html || true
             cat /tmp/v8-live-combat-errors.log
@@ -79,7 +81,7 @@ jobs:
       - name: Verify malformed save recovery and non-overlapping combat actions
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=12000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-logic-smoke.html >/tmp/v8-logic-smoke.html 2>/tmp/v8-logic-smoke-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=12000 --window-size=900,700 --dump-dom http://127.0.0.1:4180/tests/v8-logic-smoke.html >/tmp/v8-logic-smoke.html 2>/tmp/v8-logic-smoke-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-logic-smoke.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-logic-smoke.html || true
             cat /tmp/v8-logic-smoke-errors.log
@@ -88,7 +90,7 @@ jobs:
       - name: Complete first gacha pull, automatic mob combat and novice guide in portrait Chromium
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --window-size=390,844 --dump-dom http://127.0.0.1:4173/tests/v8-novice-onboarding-smoke.html >/tmp/v8-novice-journey.html 2>/tmp/v8-novice-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=30000 --window-size=390,844 --dump-dom http://127.0.0.1:4180/tests/v8-novice-onboarding-smoke.html >/tmp/v8-novice-journey.html 2>/tmp/v8-novice-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-novice-journey.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-novice-journey.html || true
             cat /tmp/v8-novice-errors.log
@@ -97,7 +99,7 @@ jobs:
       - name: Verify real-time manual hits, deferred rewards, multiwave guardian and mid-fight reload
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=100000 --window-size=900,720 --dump-dom http://127.0.0.1:4173/tests/v8-true-manual-combat-smoke.html >/tmp/v8-real-manual.html 2>/tmp/v8-real-manual-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=100000 --window-size=900,720 --dump-dom http://127.0.0.1:4180/tests/v8-true-manual-combat-smoke.html >/tmp/v8-real-manual.html 2>/tmp/v8-real-manual-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-real-manual.html; then
             grep -o 'id="result"[^>]*>[^<]*' /tmp/v8-real-manual.html || true
             grep -o 'data-phase="[^"]*"' /tmp/v8-real-manual.html || true
@@ -108,7 +110,7 @@ jobs:
       - name: Verify automatic push waits for full real-time guardian battle before stage progression
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=42000 --window-size=900,700 --dump-dom http://127.0.0.1:4173/tests/v8-auto-push-realtime-smoke.html >/tmp/v8-auto-push-realtime.html 2>/tmp/v8-auto-push-realtime-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=42000 --window-size=900,700 --dump-dom http://127.0.0.1:4180/tests/v8-auto-push-realtime-smoke.html >/tmp/v8-auto-push-realtime.html 2>/tmp/v8-auto-push-realtime-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-auto-push-realtime.html; then
             grep -o 'id="result"[^>]*>[^<]*' /tmp/v8-auto-push-realtime.html || true
             grep -o 'FAIL:[^<]*' /tmp/v8-auto-push-realtime.html || true
@@ -118,22 +120,42 @@ jobs:
       - name: Validate actual landscape touch layout and equipment drawer in Chromium
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size=844,390 --dump-dom http://127.0.0.1:4173/tests/v8-landscape-smoke.html >/tmp/v8-landscape-functional.html 2>/tmp/v8-landscape-errors.log
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size=844,390 --dump-dom http://127.0.0.1:4180/tests/v8-landscape-smoke.html >/tmp/v8-landscape-functional.html 2>/tmp/v8-landscape-errors.log
           if ! grep -q 'data-result="PASS"' /tmp/v8-landscape-functional.html; then
             grep -o 'FAIL:[^<]*' /tmp/v8-landscape-functional.html || true
             cat /tmp/v8-landscape-errors.log
             exit 1
           fi
-          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --window-size=844,390 --screenshot=/tmp/v8-landscape.png http://127.0.0.1:4173/preview-v0.8.html >/dev/null 2>&1
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=3500 --window-size=844,390 --screenshot=/tmp/v8-landscape.png http://127.0.0.1:4180/preview-v0.8.html >/dev/null 2>&1
           test -s /tmp/v8-landscape.png
           for SIZE in 740,360 667,375; do
-            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size="$SIZE" --dump-dom http://127.0.0.1:4173/tests/v8-landscape-smoke.html >"/tmp/v8-landscape-${SIZE}.html" 2>"/tmp/v8-landscape-${SIZE}.log"
+            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=10000 --window-size="$SIZE" --dump-dom http://127.0.0.1:4180/tests/v8-landscape-smoke.html >"/tmp/v8-landscape-${SIZE}.html" 2>"/tmp/v8-landscape-${SIZE}.log"
             if ! grep -q 'data-result="PASS"' "/tmp/v8-landscape-${SIZE}.html"; then
               grep -o 'FAIL:[^<]*' "/tmp/v8-landscape-${SIZE}.html" || true
               cat "/tmp/v8-landscape-${SIZE}.log"
               exit 1
             fi
           done
+      - name: Verify unified bank and contextual help in desktop, portrait and landscape
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          for SIZE in 1440,900 390,844 844,390; do
+            "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=20000 --window-size="$SIZE" --dump-dom http://127.0.0.1:4180/tests/v8-bank-smoke.html >"/tmp/v8-bank-${SIZE}.html" 2>"/tmp/v8-bank-${SIZE}.log"
+            if ! grep -q 'data-result="PASS"' "/tmp/v8-bank-${SIZE}.html"; then
+              grep -o 'id="result"[^>]*>[^<]*' "/tmp/v8-bank-${SIZE}.html" || true
+              cat "/tmp/v8-bank-${SIZE}.log"
+              exit 1
+            fi
+          done
+      - name: Verify migration, production, directed draws, lineage and reincarnation
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=20000 --window-size=1280,800 --dump-dom http://127.0.0.1:4180/tests/v8-management-smoke.html >/tmp/v8-management.html 2>/tmp/v8-management.log
+          if ! grep -q 'data-result="PASS"' /tmp/v8-management.html; then
+            grep -o 'id="result"[^>]*>[^<]*' /tmp/v8-management.html || true
+            cat /tmp/v8-management.log
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

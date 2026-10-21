@@ -12,6 +12,8 @@ test-results/
 screenshots/
 *.log
 *.tmp
+__pycache__/
+*.pyc
 
 # Local tools and secrets (never commit)
 .env
