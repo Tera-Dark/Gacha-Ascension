@@ -2,7 +2,7 @@
  * Read-only detail selectors for the responsive UI.
  * No random calls, no mutations, no effects. Labels match the battle/economy engine.
  */
-import {SAVE_KEY,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequirements,packCost,farmTarget,fight} from "./engine.mjs";
+import {SAVE_KEY,STARTING_STONES,heroStats,yields,enemyPreview,combatSnapshot,breakthroughRequirements,packCost,farmTarget,fight} from "./engine.mjs";
 import {equipmentStats,EQUIPMENT_SLOTS} from "./equipment.mjs";
 import {STYLE_LABELS,combatStyle,RULES} from "./combat-depth.mjs";
 import {baseRates} from "./relic-pool.mjs";
@@ -247,7 +247,7 @@ export function detailModel(s,c,analysis=null){
    row("本世累计获得灵石",fmt(r.totalEarned)),
    row("本世累计花费灵石",fmt(r.totalSpent)),
    row("本世现存灵石",fmt(r.stones)),
-   row("灵石流水核对",r.totalEarned+110===r.stones+r.totalSpent?"一致":"异常"),
+   row("灵石流水核对",r.totalEarned+(r.startingStones??STARTING_STONES)===r.stones+r.totalSpent?"一致":"异常"),
    row("击败普通小怪",r.mobKills),
    row("关卡守卫胜场",r.guardianWins),
    row("地图Boss胜场",r.bossWins),

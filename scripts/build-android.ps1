@@ -37,13 +37,19 @@ try {
         if (-not $archive.GetEntry("assets/game/$required")) { throw "Missing APK asset: $required" }
     }
 } finally { $archive.Dispose() }
+$version = (Get-Content (Join-Path $repoPath 'package.json') -Raw | ConvertFrom-Json).version
+$gradleText = Get-Content (Join-Path $androidPath 'app\build.gradle') -Raw
+if ($gradleText -notmatch "versionName\s+'([^']+)'") { throw 'versionName not found in android/app/build.gradle.' }
+if ($Matches[1] -ne $version) { throw "Version drift: package.json=$version build.gradle versionName=$($Matches[1])." }
 $outputPath = Join-Path $repoPath 'dist\android'
 New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
-$version = (Get-Content (Join-Path $repoPath 'package.json') -Raw | ConvertFrom-Json).version
 $suffix = if ($Release) { '-taptap' } else { '' }
 $deliverablePath = Join-Path $outputPath "Gacha-Ascension-$version$suffix.apk"
 $sdkPath = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
-$buildTools = Get-ChildItem -LiteralPath (Join-Path $sdkPath 'build-tools') -Directory | Sort-Object Name -Descending | Select-Object -First 1
+$buildTools = Get-ChildItem -LiteralPath (Join-Path $sdkPath 'build-tools') -Directory |
+    Where-Object { $_.Name -match '^\d+(\.\d+)+$' } |
+    Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+if (-not $buildTools) { throw 'No Android build-tools installed under the SDK.' }
 $signer = Join-Path $buildTools.FullName 'apksigner.bat'
 $signature = & $signer verify --verbose --print-certs $apkPath
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }

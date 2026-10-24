@@ -2,7 +2,7 @@
   "version": "0.8-playable-slice-1",
   "playableMaps": 4,
   "checkpointsPerMap": 8,
-  "startingStones": 80,
+  "startingStones": 110,
   "balance": {
     "mobHp": 65,
     "mobAttack": 13,

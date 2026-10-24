@@ -66,12 +66,29 @@ export function equipmentStats(s,c){
  }
  return result;
 }
+function addStats(c,id,out){
+ const card=c.cards[id];
+ if(card?.effect==="equipment")for(const key of KEYS)out[key]+=card.stats[key]||0;
+ return out;
+}
+/** Stats if `slot` held `id`, without cloning the save (called for every candidate on render). */
+function statsAfter(s,c,slot,id){
+ const out={attack:0,hp:0,defense:0,speedPct:0};
+ for(const [slotId,itemId] of Object.entries(equippedMap(s)))if(slotId!==slot&&itemId)addStats(c,itemId,out);
+ if(id)addStats(c,id,out);
+ return out;
+}
 export function comparison(s,c,slot,id){
- const baseline=equipmentStats(s,c);
- const old=equippedMap(s)[slot]||null;
- const fresh=structuredClone(s);
- equipItem(fresh,c,slot,id);
- const after=equipmentStats(fresh,c);
- return {previous:old,afterId:id,difference:Object.fromEntries(KEYS.map(k=>[k,after[k]-baseline[k]])),
+ const info=EQUIPMENT_SLOTS.find(x=>x.id===slot);
+ if(!info)throw Error("未知装备槽位");
+ const equipped=equippedMap(s),previous=equipped[slot]||null;
+ if(id!==null){
+  const card=c.cards[id];
+  if(card?.effect!=="equipment"||card.equipmentSlot!==info.type)throw Error("装备与槽位不匹配");
+  if(id!==previous&&(s.run.cards[id]||0)<=Object.values(equipped).filter(x=>x===id).length)
+   throw Error("没有多余的装备副本可以穿戴");
+ }
+ const baseline=equipmentStats(s,c),after=statsAfter(s,c,slot,id);
+ return {previous,afterId:id,difference:Object.fromEntries(KEYS.map(k=>[k,after[k]-baseline[k]])),
    total:after};
 }

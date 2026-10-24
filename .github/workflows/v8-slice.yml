@@ -14,21 +14,21 @@ on:
       - "assets/pixel/**"
       - "docs/**"
       - "tests/v8*.test.mjs"
-      - "tests/v8-mobile-smoke.html"
-      - "tests/v8-landscape-smoke.html"
-      - "tests/v8-live-combat-smoke.html"
-      - "tests/v8-logic-smoke.html"
-      - "tests/v8-novice-onboarding-smoke.html"
-      - "tests/v8-true-manual-combat-smoke.html"
-      - "tests/v8-auto-push-realtime-smoke.html"
-      - "tests/v8-bank-smoke.html"
-      - "tests/v8-pixel-assets-smoke.html"
-      - "tests/v8-mobile-host-smoke.html"
-      - "tests/v8-return-smoke.html"
-      - "tests/v8-world-presentation-smoke.html"
-      - "tests/v8-management-smoke.html"
+      - "tests/v8-*-smoke.html"
       - "scripts/simulate-v8-combat.mjs"
-      - "scripts/audit-newcomer-v094.mjs"
+      - "scripts/verify-v8.mjs"
+      - "scripts/browser-smoke-v8.mjs"
+      - "package.json"
+      - ".github/workflows/v8-slice.yml"
+  pull_request:
+    paths:
+      - "src/v8/**"
+      - "data/v8-slice.json"
+      - "data/realms-maps.v0.8.proposal.json"
+      - "preview-v0.8.html"
+      - "assets/css/preview.css"
+      - "assets/pixel/**"
+      - "tests/v8*"
       - "scripts/verify-v8.mjs"
       - "scripts/browser-smoke-v8.mjs"
       - "package.json"
@@ -39,7 +39,7 @@ permissions:
 jobs:
   logic-and-browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +49,11 @@ jobs:
         run: npm run check:v8
       - name: Install browser driver using the runner's Chromium
         run: npm install --no-save --package-lock=false playwright-core@1.64.1
+      - name: Locate the runner's Chromium
+        run: |
+          CHROME_BIN="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || command -v chromium)"
+          test -n "$CHROME_BIN" || { echo "No Chromium executable on this runner"; exit 1; }
+          echo "CHROME_BIN=$CHROME_BIN" >> "$GITHUB_ENV"
       - name: Serve isolated preview for browser fixtures
         run: |
           python3 -m http.server 4180 --bind 127.0.0.1 >/tmp/v8-site.log 2>&1 &

@@ -44,7 +44,11 @@ test('full queue, invalid amounts, unavailable herbs and backwards clocks are re
  assert.throws(()=>command(s,'QUEUE_BREW',0,{herb:'H001',mode:'target',amount:0}),/数量/);
  assert.throws(()=>command(s,'START_ACTIVITY',0,{activity:'gather',herb:'H003'}),/未解锁/);
  assert.equal(JSON.stringify(s),bytes);
- s=command(s,'CLAIM_WORLD',5).state;assert.throws(()=>command(s,'CLAIM_WORLD',4),/倒退/);
+ s=command(s,'CLAIM_WORLD',5).state;
+ const rolledBack=command(s,'CLAIM_WORLD',4);
+ assert.equal(rolledBack.state.run.world.at,5);
+ assert.ok(rolledBack.result.reasons.some(x=>x.includes('时间回退')));
+ validateSave(rolledBack.state,c);
 });
 test('eight hours in one claim equals split claims, including concurrent harvest, crafting, combat and potions',()=>{
  let s=initial();s.run.cards.H001=3;s.run.cards.H003=3;s.run.herbs.H001=60;

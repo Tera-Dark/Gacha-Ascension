@@ -27,7 +27,7 @@ test("first combat wins and farms same current monster without advancing",()=>{
  const r=execute(s,"BATTLE",{enemyType:"mob"});
  assert.equal(r.result.won,true);assert.equal(r.state.run.checkpoint,initial.stage-1);
  assert.equal(r.state.run.mapIndex,0);assert.ok(r.result.stones>0);assert.ok(r.result.qi>0);
- assert.equal(r.state.run.totalEarned+110,r.state.run.stones+r.state.run.totalSpent);
+ assert.equal(r.state.run.totalEarned+r.state.run.startingStones,r.state.run.stones+r.state.run.totalSpent);
 });
 test("guardian failure never rolls back current checkpoint or confiscates resources",()=>{
  const s=advanceTo(createSave(101),3,7),before=JSON.stringify(s);

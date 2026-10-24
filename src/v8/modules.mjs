@@ -25,7 +25,7 @@ export const MODULES=Object.freeze([
  {id:"fate",name:"轮回天命",scope:"meta",source:"reincarnation",status:"live",panel:"fate"},
  {id:"explore",name:"地图战斗",scope:"run",source:"combat",status:"live",panel:"explore"},
  {id:"idle",name:"离线刷怪",scope:"run",source:"combat",status:"live",panel:"explore"},
- {id:"artifact",name:"法宝",scope:"run",source:"gacha",status:"planned",panel:"artifact"},
+ {id:"fabao",name:"法宝",scope:"run",source:"gacha",status:"planned",panel:"artifact"},
  {id:"sect",name:"宗门",scope:"meta",source:"gacha",status:"planned",panel:"sect"},
  {id:"ascension",name:"飞升",scope:"meta",source:"boss",status:"planned",panel:"ascension"}
 ]);

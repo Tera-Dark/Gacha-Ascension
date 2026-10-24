@@ -101,7 +101,7 @@ python -m http.server 4180 --bind 127.0.0.1
 
 打开 `tests/v8-mobile-smoke.html`、`tests/v8-landscape-smoke.html`、`tests/v8-bank-smoke.html`、`tests/v8-management-smoke.html`。测试页会创建或修改该端口的测试档；切勿在此端口经营真实进度。战斗时序、损坏存档和新手流程另有 `tests/v8-*-smoke.html`。CI 额外安装固定版 `playwright-core@1.64.1`，运行 `scripts/browser-smoke-v8.mjs`，以真实 Chromium 时钟逐项等待结果并保留截图，避免虚拟时钟跳过动画帧。运行浏览器脚本需设置 `CHROME_BIN` 或在 PATH 中提供 Chromium。
 
-`.github/workflows/v8-slice.yml` 负责现行逻辑与 Chromium 验收；`v8-combat-balance.yml` 负责完整战斗／三世模拟；`pages.yml` 仅由 `main` 推送或手动触发发布。需核验成功的 deploy 状态后才能称已上线。
+`.github/workflows/v8-slice.yml` 在推送和 Pull Request 上运行现行逻辑与 Chromium 验收（含所有 `tests/v8-*-smoke.html`），并显式定位 Chromium；`v8-combat-balance.yml` 负责完整战斗／三世模拟；`pages.yml` 仅由 `main` 推送或手动触发发布，发布前先运行 `check:v8`，门禁不过不会部署。需核验成功的 deploy 状态后才能称已上线。`npm run check:v8` 也会校验产品版本在 `package.json`、脱敏诊断和安卓 `versionName` 三处一致。
 
 物料草稿可在隔离4180服务上用 `npm run capture:v8:materials` 复现（先设置 `CHROME_BIN` 并运行 `node node_modules/playwright-core/cli.js install ffmpeg`）。输出 `dist/store-preview/` 的3张1280×720实机界面截图及真实时钟的无声WebM录屏草稿，不注入资源、不上传。最终商店图标、宣传图、视频编码／声音、实际运营主体隐私文本仍须在真机验收后确认；草稿不代表已提交审核。
 

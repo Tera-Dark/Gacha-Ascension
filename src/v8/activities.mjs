@@ -40,7 +40,10 @@ export function settleWorld(s,c,now,hooks){
  const r=s.run,w=r.world,cfg=c.management;
  const report={kind:'world',attempts:0,wins:0,stones:0,qi:0,insight:0,gathered:{},grown:{},crafted:{},spent:{},usedItems:{},gearBoxes:0,herbBoxes:0,potionsUsed:0,lastBattle:null,active:!!r.idle?.active,elapsedMs:0,capped:false,reasons:[]};
  if(w.at===null){w.at=now;return report}
- if(now<w.at)throw Error('活动时间不能倒退');
+ // A clock that moves backwards (NTP/DST/manual change) must not brick every
+ // timed command. Keep the anchor and settle zero time: moving the anchor back
+ // would let the same hours be farmed twice after a forward jump.
+ if(now<w.at){report.reasons.push('检测到时间回退，本次不结算');return report}
  const raw=now-w.at,span=Math.min(raw,cfg.offlineCapMs);
  report.elapsedMs=span;report.capped=raw>span;
  let left=span,steps=0;

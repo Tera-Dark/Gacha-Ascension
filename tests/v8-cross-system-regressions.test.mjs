@@ -110,7 +110,7 @@ test("30-seed cross-system gameplay maintains cards, money, gear and save invari
    }
    s=run(s,"BATTLE",{enemyType:"mob"}).state;
    validateSave(s,c);
-   assert.equal(s.run.totalEarned+110,s.run.stones+s.run.totalSpent);
+   assert.equal(s.run.totalEarned+s.run.startingStones,s.run.stones+s.run.totalSpent);
    assert.ok(s.seq>original.seq);
   }
  }

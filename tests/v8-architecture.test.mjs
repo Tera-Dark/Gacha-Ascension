@@ -1,7 +1,7 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {createSave,loadCatalog,dispatch} from "../src/v8/engine.mjs";
+import {createSave,loadCatalog,dispatch,STARTING_STONES} from "../src/v8/engine.mjs";
 import {MODULES,unimplementedModules,unlockedPack,validateContentContract} from "../src/v8/modules.mjs";
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const world=read("realms-maps.v0.8.proposal.json"),slice=read("v8-slice.json"),catalog=loadCatalog(world,slice);
@@ -14,7 +14,7 @@ test("each shipping pack is registered and schema-valid",()=>{
  }
 });
 test("future module features are declared but never labeled implemented",()=>{
- assert.ok(unimplementedModules().some(x=>x.id==="artifact"));
+ assert.ok(unimplementedModules().some(x=>x.id==="fabao"));
  assert.ok(unimplementedModules().some(x=>x.id==="sect"));
  assert.ok(unimplementedModules().some(x=>x.id==="ascension"));
  assert.ok(unimplementedModules().every(x=>x.status==="planned"));
@@ -35,6 +35,12 @@ test("unknown effect keys and unregistered packs are rejected before gameplay",(
  const missing=structuredClone(slice);
  delete missing.features.unlockAtGlobalCheckpoint.pet;
  assert.throws(()=>loadCatalog(world,missing),/未配置解锁里程碑/);
+});
+test("opening wallet has one source of truth",()=>{
+ assert.equal(slice.startingStones,STARTING_STONES);
+ assert.equal(createSave(91).run.stones,STARTING_STONES);
+ const drift=structuredClone(slice);drift.startingStones=80;
+ assert.throws(()=>loadCatalog(world,drift),/开局灵石/);
 });
 test("new optional rarity, idle and apex fields never invalidate pre-upgrade v8 saves",()=>{
  const old=createSave(55);

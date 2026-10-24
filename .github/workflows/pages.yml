@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Verify current v8 rules, saves and simulations before publishing
+        run: npm run check:v8
       - name: Verify M0 published files
         run: node --check src/m0/ui.mjs && node scripts/verify-m0-pages.mjs
       - name: Configure Pages

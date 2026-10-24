@@ -12,12 +12,15 @@ import {recordReturn,validateReturns} from './return-ledger.mjs';
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
 export const SCHEMA=10;
+/** Single source for the opening wallet. data/v8-slice.json must agree; loadCatalog rejects drift. */
+export const STARTING_STONES=110;
 const deep=x=>structuredClone(x), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const nat=n=>Number.isSafeInteger(n)&&n>=0;
 export function loadCatalog(world,slice){
  if(world?.maps?.length!==24||world?.cultivation?.length!==20||slice?.version!=="0.8-playable-slice-1")throw Error("版本化地图/卡池配置缺失");
  if(slice.playableMaps!==4||slice.packs.length!==9||!nat(slice.checkpointsPerMap)||!finite(slice.balance.mapHpFactor))throw Error("可玩切片配置有误");
+ if(slice.startingStones!==STARTING_STONES)throw Error("开局灵石配置与引擎不一致");
  validateContentContract(slice);
  if(!Array.isArray(slice.farmTargets)||slice.farmTargets.length!==3||
   new Set(slice.farmTargets.map(x=>x.id)).size!==3||
@@ -42,7 +45,8 @@ export function createSave(seed=20261020){
 }
 function createRun(){return {mapIndex:0,checkpoint:0,bossCleared:false,realmIndex:0,qi:0,insight:0,
  world:createWorld(),recipes:{H001:true},mastery:{gather:0,meditate:0,brew:0},
- stones:110,farmFocus:"balanced",equipment:{},artifacts:{},boxes:{gear:0,herb:0},herbs:{},consumables:{},prepared:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
+ startingStones:STARTING_STONES,
+ stones:STARTING_STONES,farmFocus:"balanced",equipment:{},artifacts:{},boxes:{gear:0,herb:0},herbs:{},consumables:{},prepared:{},cards:{},pills:{"D004":0},pillPity:0,draws:{},technique:null,pet:null,
  victories:0,mobKills:0,guardianWins:0,bossWins:0,losses:0,
  totalEarned:0,totalSpent:0,lastBattle:null};}
 export function validateSave(s,c){
@@ -51,8 +55,14 @@ export function validateSave(s,c){
  if(!nat(r.mapIndex)||r.mapIndex>=c.playableMaps||!nat(r.checkpoint)||r.checkpoint>=c.checkpointsPerMap)throw Error("地图位置损坏");
  if(!nat(r.realmIndex)||r.realmIndex>4||!nat(r.stones)||!nat(r.qi)||!nat(r.insight)||!nat(m.fate)||!nat(m.reincarnations)||!nat(m.bestMap))throw Error("资源数据损坏");
  if(!r.cards||!r.draws||!r.pills||!m.relics||!m.ultras||!nat(r.victories)||!nat(r.totalEarned)||!nat(r.totalSpent)||!nat(r.losses))throw Error("存档字段错误");
+ // Inventory containers are always created by createRun and by every migration;
+ // missing ones would surface later as a TypeError inside production settle.
+ if(!r.herbs||!r.consumables||!r.prepared||!r.boxes||!r.equipment||!r.artifacts)throw Error("背包字段缺失");
+ if(!nat(r.pillPity))throw Error("丹道保底进度损坏");
  if(r.farmFocus!==undefined&&!c.farmTargets.some(x=>x.id===r.farmFocus))throw Error("刷怪目标异常");
- if(r.totalEarned+110!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
+ const opening=r.startingStones;
+ if(!Number.isSafeInteger(opening)||opening<0)throw Error("开局灵石记录损坏");
+ if(r.totalEarned+opening!==r.stones+r.totalSpent)throw Error("灵石流水账不一致");
  for(const [id,count] of Object.entries(r.cards))if(!c.cards[id]||!nat(count))throw Error("未知卡牌或数量损坏");
  const pending=r.pendingBattle;
  const snapshotValid=snap=>snap&&[snap.hero,snap.enemy,...(snap.waves||[])].every(x=>x&&finite(x.hp)&&x.hp>0&&finite(x.attack)&&x.attack>0&&finite(x.defense)&&x.defense>=0)&&Array.isArray(snap.waves)&&snap.waves.length>0&&snap.waves.length<=3&&snap.tech&&finite(snap.tech.power)&&snap.pet&&finite(snap.pet.power)&&finite(snap.heroSpeedPct);
@@ -81,6 +91,16 @@ function cardCount(s,id){return s.run.cards[id]||0}
 function sumEffect(s,c,key){return Object.values(c.cards).reduce((a,card)=>a+(card.effect===key?cardCount(s,card.id)*card.value:0),0)}
 function cave(s,c,style,legacy=false){return Object.values(c.cards).reduce((n,x)=>n+(x.effect==="cave"&&x.style===style?(legacy?cardCount(s,x.id):cappedCopies(s,x.id))*x.value:0),0)}
 const hasUltra=(s,id)=>!!s.meta.ultras[id];
+/** Apex/鸿蒙 multipliers live in data/v8-slice.json; these lookups keep one source.
+ * Fallback values only apply to catalogs that predate the field. */
+function ultraValue(c,id,fallback){
+ const entry=c.ultras?.find(x=>x.id===id);
+ return Number.isFinite(entry?.value)?entry.value:fallback;
+}
+function apexValue(c,id,fallback){
+ const entry=c.apex?.find(x=>x.id===id);
+ return Number.isFinite(entry?.value)?entry.value:fallback;
+}
 const applyPct=(x,pct)=>x*(1+clamp(pct,0,1500)/100);
 export function heroStats(s,c){
  const r=s.run,b=c.balance;
@@ -94,7 +114,7 @@ export function heroStats(s,c){
  return {name:realm.name,attack,hp,defense,realmFactor};
 }
 export function yields(s,c,legacy=false){
- const caveMult=hasUltra(s,"U003")?3:1;
+ const caveMult=hasUltra(s,"U003")?ultraValue(c,"U003",3):1;
  const stonePct=clamp(sumEffect(s,c,"stonePct")+cave(s,c,"stone",legacy)*caveMult,0,600)+metaPct(s,c,"stonePct");
  const qiPct=clamp(sumEffect(s,c,"qiPct")+cave(s,c,"qi",legacy)*caveMult,0,600)+metaPct(s,c,"qiPct");
  const speedPct=clamp(sumEffect(s,c,"speedPct")+cave(s,c,"speed",legacy)+equipmentStats(s,c).speedPct,0,60);
@@ -149,13 +169,13 @@ function technique(s,c,legacy=false){
  const id=s.run.technique,card=id?c.cards[id]:null;
  if(!card)return {style:"none",power:0};
  const level=legacy?cardCount(s,id):cappedCopies(s,id);
- return {style:card.style,power:card.value*level*(hasUltra(s,"U004")?2.5:1),...(legacy?{}:{tier:growth(level),tags:card.tags})};
+ return {style:card.style,power:card.value*level*(hasUltra(s,"U004")?ultraValue(c,"U004",2.5):1),...(legacy?{}:{tier:growth(level),tags:card.tags})};
 }
 function pet(s,c,legacy=false){
  const id=s.run.pet,card=id?c.cards[id]:null;
  if(!card)return {style:"none",power:0};
- const base=card.value*(legacy?cardCount(s,id):cappedCopies(s,id))*(1+yields(s,c,legacy).petPct/100)*(ownedApex(s,"A002")?1.8:1);
- return {style:card.style,power:base*(hasUltra(s,"U002")?4:1),...(legacy?{}:{tier:growth(cardCount(s,id)),tags:card.tags,spiritCare:growth(s.run.cards.H004)})};
+ const base=card.value*(legacy?cardCount(s,id):cappedCopies(s,id))*(1+yields(s,c,legacy).petPct/100)*(ownedApex(s,"A002")?apexValue(c,"A002",1.8):1);
+ return {style:card.style,power:base*(hasUltra(s,"U002")?ultraValue(c,"U002",4):1),...(legacy?{}:{tier:growth(cardCount(s,id)),tags:card.tags,spiritCare:growth(s.run.cards.H004)})};
 }
 /** Preview is a seeded *sample* disconnected from the actual next battle RNG.
  * Live battle explicitly supplies state.seed and advances that seed once.
@@ -169,8 +189,9 @@ export function combatSnapshot(s,c,kind,legacy=false){
  const healing={auto:!!auto?.unlocked&&!!auto.enabled,threshold:auto?.threshold??.35,
   available:s.run.consumables?.MED001||0,prepared:prepared.MED001||0};
  return {hero:h,enemy:f,tech:t,pet:p,synergy:activeSynergy(s,legacy,c),modern:!legacy,heroUltra:hasUltra(s,"U001"),
+  ultraDamageMultiplier:hasUltra(s,"U001")?ultraValue(c,"U001",2.5):1,
   kind,mapIndex:index,heroSpeedPct:Math.min(60,yields(s,c,legacy).speedPct+a.blessing),
-  apexDamageMultiplier:ownedApex(s,"A001")?1.4:1,healing,
+  apexDamageMultiplier:ownedApex(s,"A001")?apexValue(c,"A001",1.4):1,healing,
   waves:encounterWaves(f,kind,index)};
 }
 export function combatAssessment(s,c,kind,samples=24){
@@ -275,8 +296,8 @@ function battle(s,c,kind,committedCombat=null){
    qi=Math.max(1,Math.round(qi*target.qiFactor));
   }
   if(s.run.pet&&c.cards[s.run.pet]?.style==="qi")qi=Math.round(qi*(1+pet(s,c).power/100));
-  if(ownedApex(s,"A004"))stones=Math.max(1,Math.round(stones*1.5));
-  if(ownedApex(s,"A003"))qi=Math.max(1,Math.round(qi*1.5));
+  if(ownedApex(s,"A004"))stones=Math.max(1,Math.round(stones*apexValue(c,"A004",1.5)));
+  if(ownedApex(s,"A003"))qi=Math.max(1,Math.round(qi*apexValue(c,"A003",1.5)));
   if(!Number.isSafeInteger(stones)||!Number.isSafeInteger(qi)||!Number.isSafeInteger(r.stones+stones)||!Number.isSafeInteger(r.qi+qi))throw Error("资源即将超出安全整数范围；待升级大数模块");
   r.stones+=stones;r.qi+=qi;r.totalEarned+=stones;
   const boxes=rollBoxDrop(s,c,kind,()=>roll(s));
@@ -348,7 +369,7 @@ export function dispatch(current,c,cmd){
  const interval=(st,cat)=>battleIntervalMs(st,cat,yields,(x,y)=>fight(x,y,"mob",{seed:x.seed}));
  // A manually started encounter owns the save until its real combat clock
  // completes. No cards, equipment, drops or rewards can change mid-fight.
- if(r.pendingBattle&&!["FINISH_BATTLE","CLAIM_WORLD","RESTORE_SESSION","ACK_RETURN"].includes(cmd.type))throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
+ if(r.pendingBattle&&!["FINISH_BATTLE","ABANDON_BATTLE","CLAIM_WORLD","RESTORE_SESSION","ACK_RETURN"].includes(cmd.type))throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
  // Settle the old activity and production before any mutation of its rules.
  let worldReport=null;
  const returnFrom=r.world.at;
@@ -387,6 +408,18 @@ export function dispatch(current,c,cmd){
   result=battle(s,c,pending.kind,combat);
   break;
  }
+ /** Escape hatch for a battle record that can no longer be replayed (schema or
+  * combat tuning changed under a pending fight). Only allowed after its clock
+  * has elapsed, so it can never skip a fight that is still in progress. */
+ case "ABANDON_BATTLE":{
+  const pending=r.pendingBattle;
+  if(!pending)throw Error("当前没有等待结算的战斗");
+  if(!Number.isSafeInteger(cmd.now)||cmd.now<pending.startedAt+pending.durationMs)
+   throw Error("战斗还未结束，不能放弃");
+  delete r.pendingBattle;
+  result={kind:"battleAbandoned",type:pending.kind};
+  break;
+ }
  case "DRAW":result=draw(s,c,cmd);break;
  case "BATTLE":{
   if(cmd.enemyType==="mob"&&Number.isSafeInteger(cmd.now)){
@@ -394,11 +427,14 @@ export function dispatch(current,c,cmd){
    if(cmd.now<(r.nextManualMobAt||0))throw Error("普通小怪尚未刷新，请等待下一次战斗");
    r.nextManualMobAt=cmd.now+interval(s,c);
   }
+  let committed=null;
   if(cmd.enemyType!=="mob"&&Number.isSafeInteger(cmd.now)){
    if(cmd.now<(r.nextChallengeAt||0))throw Error("挑战尚在冷却中，请等待战斗结束");
-   r.nextChallengeAt=cmd.now+Math.ceil(fight(s,c,cmd.enemyType,{seed:s.seed}).timeMs);
+   // Simulate once and reuse the result for both the cooldown and the settlement.
+   committed=fight(s,c,cmd.enemyType,{seed:s.seed});
+   r.nextChallengeAt=cmd.now+Math.ceil(committed.timeMs);
   }
-  result=battle(s,c,cmd.enemyType);break;
+  result=battle(s,c,cmd.enemyType,committed);break;
  }
  case "BREAKTHROUGH":result=breakthrough(s,c);break;
  case "EQUIP_TECH":{
@@ -461,11 +497,37 @@ export function dispatch(current,c,cmd){
  return {state:s,result,worldReport};
 }
 
+/** First Schema8 builds predate fields such as farms, chests and equipment.
+ * Every migration and every load fills them, so a later command can never
+ * dereference an undefined container; validation then explains real corruption. */
+function fillRunDefaults(r){
+ if(!r||typeof r!=="object")return;
+ const ensure=(key,value)=>{if(!r[key]||typeof r[key]!=="object"||Array.isArray(r[key]))r[key]=value};
+ ensure("herbs",{});ensure("consumables",{});ensure("prepared",{});
+ ensure("equipment",{});ensure("artifacts",{});ensure("boxes",{});
+ for(const id of ["gear","herb"])if(!Number.isSafeInteger(r.boxes[id])||r.boxes[id]<0)r.boxes[id]=0;
+ if(r.farmFocus===undefined)r.farmFocus="balanced";
+ if(!Number.isSafeInteger(r.startingStones)){
+  const opening=r.stones+r.totalSpent-r.totalEarned;
+  r.startingStones=Number.isSafeInteger(opening)&&opening>=0?opening:STARTING_STONES;
+ }
+}
+function missingRunFields(save){
+ const run=save?.run;
+ return !run||!run.herbs||!run.consumables||!run.prepared||!run.boxes||
+  !run.equipment||!run.artifacts||!Number.isSafeInteger(run.startingStones);
+}
 /** Explicit 8/9 -> 10 migration; raw-byte backup is the storage layer's job. */
 export function migrateSave(old,c){
- if(old?.schemaVersion===SCHEMA)return {state:validateSave(old,c),migrated:false};
+ if(old?.schemaVersion===SCHEMA){
+  if(!missingRunFields(old))return {state:validateSave(old,c),migrated:false};
+  const s=structuredClone(old);
+  fillRunDefaults(s.run);
+  return {state:validateSave(s,c),migrated:true};
+ }
  if(![8,9].includes(old?.schemaVersion))throw Error("不支持的存档版本");
  const s=structuredClone(old);s.schemaVersion=SCHEMA;s.meta.returns=[];
+ fillRunDefaults(s.run);
  if(old.schemaVersion===9){validateSave(s,c);return {state:s,migrated:true}}
  ensureProgression(s);
  s.run.world=createWorld(s.run.idle?.at??null);

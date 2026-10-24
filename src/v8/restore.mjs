@@ -9,7 +9,7 @@ export function restoreInWorker(state,catalog,now,{signal}={}){
   worker.onmessage=e=>e.data.ok?finish(null,e.data.out):finish(Error(e.data.error));
   worker.onerror=()=>finish(Error('后台恢复失败，原存档保留，请重试'));
   signal?.addEventListener('abort',abort,{once:true});
-  timeout=setTimeout(()=>finish(Error('恢复超时，原存档保留，请重试')),120000);
+  timeout=setTimeout(()=>finish(Error('恢复超时，原存档保留，请重试')),30000);
   worker.postMessage({state,catalog,now});
  });
 }

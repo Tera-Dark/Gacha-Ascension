@@ -1,6 +1,6 @@
 import {mountBank,renderBank} from './bank.mjs';
 import {mountHelp} from './module-help.mjs';
-import {loadCatalog,createSave,dispatch,heroStats,yields,progress,breakthroughRequirements,enemyPreview,combatSnapshot,fight,combatAssessment,combatLabels,reincarnationPreview,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
+import {loadCatalog,dispatch,heroStats,yields,progress,breakthroughRequirements,combatSnapshot,fight,reincarnationPreview,packCost,farmTarget,pendingRealmGate} from "./engine.mjs";
 import {readGame,writeGame,backupAndReset,recoverInvalidSave,parseImport,importGame} from "./storage.mjs";
 import {openSession} from './session.mjs';
 import {diagnosticSummary} from './diagnostics.mjs';
@@ -11,8 +11,8 @@ import {failureEvidence,renderBuildRoadmap} from './build-guide.mjs';
 import {detailModel} from "./details.mjs";
 import {showReveal} from "./reveal.mjs";
 import {unlockedPack} from "./modules.mjs";
-import {EQUIPMENT_SLOTS,equippedMap,equipmentStats,comparison,STAT_LABELS} from "./equipment.mjs";
-import {RULES} from "./combat-depth.mjs";
+import {EQUIPMENT_SLOTS,equippedMap,comparison,STAT_LABELS} from "./equipment.mjs";
+import {RULES,assessEncounter} from "./combat-depth.mjs";
 import {ARTIFACT_SLOTS,ARTIFACT_EFFECTS,artifactsOwned,artifactBonuses} from "./artifacts.mjs";
 import {ITEMS,AUTO_POTION_COST} from "./treasure.mjs";
 import {activeSynergy} from "./synergy.mjs";
@@ -32,16 +32,20 @@ const $=id=>document.getElementById(id),fmt=n=>{
 };
 const escapeHTML=t=>String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 const majors=["凡尘炼气","地脉筑基","丹成沧海","雷穹元婴","太虚化神"];
-let c,s,view="explore",auto=false,autoPush=false,timer=null,playToken=0,renderToken=0,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveClock=null,settledPose=null,livePreview=false,suggestedGearSlot=null,manualTimer=null,manualResumeAuto=false;
+let c,s,view="explore",auto=false,autoPush=false,timer=null,toastTimer=null,battleBusy=false,lastCombatAnalysis=null,revealBusy=false,selectedGearSlot="weapon1",selectedArtifactSlot=null,buildAdvice=null,liveClock=null,settledPose=null,livePreview=false,manualTimer=null,manualResumeAuto=false;
 let hostHidden=false;
 let session=null,restoring=false,saveFailed=false;
+let gearOpener=null;
 const platformAllowed=()=>!window.GachaAndroid?.isPlayAllowed||window.GachaAndroid.isPlayAllowed()===true;
 function sessionMessage(text){$('sessionNotice').hidden=!text;set('sessionMessage',text)}
-function pausePlayback(){clearTimeout(timer);clearTimeout(manualTimer);timer=manualTimer=null;clearLiveTimeline();++playToken;battleBusy=false}
-function commitState(state){
- try{if(!platformAllowed())throw Error('平台认证受限，已停止前台游戏');session.assert();writeGame(state,c,session.storage)}
- catch(error){saveFailed=true;pausePlayback();sessionMessage('保存停止：'+error.message+'。原存档保留，请导出或重新载入。');throw error}
- s=state;
+function pausePlayback(){clearTimeout(timer);clearTimeout(manualTimer);timer=manualTimer=null;clearLiveTimeline();battleBusy=false}
+function commitState(state,{persist=true}={}){
+ try{
+  if(!platformAllowed())throw Error('平台认证受限，已停止前台游戏');
+  if(persist){session.assert();writeGame(state,c,session.storage)}
+  else if(!session?.writable)throw Error('此页面为只读：请关闭其他游戏页面，再接管存档');
+  s=state;
+ }catch(error){saveFailed=true;pausePlayback();sessionMessage('保存停止：'+error.message+'。原存档保留，请导出或重新载入。');throw error}
 }
 async function recoverSession(){
  if(!session?.writable||restoring||saveFailed)return;
@@ -58,6 +62,10 @@ const pageHidden=()=>document.hidden||hostHidden;
 const NOVICE_SKIP_KEY="gacha-ascension-v8-novice-skip-v1";
 const QUICK_REVEAL_KEY="gacha-ascension-v8-quick-reveal-v1";
 const set=(id,text)=>{const e=$(id);if(e&&e.textContent!==String(text))e.textContent=text};
+/** innerHTML is only touched when the produced markup actually changed; a kill
+ * during auto farming must not re-parse nine pack cards and 24 atlas rows. */
+const markupCache=new Map();
+function setMarkup(id,content){if(markupCache.get(id)===content)return;markupCache.set(id,content);$(id).innerHTML=content}
 const enemyName=name=>{const prefix=c?.maps.find(map=>String(name).startsWith(map.name+'·'));return prefix?String(name).slice(prefix.name.length+1):name};
 function toast(message,failure=false){
  const el=$("toast");el.textContent=message;el.classList.toggle("failure",failure);el.classList.add("visible");
@@ -141,6 +149,43 @@ function doCommand(type,more={}){
   return out.result;
  }catch(error){toast(error.message,true);return null}
 }
+/** The 5s clock settles production even when nothing finished. Rebuilding every
+ * panel on each tick is the main idle CPU cost on low-end phones, so an unchanged
+ * report only repaints the cheap top bar; real gains still trigger a full render. */
+let lastTickKey="";
+let lastPersistAt=0;
+function tickKey(report){
+ if(!report)return "";
+ const {elapsedMs,lastBattle,...rest}=report;
+ return JSON.stringify(rest);
+}
+function tickWorld(){
+ if(!s||!c||restoring||saveFailed||!session?.writable||pageHidden()||auto)return;
+ const brewed=s.run.mastery.brew;
+ let out;
+ try{out=dispatch(s,c,{type:'CLAIM_WORLD',seq:s.seq+1,now:Date.now()})}
+ catch(error){toast(error.message,true);return}
+ buildAdvice=null;
+ if(s.run.mastery.brew>brewed)sound('craft');
+ const key=tickKey(out.worldReport);
+ const now=Date.now();
+ // Persisting every five seconds regardless of progress wears the storage and
+ // costs a full validate+serialize; a minute of unpersisted settlement is
+ // safely recomputed on reload because nothing here consumes RNG.
+ const persist=key!==lastTickKey||now-lastPersistAt>=60000;
+ try{commitState(out.state,{persist})}catch{return}
+ if(persist)lastPersistAt=now;
+ if(key===lastTickKey){renderTop();return}
+ lastTickKey=key;render();
+}
+/** assessEncounter runs 24 seeded fights and is deterministic for a build.
+ * Cache by the snapshot that feeds it instead of resimulating on every render. */
+let assessmentCache={key:"",value:null};
+function combatReport(kind){
+ const snap=combatSnapshot(s,c,kind),key=JSON.stringify(snap);
+ if(assessmentCache.key!==key)assessmentCache={key,value:assessEncounter(snap,24)};
+ return assessmentCache.value;
+}
 
 function closeLandscapeNav(){
  document.body.classList.remove("wb-nav-open");
@@ -169,11 +214,11 @@ function renderMapDrawer(){
 
 function renderArtifacts(){
  const equipped=artifactsOwned(s),bonus=artifactBonuses(s,c);
- $("artifactGrid").innerHTML=ARTIFACT_SLOTS.map(slot=>{
+ setMarkup("artifactGrid",ARTIFACT_SLOTS.map(slot=>{
   const open=s.run.realmIndex>=slot.realmIndex,card=c.cards[equipped[slot.id]];
   return '<button type="button" class="wb-artifact-slot'+(card?" active":"")+'" data-artifact-slot="'+slot.id+'"'+(open?"":" disabled")+
    '><strong>✧ '+slot.name+'</strong><small>'+escapeHTML(open?card?.name||"空 · 点击穿戴":"境界未达成 · 待解锁")+'</small></button>';
- }).join("");
+ }).join(""));
  set("artifactSlotsInfo","已开放 "+ARTIFACT_SLOTS.filter(x=>s.run.realmIndex>=x.realmIndex).length+"/4 · 攻击+"+bonus.strike+"% · 减敌攻"+bonus.curse+"%");
 }
 function drawArtifactBag(){
@@ -194,6 +239,7 @@ function drawArtifactBag(){
 }
 function openArtifact(slot){
  selectedArtifactSlot=slot;
+ gearOpener=document.activeElement;
  $("equipmentDrawer").hidden=false;
  drawArtifactBag();
  $("closeEquipment").focus();
@@ -230,26 +276,36 @@ function safeGearUpgrades(){
 function renderGear(){
  const equipment=equippedMap(s);
  const upgrades=safeGearUpgrades();
- suggestedGearSlot=upgrades[0]?.slot||null;
  const slots=new Set(upgrades.map(x=>x.slot));
  set("openGearBag",slots.size?"行囊 · "+slots.size+"槽可提升 ↗":"行囊 ↗");
- $("equipmentGrid").innerHTML=EQUIPMENT_SLOTS.map(slot=>{
+ setMarkup("equipmentGrid",EQUIPMENT_SLOTS.map(slot=>{
   const id=equipment[slot.id],card=id?c.cards[id]:null;
   return '<button class="wb-gear-slot'+(card?" filled":"")+(slots.has(slot.id)?" can-upgrade":"")+'" type="button" data-gear-slot="'+slot.id+'" aria-label="'+
     escapeHTML(slot.name+(card?" "+card.name:" 空槽"))+'"><span class="wb-gear-icon">'+slot.icon+'</span>'+
     '<span class="wb-gear-caption">'+escapeHTML(slot.name)+'</span>'+
     '<span class="wb-gear-name">'+escapeHTML(card?.name||"空")+'</span></button>';
- }).join("");
+ }).join(""));
 }
 function openGear(slot){
  selectedArtifactSlot=null;
  selectedGearSlot=slot;
+ gearOpener=document.activeElement;
  $("equipmentDrawer").hidden=false;
  drawGearBag();
  $("closeEquipment").focus();
 }
 function closeGear(){
- $("equipmentDrawer").hidden=true;
+ const drawer=$("equipmentDrawer");
+ if(!drawer||drawer.hidden)return;
+ drawer.hidden=true;
+ if(gearOpener&&gearOpener.isConnected)gearOpener.focus({preventScroll:true});
+ gearOpener=null;
+}
+function dismissReveal(){
+ const overlay=$("revealOverlay");
+ if(!overlay||overlay.hidden)return false;
+ $("closeReveal").click();
+ return true;
 }
 function drawGearBag(){
  if(selectedArtifactSlot){drawArtifactBag();return}
@@ -340,14 +396,18 @@ function advanceLiveClock(){
  return motions;
 }
 function presentationFrame(now){
- if(!advanceLiveClock())renderPixelFrame(settledPose&&Date.now()<settledPose.until?settledPose.motions:null,now);
+ // Canvas sprites only need repainting while a fight is on screen; idling on
+ // another panel must not keep redrawing 60 times a second on mobile.
+ const visible=!!liveClock||(document.body.dataset.currentView||'explore')==='explore'||
+  !!(settledPose&&Date.now()<settledPose.until);
+ if(visible&&!advanceLiveClock())
+  renderPixelFrame(settledPose&&Date.now()<settledPose.until?settledPose.motions:null,now);
  requestAnimationFrame(presentationFrame);
 }
 function startLiveTimeline(combat,plan,mode="auto",origin=Date.now()-plan.elapsedMs){
  clearLiveTimeline();
  combatReceiptUntil=0;
- ++playToken;settledPose=null;
- livePreview=true;battleBusy=true;
+ settledPose=null;livePreview=true;battleBusy=true;
  snapshot("heroHP","heroBar",combat.hero.hp,combat.hero.hp);
  const first=combat.waves?.[0]||combat.enemy;
  snapshot("enemyHP","enemyBar",first.hp,first.hp);
@@ -362,6 +422,7 @@ function startLiveTimeline(combat,plan,mode="auto",origin=Date.now()-plan.elapse
  * while the persistent authoritative battle transaction remains uncommitted.
  * Switching tabs or refreshing only seeks the same encounter clock.
  */
+let manualRetries=0;
 function finishManual(){
  if(saveFailed||restoring||!session?.writable)return;
  if(manualTimer!==null){clearTimeout(manualTimer);manualTimer=null}
@@ -371,7 +432,17 @@ function finishManual(){
  if(remaining>0){manualTimer=setTimeout(finishManual,remaining+15);return}
  advanceLiveClock();
  const result=doCommand("FINISH_BATTLE");
- if(!result){manualTimer=setTimeout(finishManual,180);return}
+ if(!result){
+  // Retry with backoff, then leave a documented escape hatch instead of
+  // keeping the save locked forever behind a pending battle.
+  if(++manualRetries<=3){manualTimer=setTimeout(finishManual,250*manualRetries);return}
+  const abandoned=doCommand("ABANDON_BATTLE");
+  manualRetries=0;
+  if(abandoned){toast("本场战斗记录无法复核，已放弃结算并恢复操作；本场未发放奖励。",true);render();return}
+  sessionMessage("战斗记录异常，无法结算。请先导出存档并反馈；重新载入后可继续其他操作。");
+  return;
+ }
+ manualRetries=0;
  afterBattle(result);
  set("fightTimer","战斗已按时间线完成 · 资源和掉落已结算");
  const resume=manualResumeAuto;
@@ -387,7 +458,12 @@ function scheduleManual(){
  const pending=s.run.pendingBattle;
  const combat=fight(s,c,pending.kind,{seed:pending.seed});
  if(Math.ceil(combat.timeMs)!==pending.durationMs){
-  toast("战斗数据与存档中的时间不符，已暂停结算以保护存档。",true);
+  // Deploying or migrating can change the combat rules under a saved fight.
+  // The stored record stays authoritative, so settle on its own clock rather
+  // than refusing to settle and locking every other command.
+  toast("战斗参数已更新，将按存档记录的时间结算本场。",true);
+  set("fightTimer","按存档时间线结算中…");
+  manualTimer=setTimeout(finishManual,Math.max(0,pending.startedAt+pending.durationMs-Date.now())+15);
   return;
  }
  const timeline=combatTimeline(combat,Math.max(0,Date.now()-pending.startedAt));
@@ -414,11 +490,9 @@ function refreshCombatButtons(){
  $("analyzeBuild").disabled=r.bossCleared||battleBusy||pending;
 }
 function settleLiveTimeline(result){
- const hadLive=livePreview;
  const motions=advanceLiveClock();
  if(motions)settledPose={motions,until:Date.now()+180};
  clearLiveTimeline();
- if(hadLive)++playToken;
  battleBusy=false;
  combatReceiptUntil=Date.now()+850;
  const {combat}=result;
@@ -549,7 +623,7 @@ function renderExplore(){
   set("combatAdvice","可以在当前关刷怪，满足筑基条件或自愿轮回。");
   set("goalHint","恭喜击败雾隐剑冢Boss！前往境界页面突破筑基，或通过轮回天命进入下一世。");
  }else{
-  const target=p.finalGuardian?"boss":"guardian",a=combatAssessment(s,c,target,24);
+  const target=p.finalGuardian?"boss":"guardian",a=combatReport(target);
   lastCombatAnalysis=a;
   set("guardForecast",Math.round(a.winRate*100)+"% · "+a.risk);
   set("combatStyles",a.heroStyle+" / "+a.enemyStyle+" · "+a.matchup);
@@ -600,7 +674,7 @@ function renderCultivate(){
  set("realmGate",needs.length?needs.join(" · "):("可突破至"+c.realms[r.realmIndex+1]?.name));
  $("realmGate").classList.toggle("success",req.canBreak);
  $("breakthrough").disabled=!req.canBreak;
- $("realmRoute").innerHTML=c.realms.map((q,i)=>'<div class="realm-stage '+(i<r.realmIndex?"passed":i===r.realmIndex?"current":"")+'">'+escapeHTML(q.name)+'</div>').join("");
+ setMarkup("realmRoute",c.realms.map((q,i)=>'<div class="realm-stage '+(i<r.realmIndex?"passed":i===r.realmIndex?"current":"")+'">'+escapeHTML(q.name)+'</div>').join(""));
 }
 function renderPacks(){
  const r=s.run,step=nextStep(s,c,lastCombatAnalysis);
@@ -614,7 +688,7 @@ function renderPacks(){
  const groups=['基础成长','战斗构筑','洞府经营'];
  const available=c.packs.filter(p=>unlockedPack(s,c,p.id)),locked=c.packs.filter(p=>!unlockedPack(s,c,p.id));
  const lockedOpen=$('packList').querySelector('.locked-packs')?.open;
- $('packList').innerHTML=groups.map(group=>{const packs=available.filter(p=>c.management.groups[p.id]===group);return packs.length?'<section class="pack-group"><h3>'+group+'</h3><div class="pack-group-grid">'+packs.map(packCard).join('')+'</div></section>':''}).join('')+(locked.length?'<details class="quiet-disclosure locked-packs" '+(lockedOpen?'open':'')+'><summary>未开放卡包 <span>'+locked.length+'</span></summary><div class="pack-group-grid">'+locked.map(packCard).join('')+'</div></details>':'');
+ setMarkup('packList',groups.map(group=>{const packs=available.filter(p=>c.management.groups[p.id]===group);return packs.length?'<section class="pack-group"><h3>'+group+'</h3><div class="pack-group-grid">'+packs.map(packCard).join('')+'</div></section>':''}).join('')+(locked.length?'<details class="quiet-disclosure locked-packs" '+(lockedOpen?'open':'')+'><summary>未开放卡包 <span>'+locked.length+'</span></summary><div class="pack-group-grid">'+locked.map(packCard).join('')+'</div></details>':''));
 }
 const inventoryMarkup=new Map();
 function renderInventory(listId,effect,slot){
@@ -649,15 +723,15 @@ function renderFate(){
   (s.meta.apex?.[x.id]?"已拥有 · ":"十万分之一 · ")+escapeHTML(x.description)+'</div></div>').join("");
  const ultra=c.ultras.map(x=>'<div class="v8-item '+(s.meta.ultras[x.id]?"active":"missing")+'"><div class="v8-item-name">鸿蒙 · '+escapeHTML(x.name)+'</div><div class="v8-item-desc">'+
   (s.meta.ultras[x.id]?"已拥有 · ":"百万分之一 · ")+escapeHTML(x.description)+'</div></div>').join("");
- $("relicList").innerHTML=regular+apex+ultra;
+ setMarkup("relicList",regular+apex+ultra);
 }
 function renderAtlas(){
  const card=m=>'<div class="v8-atlas-entry '+(m.index<=c.playableMaps?"playable":"")+'"><div><b>'+
    String(m.index).padStart(2,"0")+" "+escapeHTML(m.name)+'</b><small>'+
    escapeHTML(m.mechanicDescription)+" · Boss "+escapeHTML(m.boss.name)+'</small></div><span>'+
    (m.index>c.playableMaps?"规划中":m.index<=s.meta.bestMap?"已抵达":"可玩待解锁")+'</span></div>';
- $("mapAtlas").innerHTML=c.allMaps.slice(0,c.playableMaps).map(card).join("");
- $("mapAtlasFuture").innerHTML=c.allMaps.slice(c.playableMaps).map(card).join("");
+ setMarkup("mapAtlas",c.allMaps.slice(0,c.playableMaps).map(card).join(""));
+ setMarkup("mapAtlasFuture",c.allMaps.slice(c.playableMaps).map(card).join(""));
 }
 function renderDetailPanels(){
  const keys=["explore","cultivate","gacha","technique","cave","pet","items","fate","atlas","settings"];
@@ -678,7 +752,7 @@ function renderDetailPanels(){
 }
 function render(){
  if(!c||!s)return;
- renderToken++;renderTop();renderExplore();renderNovice();renderCultivate();renderPacks();renderGuidance(s,c,view);
+ renderTop();renderExplore();renderNovice();renderCultivate();renderPacks();renderGuidance(s,c,view);
  renderInventory("techniqueList","technique","technique");
  renderInventory("caveList","cave",null);renderInventory("petList","pet","pet");
  renderItems();renderFate();renderAtlas();renderDetailPanels();renderPixelScene(s);renderManagement(s,c,fmt);renderStory(s,c);renderReturns(s);renderBuildRoadmap(s,c);
@@ -728,7 +802,7 @@ function stopAuto(){
  if(timer!==null)clearTimeout(timer);timer=null;
  const wasLive=livePreview;
  clearLiveTimeline();
- if(wasLive){++playToken;battleBusy=false}
+ if(wasLive){battleBusy=false}
  const wasActive=auto;auto=false;
  if(wasActive&&s?.run?.idle?.active){
   const claim=doCommand("STOP_IDLE");
@@ -778,7 +852,7 @@ function schedule(){
   if(autoPush&&!s.run.bossCleared&&!s.run.pendingBattle){
    const target=s.run.checkpoint===c.checkpointsPerMap-1?"boss":"guardian";
    if(!(target==="guardian"&&pendingRealmGate(s,c))){
-    const risk=combatAssessment(s,c,target,24);
+    const risk=combatReport(target);
     if(risk.safeToAuto){
      // Stop the idle transaction before preparing a real-time Boss/guardian
      // encounter. The last idle fractional interval is safely banked.
@@ -809,7 +883,7 @@ async function acceptImport(raw){
   if(s.run.pendingBattle){toast("请等待当前战斗结束后导入存档",true);return}
   const candidate=parseImport(raw,c);
   if(!window.confirm("导入第"+(candidate.meta.reincarnations+1)+"世 · "+c.realms[candidate.run.realmIndex].name+"？当前进度会先备份，然后载入所选存档。"))return;
-  importGame(raw,c,session.storage);clearTimeout(timer);clearTimeout(manualTimer);clearLiveTimeline();playToken++;window.location.reload();
+  importGame(raw,c,session.storage);clearTimeout(timer);clearTimeout(manualTimer);clearLiveTimeline();window.location.reload();
  }catch(error){toast("导入失败："+error.message,true)}
 }
 async function init(){
@@ -883,7 +957,7 @@ async function init(){
   });
   $("closeMobileSheet").addEventListener("click",closeMobileSheet);
   $("mobileSheetBackdrop").addEventListener("click",closeMobileSheet);
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMobileSheet();closeLandscapeNav();closeGear()}});
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(dismissReveal())return;closeMobileSheet();closeLandscapeNav();closeGear()});
   document.addEventListener("click",e=>{
    const main=e.target.closest('button[data-main]');
    if(main){
@@ -961,7 +1035,7 @@ async function init(){
    const ids=[...document.querySelectorAll('[data-inherit]:checked')].map(x=>x.dataset.inherit);
    if(!doCommand('SET_INHERITANCE',{ids}))event.target.checked=!event.target.checked;
   });
-  setInterval(()=>{if(s&&!pageHidden()&&!auto)doCommand('CLAIM_WORLD')},5000);
+  setInterval(tickWorld,5000);
   $("unlockAutoPotion").addEventListener("click",()=>{
    const result=doCommand("UNLOCK_AUTO_POTION");
    if(result)toast("已永久解锁回春自律 · 因果 -"+result.spent);
@@ -1005,7 +1079,7 @@ async function init(){
    const alternative=s.run.realmIndex<4?"\n注意：先筑基再轮回能额外获得10因果，并凑足40因果遗物箱＋25因果自动服药。":"";
    const preview=reincarnationPreview(s,c);
    if(!window.confirm("确定轮回获得"+earned+"因果？\n清空："+preview.cleared+"。\n保留："+preview.kept+"。\n传承："+(preview.inheritance.map(x=>x.name).join("、")||"未选择")+"，每张"+preview.copies+"份。\n已修过境界所需修为降至60%。"+alternative))return;
-   stopAuto();const r=doCommand("REINCARNATE");if(r){playToken++;toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
+   stopAuto();const r=doCommand("REINCARNATE");if(r){toast("轮回成功！获得"+r.earned+"因果，永久遗物继续生效。");changeView("fate")}});
   $("openRelic").addEventListener("click",async()=>{
    if(revealBusy)return;
    revealBusy=true;
@@ -1028,11 +1102,13 @@ async function init(){
   $("importSaveFile").addEventListener("change",async event=>{const file=event.target.files[0];if(file){if(file.size>2*1024*1024)toast("存档文件需小于2MB",true);else await acceptImport(await file.text())}event.target.value=""});
   window.addEventListener("gacha:import",event=>{if(typeof event.detail==='string')acceptImport(event.detail)});
   $("resetSave").addEventListener("click",()=>{if(!session?.writable||restoring||saveFailed)return;if(!window.confirm("确认备份当前v0.8存档并从炼气初期重开？旧版存档不会被修改。"))return;
-   try{stopAuto();playToken++;s=backupAndReset(c,session.storage);try{localStorage.removeItem(NOVICE_SKIP_KEY)}catch{}set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")}catch(error){saveFailed=true;pausePlayback();sessionMessage("备份或保存失败："+error.message+"。原档保留，请重新载入。")}});
+   try{stopAuto();s=backupAndReset(c,session.storage);try{localStorage.removeItem(NOVICE_SKIP_KEY)}catch{}set("saveStatus","已备份旧存档并重新开始");render();changeView("explore")}catch(error){saveFailed=true;pausePlayback();sessionMessage("备份或保存失败："+error.message+"。原档保留，请重新载入。")}});
   const syncVisibility=async()=>{
-   if(!session?.writable||saveFailed)return;
+   // Pausing audio/playback must also work for read-only tabs and after a
+   // failed save; those pages otherwise keep playing in the background.
    if(pageHidden()){pausePlayback();pauseAudio(true);return}
    pauseAudio(false);
+   if(!session?.writable||saveFailed)return;
    if(restoring)return;
    try{await recoverSession()}catch{return}
    if(pageHidden())return;
@@ -1044,6 +1120,7 @@ async function init(){
   window.addEventListener("gacha:back",()=>{
    let handled=true;
    const help=$("moduleHelp"),map=$("explorationMap");
+   if(dismissReveal()){window.GachaAndroid?.backHandled(true);return}
    if($('returnLedger').open)$('returnLedger').close();else if($("storyConversation").open)$("storyConversation").close();else if($("cultivationGuide").open)$("cultivationGuide").close();else if($("combatOptions").open)$("combatOptions").close();else if(help.open)help.close();else if(map.open)map.close();else if(!$("equipmentDrawer").hidden)closeGear();
    else if(document.body.classList.contains("wb-nav-open"))closeLandscapeNav();else if(!$("mobileSheet").hidden)closeMobileSheet();
    else if(view!=="explore")changeView("explore");else handled=false;

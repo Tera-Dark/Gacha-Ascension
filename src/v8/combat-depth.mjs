@@ -93,7 +93,7 @@ export function assessEncounter(snapshot,samples=24){
   opportunity:winRate>=.83?"适合冲关":winRate>=.6?"有风险，可手动挑战":"建议刷怪改善构筑"};
 }
 export function simulateEncounter(input,startSeed){
- const {hero,enemy,tech,pet,heroUltra=false,apexDamageMultiplier=1,kind,mapIndex,
+ const {hero,enemy,tech,pet,heroUltra=false,ultraDamageMultiplier=2.5,apexDamageMultiplier=1,kind,mapIndex,
   heroSpeedPct=0,healing=null,synergy=null,modern=false}=input;
  if(!Number.isSafeInteger(startSeed)||startSeed<1||startSeed>0xffffffff)throw Error("Invalid combat seed");
  const waves=input.waves||encounterWaves(enemy,kind,mapIndex);
@@ -150,7 +150,7 @@ export function simulateEncounter(input,startSeed){
      if(tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(tech.power/100,0,5);
       if(synergy?.strike)raw*=1+cap(synergy.strike,0,.15);
       if(synergy?.burst&&tech.style==="burst"&&heroAttacks%3===0)raw*=1+cap(synergy.burst,0,.25);
-     if(heroUltra)raw*=2.5;
+     if(heroUltra)raw*=ultraDamageMultiplier;
      raw*=apexDamageMultiplier;
      amount=Math.max(1,Math.round(raw));
      enemyHp=Math.max(0,enemyHp-amount);heroDealt+=amount;

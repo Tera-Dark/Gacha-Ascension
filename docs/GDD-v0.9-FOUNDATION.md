@@ -45,11 +45,11 @@
 
 ### 状态与交易
 
-Schema10沿用原存档键。`run.world` 保存主活动、药田、丹炉排程、时间尾数与结算报告；`run.recipes/mastery` 属于本世；`meta.knowledge/dao/inheritance/directed` 跨世。Schema8／9升级先备份原始字节，保留卡牌、装备、材料、因果、遗物与冻结的旧战斗，不推测已经消耗的历史卡或补发定向抽数。
+Schema10沿用原存档键。`run.world` 保存主活动、药田、丹炉排程、时间尾数与结算报告；`run.startingStones` 记录本世开局灵石，灵石流水校验使用存档内数值，调整开局经济不会让旧档失效；`run.recipes/mastery` 属于本世；`meta.knowledge/dao/inheritance/directed` 跨世。Schema8／9升级先备份原始字节，保留卡牌、装备、材料、因果、遗物与冻结的旧战斗，不推测已经消耗的历史卡或补发定向抽数。首个Schema8版本的存档缺少药草、丹药、宝箱、装备与法器容器，迁移会补默认值并要求这些字段存在，避免升级后第一次采药或挂机才崩溃。
 
 回访用 `RESTORE_SESSION` 在同一事务内追加 `meta.returns`（跨世最近5次），`ACK_RETURN`只确认阅读，不结算时间或发奖。普通在线结算不会覆盖历史回访；Schema8／9迁移不补造账单。模块Worker仅计算一个固定结束时间与24小时总窗口，输出经单写会话校验后保存；中断或冲突不提交。Web Locks所有者负责迁移／导入／重开／保存，其他页面只读；旧客户端写入造成字节冲突也会停止当前写入。
 
-事务：`START_ACTIVITY`／`CLAIM_WORLD`／`SET_FIELD`／`QUEUE_BREW`／`REMOVE_BREW`；`BREW`兼容入口改为计时排程；`CLAIM_DIRECTED`／`LEARN_DAO`／`SET_INHERITANCE`。既有探索、手动实时战斗和轮回命令继续复用；UI不直接发奖。完整工程职责与验证命令见仓库README。
+事务：`START_ACTIVITY`／`CLAIM_WORLD`／`SET_FIELD`／`QUEUE_BREW`／`REMOVE_BREW`；`BREW`兼容入口改为计时排程；`CLAIM_DIRECTED`／`LEARN_DAO`／`SET_INHERITANCE`。进行中的手动战斗只能经`FINISH_BATTLE`结算；战斗参数被更新导致旧记录无法复核时，`ABANDON_BATTLE`在存档时间结束后放弃本场且不发奖，避免存档被永久锁住。设备时钟回退时结算按0秒处理并保留时间锚点，不承认倒退的时间，也不会把同一段收益重复发放。既有探索、手动实时战斗和轮回命令继续复用；UI不直接发奖。完整工程职责与验证命令见仓库README。
 
 ### 当前验收与剩余边界
 
@@ -78,7 +78,7 @@ Schema10沿用原存档键。`run.world` 保存主活动、药田、丹炉排程
 隐私政策与用户协议必须填实际运营主体、联系方式、SDK信息和可访问HTTPS地址；现阶段未伪造主体或平台应用配置。接入参数与命令见README。开发者认证、协议签署和正式密钥保管由开发者完成。
 手册是可选实践清单，不是每日任务或新的奖励来源。入门、经营、构筑按本世记录；道统、定向领取及首次轮回依据永久记录。装配和药田表示当前状态，卸下／关闭会取消勾选。已有药品不证明亲手炼过丹，传承卡不证明本世抽过卡；不追溯已消耗历史。14项可并行，随机解锁项不会阻塞下一建议；各页「手册」随时重开。基础三步引导的旧跳过偏好继续生效。提示偏好独立存在 `gacha-ascension-v8-guidance-v1`，属于当前设备界面设置，不随游戏档导出；不增加 Schema 字段、不自动开始活动、不代抽、不领奖、不自动轮回。
 
-本轮另记录一处既存配置漂移：`data/v8-slice.json/startingStones` 为80，实际 `createRun()` 与现行首局测试是110；本轮保留实际开局和经济，后续统一配置入口时以显式兼容测试处理，不能据旧字段推断玩家只有80灵石。多标签单写与Worker恢复已处理；大数与实际低端机性能仍待后续验证。
+开局灵石有单一配置源：`data/v8-slice.json/startingStones` 与 `engine.mjs/STARTING_STONES` 同为110，`loadCatalog` 在两者不一致时直接拒绝启动；开局时该数值写入 `run.startingStones`，流水校验读取存档内数值，因此之后调整开局经济只会影响新开的一世，不会把存量存档判成损坏。多标签单写与Worker恢复已处理；大数与实际低端机性能仍待后续验证。
 
 ## 地图、境界与战斗
 
