@@ -48,7 +48,7 @@ export function renderBank(s,c,fmt){
  const all=bankEntries(s,c),visible=all.filter(x=>(category==='all'||x.category===category)&&(!query||(x.name+' '+x.id).toLowerCase().includes(query)));
  // Keep selection through state updates, including consuming the final copy.
  if(!selected&&visible.length)selected=visible[0].key;
- html($('bankFilters'),Object.entries(BANK_CATEGORIES).map(([key,label])=>'<button type="button" data-bank-category="'+key+'" aria-pressed="'+(key===category)+'">'+label+(key==='all'?'':' <small>'+all.filter(x=>x.category===key).length+'</small>')+'</button>').join(''));
+ html($('bankFilters'),Object.entries(BANK_CATEGORIES).map(([key,label])=>{const count=all.filter(x=>x.category===key).length;return '<button type="button" data-bank-category="'+key+'" aria-pressed="'+(key===category)+'">'+label+(key==='all'||!count?'':' <small>'+count+'</small>')+'</button>'}).join(''));
  $('bankCount').textContent=visible.length+' / '+all.length+' 种';
  html($('bankGrid'),visible.map(x=>'<button type="button" class="bank-item" data-bank-item="'+x.key+'" data-rarity="'+esc(x.rarity||'huang')+'" aria-pressed="'+(x.key===selected)+'"><span class="bank-item-icon">'+pixelIcon(x.icon)+'</span><strong>'+esc(x.name)+'</strong><span class="bank-item-count">×'+fmt(x.count)+'</span>'+(x.equipped?'<small class="bank-badge">已装配 '+x.equipped+'</small>':x.prepared?'<small class="bank-badge">备战 '+x.prepared+'</small>':'')+'</button>').join('')||'<div class="bank-empty">'+(query?'没有匹配物品':'暂无物品')+'</div>');
  const item=all.find(x=>x.key===selected);

@@ -19,20 +19,20 @@ export function pixelIcon(name,extra=''){
 export const packIcons={battle:'sword',wealth:'coin',cultivation:'scroll',technique:'book',cave:'cave',pet:'fox',elixir:'bottle',equipment:'bag',artifact:'fate'};
 export function initPixelUI(){
  const screens={
-  cultivate:['01','scroll','问道台','积蓄修为 · 凝神破境','CULTIVATION'],
-  gacha:['02','fate','万象阁','九道机缘 · 一念天成','FATE & FORTUNE'],
-  technique:['03','book','藏经楼','主修一法 · 剑守灵势','TECHNIQUES'],
-  cave:['04','cave','山中洞府','灵田聚气 · 营造长生','MOUNTAIN RETREAT'],
-  pet:['05','fox','御灵苑','缔结灵契 · 共赴山海','SPIRIT COMPANIONS'],
-  items:['06','bag','百宝行囊','战利归囊 · 炼药备战','INVENTORY'],
-  fate:['07','fate','轮回台','前尘归一 · 因果长存','SAMSARA'],
-  atlas:['08','map','山海舆图','四境已启 · 大千待寻','WORLD ATLAS'],
-  settings:['09','save','修行手札','封存此世 · 续写仙途','ARCHIVE']
+  cultivate:['01','scroll','境界突破'],
+  gacha:['02','fate','机缘抽卡'],
+  technique:['03','book','功法'],
+  cave:['04','cave','洞府'],
+  pet:['05','fox','灵宠'],
+  items:['06','bag','道具行囊'],
+  fate:['07','fate','轮回天命'],
+  atlas:['08','map','世界图鉴'],
+  settings:['09','save','存档设置']
  };
  for(const [view,[index,icon,title,subtitle,english]] of Object.entries(screens)){
   const panel=document.querySelector('[data-view-panel="'+view+'"]');if(!panel)continue;
   const banner=document.createElement('header');banner.className='px-system-banner';
-  banner.innerHTML='<div class="px-banner-mark">'+pixelIcon(icon)+'</div><div><div class="module-title"><h2>'+title+'</h2><button type="button" class="module-help" data-module-help="'+view+'" aria-label="查看'+title+'说明">?</button></div></div><span class="px-banner-index">'+index+'</span>';
+  banner.innerHTML='<div class="px-banner-mark">'+pixelIcon(icon)+'</div><div class="module-title"><h2>'+title+'</h2><button type="button" class="module-help" data-module-help="'+view+'" aria-label="查看'+title+'说明">?</button></div>';
   panel.prepend(banner);
  }
  for(const node of document.querySelectorAll('button[data-view] .nav-glyph,.mobile-tabs button[data-view]>span')){

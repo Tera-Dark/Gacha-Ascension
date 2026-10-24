@@ -36,7 +36,7 @@ test("visual preview is pure; idle transaction settles once and follows exactly 
  assert.equal(settled.result.attempts,1);
  assert.deepEqual(settled.result.lastBattle.combat,predicted,"visual prediction and actual encounter must agree");
  assert.equal(settled.state.run.victories,Number(predicted.won));
- assert.equal(SCHEMA,9);
+ assert.equal(SCHEMA,10);
  assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
 });
 test("resume or equipment change seeks from elapsed fight time without restarting past hits",()=>{

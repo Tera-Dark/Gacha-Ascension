@@ -5,6 +5,7 @@
  */
 import {readFileSync} from "node:fs";
 import {loadCatalog,createSave,dispatch,heroStats,combatAssessment,breakthroughRequirements,packCost} from "../src/v8/engine.mjs";
+import {unlockedPack} from '../src/v8/modules.mjs';
 const read=p=>JSON.parse(readFileSync(new URL("../data/"+p,import.meta.url),"utf8"));
 const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json"));
 
@@ -16,7 +17,7 @@ export function play(seed,policy="battle",limit=3600){
  function command(type,values={}){
   const out=dispatch(s,c,{seq:s.seq+1,type,...values});s=out.state;return out.result;
  }
- const affordable=pack=>s.run.stones>=packCost(s,c,pack);
+ const affordable=pack=>unlockedPack(s,c,pack)&&s.run.stones>=packCost(s,c,pack);
  const draw=pack=>{
   command("DRAW",{packId:pack,count:1});draws++;pulls[pack]=(pulls[pack]||0)+1;
  };

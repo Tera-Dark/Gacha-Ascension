@@ -5,11 +5,11 @@ const html=read("preview-v0.8.html"),js=read("src/v8/ui.mjs"),engine=read("src/v
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]),idSet=new Set(ids);
 assert.equal(ids.length,idSet.size,"Duplicate id in playable v0.8 page");
 const management=read("src/v8/management-ui.mjs");
-const bank=read("src/v8/bank.mjs"),help=read("src/v8/module-help.mjs");
+const bank=read("src/v8/bank.mjs"),help=read("src/v8/module-help.mjs"),guidance=read("src/v8/guidance-ui.mjs"),story=read("src/v8/story-ui.mjs");
 for(const match of management.matchAll(/\bid="([^"]+)"/g)){
  assert.ok(!idSet.has(match[1]),"Duplicate dynamic management ID "+match[1]);idSet.add(match[1]);
 }
-for(const id of [...(js+management+bank).matchAll(/\$\(["']([^"']+)["']\)/g),...js.matchAll(/\bset\("([^"]+)"/g)].map(m=>m[1]))
+for(const id of [...(js+management+bank+guidance+story).matchAll(/\$\(["']([^"']+)["']\)/g),...js.matchAll(/\bset\(["']([^"']+)["']/g)].map(m=>m[1]))
  assert.ok(idSet.has(id),"UI references absent node "+id);
 for(const [,id] of help.matchAll(/getElementById\('([^']+)'\)/g))assert.ok(idSet.has(id),"Help references absent node "+id);
 assert.match(html,/src="\.\/src\/v8\/ui\.mjs"/);

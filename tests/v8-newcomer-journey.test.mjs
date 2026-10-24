@@ -10,7 +10,7 @@ const c=loadCatalog(read("realms-maps.v0.8.proposal.json"),read("v8-slice.json")
 const exec=(s,type,other={})=>dispatch(s,c,{seq:s.seq+1,type,...other});
 test("brand new players get a clear three-step journey instead of a 96% first guardian",()=>{
  let s=createSave(20261020);
- assert.equal(SCHEMA,9);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
+ assert.equal(SCHEMA,10);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
  assert.equal(noviceStep(s).index,1);
  assert.equal(nextStep(s,c,combatAssessment(s,c,"guardian",24)).packId,"battle");
  assert.equal(nextStep(s,c,null).view,"gacha");

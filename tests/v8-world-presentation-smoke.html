@@ -1,0 +1,25 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Four worlds presentation</title><style>body{margin:0;background:#102723;color:#e5d5a2}iframe{width:100%;height:calc(100dvh - 25px);border:0}output{display:block}</style><output id="result" data-result="PENDING">RUNNING</output><main id="frames"></main><script type="module">
+import {createSave,loadCatalog,dispatch,SAVE_KEY} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
+if(location.port!=='4180'){out.dataset.result='SKIP'}else try{
+ const c=loadCatalog(...await Promise.all(['realms-maps.v0.8.proposal.json','v8-slice.json'].map(p=>fetch('../data/'+p).then(r=>r.json()))));
+ const worlds=new Set(),enemies=new Set();
+ for(let map=0;map<4;map++){
+  let s=createSave(101);s.run.mapIndex=map;s.run.realmIndex=map;s.run.checkpoint=7;s.meta.bestMap=map+1;s.meta.bestCheckpoint=map*8+8;
+  s=dispatch(s,c,{type:'PREPARE_BATTLE',enemyType:'boss',seq:1,now:Date.now()}).state;localStorage.setItem(SAVE_KEY,JSON.stringify(s));
+  const frame=document.createElement('iframe');frame.title='Map '+(map+1);document.getElementById('frames').append(frame);frame.src='../preview-v0.8.html';
+  const d=()=>frame.contentDocument;
+  for(let i=0;i<250&&(!d()?.getElementById('enemyArt')?.querySelector('canvas')||!d()?.querySelector('#packList [data-draw]'));i++)await wait(20);
+  check(d().getElementById('combatTheatre').dataset.map===String(map),'wrong map scene');
+  check(d().getElementById('combatTheatre').dataset.enemyRank==='boss','boss is not distinguished');
+  const canvas=d().getElementById('enemyArt').querySelector('canvas');check(!!canvas,'missing enemy canvas');enemies.add(canvas.toDataURL());
+  if(map>0){const scene=d().getElementById('pixelBackdrop').querySelector('canvas');check(scene&&!scene.hidden,'missing world scenery');worlds.add(scene.toDataURL())}
+  else worlds.add('existing-qingyun-asset');
+  check(d().documentElement.scrollWidth<=frame.clientWidth+2,'world scene overflow');
+  if(map===3){d().querySelector('[data-view="settings"]').click();const muted=d().getElementById('muteSound');muted.click();check(localStorage.getItem('gacha-ascension-v8-muted-v1')==='1','mute preference not saved');d().querySelector('[data-view="explore"]').click()}
+  if(map<3){frame.remove();await wait(30)}
+ }
+ check(worlds.size===4&&enemies.size===4,'worlds or bosses share the same visual');
+ out.dataset.result='PASS';out.textContent='PASS: four distinct pixel worlds/bosses, retained canvases, mute preference and no overflow';
+}catch(error){out.dataset.result='FAIL';out.textContent='FAIL: '+error.message}
+</script></html>

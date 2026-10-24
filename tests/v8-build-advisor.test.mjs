@@ -20,7 +20,7 @@ function longFight(tech,pet,synergy){
 test("four pair rules have unique, real effects and do not require a schema bump",()=>{
  assert.equal(PAIR_SYNERGIES.length,4);
  assert.equal(new Set(PAIR_SYNERGIES.map(x=>x.id)).size,4);
- assert.equal(SCHEMA,9);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
+ assert.equal(SCHEMA,10);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
  let s=createSave(10001);
  assert.equal(activeSynergy(s),null);
  s.run.technique="T001";s.run.pet="P001";

@@ -3,7 +3,7 @@
   "provider": "pixelmon-local-sdxl",
   "status": "ready",
   "reference": "concept-reference.png",
-  "provenance": "主角、狼妖、灵狐及山林背景由 pixelmon + ComfyUI + SDXL / Pixel Art XL 在本地生成；首版动作是基于同一角色原画的程序关键帧。其余地图暂复用首图美术。",
+  "provenance": "主角、狼妖、灵狐及山林背景由 pixelmon + ComfyUI + SDXL / Pixel Art XL 在本地生成；首版动作是基于同一角色原画的程序关键帧。后3图场景与各图首领由本项目pixel-world.mjs代码绘制，不增加AI生成图片。",
   "backgrounds": [
     "qingyun-background.png",
     "qingyun-background.png",

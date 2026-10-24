@@ -69,6 +69,8 @@ test('24h cap applies to both lives and stock full never destroys pre-existing h
 test('normal pulls give 20-pull directed core reward; ineligible/locked cards cannot be claimed',()=>{
  let s=fund(initial());for(let i=0;i<2;i++)s=command(s,'DRAW',0,{packId:'battle',count:10}).state;
  const seed=s.seed,draws=s.run.draws.battle;
+ assert.throws(()=>command(s,'CLAIM_DIRECTED',0,{id:'T003'}),/已开放定向池/);
+ s.run.checkpoint=1;s.meta.bestCheckpoint=2;
  s=command(s,'CLAIM_DIRECTED',0,{id:'T003'}).state;
  assert.equal(s.run.cards.T003,1);assert.equal(s.meta.knowledge.cards.T003,true);assert.equal(s.seed,seed);assert.equal(s.run.draws.battle,draws);
  assert.throws(()=>command(s,'CLAIM_DIRECTED',0,{id:'T003'}),/20抽/);
@@ -145,5 +147,5 @@ test('legacy active combat retains the original snapshot clock and migration fai
  const loaded=readGame(c,storage);assert.equal(loaded.status,'migrated');
  assert.deepEqual(fight(loaded.state,c,'guardian',{seed:old.seed}),combat);
  const denied={getItem:k=>k===SAVE_KEY?raw:null,setItem:()=>{throw Error('quota')}};
- assert.equal(readGame(c,denied).status,'invalid');assert.equal(denied.getItem(SAVE_KEY),raw);
+ assert.equal(readGame(c,denied).status,'blocked');assert.equal(denied.getItem(SAVE_KEY),raw);
 });

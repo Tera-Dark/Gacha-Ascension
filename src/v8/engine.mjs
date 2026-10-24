@@ -8,9 +8,10 @@ import {inventory,validateInventory,rollBoxDrop,openBox,prepareItem,unlockAutoPo
 import {createWorld,settleWorld,addTask,setActivity,setField,validateWorld} from "./activities.mjs";
 import {ensureProgression,recordProgress,discover,cappedCopies,growth,coreCard,selectInheritance,learnDao,validateProgression} from "./progression.mjs";
 import {activeSynergy} from "./synergy.mjs";
+import {recordReturn,validateReturns} from './return-ledger.mjs';
 /** v0.8 preview. All battle, gacha and progression mutations live here, never in the UI. */
 export const SAVE_KEY="gacha-ascension-v8-slice-v1";
-export const SCHEMA=9;
+export const SCHEMA=10;
 const deep=x=>structuredClone(x), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
 const nat=n=>Number.isSafeInteger(n)&&n>=0;
@@ -35,7 +36,7 @@ export function loadCatalog(world,slice){
 export function createSave(seed=20261020){
  if(!nat(seed)||seed===0||seed>0xffffffff)throw Error("随机种子错误");
  const state={schemaVersion:SCHEMA,seed,seq:0,receipts:{},receiptOrder:[],
-  meta:{fate:0,reincarnations:0,bestMap:1,bestCheckpoint:1,relics:{},ultras:{},apex:{},pity:0,pityXian:0,totalFateChests:0},
+  meta:{returns:[],fate:0,reincarnations:0,bestMap:1,bestCheckpoint:1,relics:{},ultras:{},apex:{},pity:0,pityXian:0,totalFateChests:0},
   run:createRun()};
  ensureProgression(state);return state;
 }
@@ -70,7 +71,7 @@ export function validateSave(s,c){
  if(m.apex&&Object.keys(m.apex).some(id=>!c.apex.some(x=>x.id===id)))throw Error("未知太古异宝");
  if(m.pityXian!==undefined&&!nat(m.pityXian))throw Error("仙阶保底进度损坏");
  if(Object.keys(m.ultras).some(id=>!c.ultras.some(x=>x.id===id)))throw Error("未知鸿蒙遗物");
- validateProgression(s,c);validateWorld(s,c);
+ validateProgression(s,c);validateWorld(s,c);validateReturns(s);
  return s;
 }
 function roll(s){let x=s.seed>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;s.seed=(x>>>0)||0x9e3779b9;return s.seed/4294967296}
@@ -336,7 +337,7 @@ function reincarnate(s,c,now){
 function openRelic(s,c){return pullFate(s,c,()=>roll(s))}
 export function dispatch(current,c,cmd){
  if(!cmd||cmd.seq!==current.seq+1||typeof cmd.type!=="string")throw Error("交易序号异常");
- if(["START_ACTIVITY","CLAIM_WORLD","START_IDLE","CLAIM_IDLE","STOP_IDLE","SET_FIELD","QUEUE_BREW","REMOVE_BREW"].includes(cmd.type)&&(!Number.isSafeInteger(cmd.now)||cmd.now<0))throw Error("修行活动需要有效的毫秒时间戳");
+ if(["RESTORE_SESSION","START_ACTIVITY","CLAIM_WORLD","START_IDLE","CLAIM_IDLE","STOP_IDLE","SET_FIELD","QUEUE_BREW","REMOVE_BREW"].includes(cmd.type)&&(!Number.isSafeInteger(cmd.now)||cmd.now<0))throw Error("修行活动需要有效的毫秒时间戳");
  const s=deep(current),r=s.run;let result;
  const encounter=()=>{
   if(!r.idle.encounter)r.idle.encounter={seed:s.seed,snapshot:combatSnapshot(s,c,"mob")};
@@ -347,11 +348,17 @@ export function dispatch(current,c,cmd){
  const interval=(st,cat)=>battleIntervalMs(st,cat,yields,(x,y)=>fight(x,y,"mob",{seed:x.seed}));
  // A manually started encounter owns the save until its real combat clock
  // completes. No cards, equipment, drops or rewards can change mid-fight.
- if(r.pendingBattle&&!["FINISH_BATTLE","CLAIM_WORLD"].includes(cmd.type))throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
+ if(r.pendingBattle&&!["FINISH_BATTLE","CLAIM_WORLD","RESTORE_SESSION","ACK_RETURN"].includes(cmd.type))throw Error("战斗尚在进行，请完成本场逐击战斗后再操作");
  // Settle the old activity and production before any mutation of its rules.
  let worldReport=null;
- if(Number.isSafeInteger(cmd.now))worldReport=settle();
+ const returnFrom=r.world.at;
+ if(Number.isSafeInteger(cmd.now)&&cmd.type!=="ACK_RETURN")worldReport=settle();
  switch(cmd.type){
+ case "RESTORE_SESSION":recordReturn(s,worldReport,returnFrom,cmd.now);result=worldReport;break;
+ case "ACK_RETURN":{
+  const row=s.meta.returns.find(x=>x.id===cmd.id);if(!row)throw Error('回访账单不存在');
+  row.acknowledged=true;result={kind:'returnAcknowledged',id:row.id};break;
+ }
  case "PREPARE_BATTLE":{
   if(!Number.isSafeInteger(cmd.now)||cmd.now<0)throw Error("战斗开始时间异常");
   const kind=cmd.enemyType;
@@ -454,11 +461,13 @@ export function dispatch(current,c,cmd){
  return {state:s,result,worldReport};
 }
 
-/** Schema 8 -> 9 is explicit and lossless for known holdings. No invented draws. */
+/** Explicit 8/9 -> 10 migration; raw-byte backup is the storage layer's job. */
 export function migrateSave(old,c){
  if(old?.schemaVersion===SCHEMA)return {state:validateSave(old,c),migrated:false};
- if(old?.schemaVersion!==8)throw Error("不支持的存档版本");
- const s=structuredClone(old);s.schemaVersion=SCHEMA;ensureProgression(s);
+ if(![8,9].includes(old?.schemaVersion))throw Error("不支持的存档版本");
+ const s=structuredClone(old);s.schemaVersion=SCHEMA;s.meta.returns=[];
+ if(old.schemaVersion===9){validateSave(s,c);return {state:s,migrated:true}}
+ ensureProgression(s);
  s.run.world=createWorld(s.run.idle?.at??null);
  if(s.run.pendingBattle&&!s.run.pendingBattle.snapshot)
   s.run.pendingBattle.snapshot=combatSnapshot(s,c,s.run.pendingBattle.kind,true);

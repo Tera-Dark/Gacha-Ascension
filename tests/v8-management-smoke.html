@@ -5,6 +5,7 @@ if(location.port!=='4180'){out.textContent='SKIP: use the isolated test server o
  const original=localStorage.getItem(SAVE_KEY),s=createSave(20261020);s.schemaVersion=8;
  delete s.run.world;delete s.run.recipes;delete s.run.mastery;delete s.meta.knowledge;delete s.meta.dao;delete s.meta.inheritance;delete s.meta.directed;
  s.run.cards.H001=3;s.run.herbs.H001=9;s.run.stones+=10000;s.run.totalEarned+=10000;
+ s.run.checkpoint=1;s.run.guardianWins=1;s.meta.bestCheckpoint=2;
  const legacy=JSON.stringify(s);localStorage.setItem(SAVE_KEY,legacy);
  let phase=0;
  frame.addEventListener('load',async()=>{
@@ -14,7 +15,7 @@ if(location.port!=='4180'){out.textContent='SKIP: use the isolated test server o
    check(!!d.querySelector('#productionPanel'),'management panel missing');
    const nav=view=>d.querySelector('.system-sidebar [data-view="'+view+'"]').click();
    if(phase===0){
-    check(read().schemaVersion===9,'legacy save did not migrate');
+    check(read().schemaVersion===10,'legacy save did not migrate');
     check(Object.keys(localStorage).some(k=>k.includes('schema8-backup')&&localStorage.getItem(k)===legacy),'exact legacy backup missing');
     d.querySelector('[data-main="gather"]').click();await wait(60);check(read().run.world.activity.kind==='gather','gather does not start');
     nav('cave');d.getElementById('brewMode').value='target';d.getElementById('brewAmount').value='1';d.getElementById('queueBrew').click();await wait(60);
@@ -31,13 +32,16 @@ if(location.port!=='4180'){out.textContent='SKIP: use the isolated test server o
     check(read().meta.directed.draws===20,'ordinary draws did not earn directed progress');
     d.getElementById('directedCard').value='T003';d.getElementById('claimDirected').click();await wait(60);
     check(read().run.cards.T003===1,'directed core card absent');
-    nav('fate');d.querySelector('[data-inherit="T003"]').click();d.querySelector('[data-inherit="H001"]').click();await wait(60);
+    nav('fate');
+    check(!d.getElementById('lineagePanel').hidden&&d.querySelector('[data-fate-panel="inheritance"]').hidden,'fate should show one section at a time');
+    d.querySelector('[data-fate-tab="inheritance"]').click();check(!d.querySelector('[data-fate-panel="inheritance"]').hidden&&d.getElementById('lineagePanel').hidden,'inheritance section cannot open');
+    d.querySelector('[data-inherit="T003"]').click();d.querySelector('[data-inherit="H001"]').click();await wait(60);
     check(read().meta.inheritance.length===2,'inheritance selection not persisted');
-    d.querySelector('[data-learn-dao="inherit"]').click();await wait(60);check(read().meta.dao.nodes.inherit,'dao unlock absent');
+    d.querySelector('[data-fate-tab="dao"]').click();d.querySelector('[data-learn-dao="inherit"]').click();await wait(60);check(read().meta.dao.nodes.inherit,'dao unlock absent');
     const saved=read();saved.run.world.activity.kind='none';saved.run.bossCleared=true;saved.run.realmIndex=3;saved.run.mapIndex=3;saved.run.checkpoint=7;
     localStorage.setItem(SAVE_KEY,JSON.stringify(saved));phase=2;w.location.reload();return;
    }
-   nav('fate');check(d.getElementById('reincarnationPreview').textContent.includes('每张2份'),'inheritance preview wrong');
+   nav('fate');d.querySelector('[data-fate-tab="inheritance"]').click();check(d.getElementById('reincarnationPreview').textContent.includes('每张2份'),'inheritance preview wrong');
    w.confirm=()=>true;d.getElementById('reincarnate').click();await wait(80);
    const final=read();check(final.meta.reincarnations===1,'rebirth did not commit');
    check(final.run.cards.T003===2&&final.run.cards.H001===2,'inherited copies wrong');check(!final.run.cards.B001,'ordinary stats survived reset');

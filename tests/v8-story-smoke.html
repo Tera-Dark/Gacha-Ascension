@@ -1,0 +1,73 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Immersive mainline acceptance</title><style>body{margin:0;background:#102723;color:#e5d5a2;font:12px sans-serif}output{display:block;padding:4px}iframe{border:0;width:100vw;height:calc(100dvh - 26px)}</style></head><body><output id="result" data-result="PENDING">RUNNING STORY ACCEPTANCE</output><iframe id="app" title="Mainline preview"></iframe><script type="module">
+import {createSave,SAVE_KEY,loadCatalog,dispatch} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
+if(location.port!=='4180'){out.dataset.result='SKIP';out.textContent='SKIP: isolated port 4180 required'}else (async()=>{
+ try{
+  const c=loadCatalog(await(await fetch('../data/realms-maps.v0.8.proposal.json')).json(),await(await fetch('../data/v8-slice.json')).json());
+  let d,w;const read=()=>JSON.parse(localStorage.getItem(SAVE_KEY));
+  const boot=async()=>{await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='../preview-v0.8.html?story='+Date.now()});d=frame.contentDocument;w=frame.contentWindow;for(let i=0;i<120&&!d.querySelector('#packList [data-draw]');i++)await wait(40);check(!!d.querySelector('#packList [data-draw]'),'game did not initialize')};
+  const detach=async()=>{const loaded=new Promise(resolve=>frame.addEventListener('load',resolve,{once:true}));frame.src='about:blank';await loaded};
+  const nav=view=>d.querySelector('.system-sidebar [data-view="'+view+'"]').click();
+  const closeReveal=async()=>{d.getElementById('skipReveal').click();d.getElementById('closeReveal').click();await wait(60)};
+  localStorage.setItem(SAVE_KEY,JSON.stringify(createSave(20261020)));localStorage.removeItem('gacha-ascension-v8-novice-skip-v1');localStorage.removeItem('gacha-ascension-v8-story-reader-v1');
+  await boot();check(d.getElementById('storyConversation').open,'fresh player did not meet keeper');
+  check(d.getElementById('storyChapterTitle').textContent==='无名庙中醒来','opening chapter wrong');
+  check(d.querySelectorAll('#packList>.pack-group [data-pack-id]').length===1,'all packs exposed on opening');
+  check(d.querySelector('.system-sidebar [data-view="pet"]').classList.contains('is-unintroduced'),'pet navigation introduced too early');
+  const original=read();d.getElementById('storyContinue').click();d.getElementById('storyContinue').click();
+  check(d.getElementById('storySpeaker').textContent.includes('阿烬'),'keeper voice missing');
+  check(read().seed===original.seed&&read().run.stones===original.run.stones,'conversation changed economy');
+  d.getElementById('storyContinue').click();
+  check(!d.getElementById('storyConversation').open&&d.querySelector('[data-view-panel="gacha"]').classList.contains('is-active'),'story did not lead to real gacha');
+  d.querySelector('[data-draw="battle"][data-count="1"]').click();await wait(80);
+  check(read().run.draws.battle===1,'opening draw not committed');
+  await closeReveal();check(d.getElementById('drawImpact').textContent.includes('命痕'),'first draw has no gameplay impact feedback');
+  const afterDraw=read();await detach();
+  // A funded combat fixture reaches the first chapter using actual transactions.
+  let s=afterDraw;s.run.stones+=5000;s.run.totalEarned+=5000;
+  s=dispatch(s,c,{type:'DRAW',seq:s.seq+1,packId:'battle',count:10,now:Date.now()}).state;
+  let won=false;for(let i=0;i<6&&!won;i++){const result=dispatch(s,c,{type:'BATTLE',seq:s.seq+1,enemyType:'guardian',now:Date.now()});s=result.state;won=result.result.won}
+  check(won&&s.run.checkpoint===1,'fixture did not actually clear first guardian');localStorage.setItem(SAVE_KEY,JSON.stringify(s));
+  await boot();check(!d.getElementById('storyConversation').open,'every chapter should not force a modal');
+  check(!d.querySelector('.system-sidebar [data-view="technique"]').classList.contains('is-unintroduced'),'technique nav did not open');
+  d.getElementById('openStory').click();check(d.getElementById('storyChapterTitle').textContent==='书页会呼吸','first guardian did not advance narrative');
+  const beforeSkip=read();d.getElementById('skipStory').click();check(read().seed===beforeSkip.seed&&read().run.stones===beforeSkip.run.stones,'skipping story granted rewards');
+  nav('gacha');check(!d.querySelector('[data-draw="technique"][data-count="1"]').disabled,'technique pack still locked after chapter');
+  check(d.querySelector('[data-draw="pet"][data-count="1"]').disabled,'future pet pack bypassed story');
+  d.querySelector('[data-draw="technique"][data-count="1"]').click();await wait(80);
+  check(read().run.technique,'first technique did not auto equip');
+  d.getElementById('skipReveal').click();check(d.getElementById('revealCards').textContent.includes('初识命痕'),'core reveal does not explain its mechanism');
+  d.getElementById('closeReveal').click();await wait(70);
+  check(d.getElementById('drawImpact').textContent.includes('初识命痕'),'core impact feedback lost');
+  // A guaranteed core choice can change which content arrives next.
+  s=read();await detach();
+  s=dispatch(s,c,{type:'DRAW',seq:s.seq+1,packId:'battle',count:10,now:Date.now()}).state;
+  s=dispatch(s,c,{type:'CLAIM_DIRECTED',seq:s.seq+1,id:'T003',now:Date.now()}).state;
+  localStorage.setItem(SAVE_KEY,JSON.stringify(s));await boot();
+  d.getElementById('openStory').click();check(d.getElementById('storyChapterTitle').textContent==='命痕唤来同伴','spirit discovery did not create companion branch');
+  d.getElementById('storyContinue').click();d.getElementById('storyContinue').click();d.getElementById('storyContinue').click();
+  check(d.querySelector('[data-view-panel="gacha"]').classList.contains('is-active'),'branch did not lead to summon');
+  check(!d.querySelector('[data-draw="pet"][data-count="1"]').disabled,'spirit branch did not really unlock pet early');
+  d.querySelector('[data-draw="pet"][data-count="1"]').click();await wait(80);check(read().run.pet,'branch summon did not create a real active companion');await closeReveal();
+  // A return episode stays replayable after the next life has already moved on.
+  await detach();s=createSave(412);s.meta.reincarnations=1;s.meta.bestMap=4;s.meta.bestCheckpoint=32;
+  s=dispatch(s,c,{type:'DRAW',seq:s.seq+1,packId:'battle',count:1,now:Date.now()}).state;
+  localStorage.setItem(SAVE_KEY,JSON.stringify(s));await boot();
+  d.getElementById('openStory').click();d.querySelector('.story-archive>summary').click();
+  const beforeReplay=read();d.querySelector('[data-story-replay="return"]').click();
+  check(d.getElementById('storyChapterTitle').textContent==='你已是自己的前人','return episode cannot be replayed');
+  d.getElementById('storyContinue').click();d.getElementById('storyContinue').click();d.getElementById('storyContinue').click();
+  check(d.getElementById('storyChapterTitle').textContent==='借来的一剑','replay action did not return to current chapter');
+  check(read().seed===beforeReplay.seed&&read().run.stones===beforeReplay.run.stones,'replaying old episode changed the game');
+  d.getElementById('skipStory').click();
+  if(d.querySelector('.story-archive').open)d.querySelector('.story-archive>summary').click();
+  nav('explore');d.getElementById('openStory').click();
+  let handled=false;w.GachaAndroid={backHandled:value=>handled=value};w.dispatchEvent(new w.Event('gacha:back'));
+  check(handled&&!d.getElementById('storyConversation').open,'Android back did not dismiss dialogue');
+  d.getElementById('openStory').click();
+  const box=d.getElementById('storyConversation').getBoundingClientRect();check(box.left>=0&&box.right<=w.innerWidth+1&&box.height<=w.innerHeight,'dialogue overflows handset');
+  check(d.getElementById('storyContinue').getBoundingClientRect().bottom<=box.bottom,'continue button is outside dialogue');
+  out.dataset.result='PASS';out.textContent='PASS: keeper opening, real guardian gates, core-triggered companion branch, layered reveals, skip/replay and Android back';
+ }catch(error){out.dataset.result='FAIL';out.textContent='FAIL: '+error.message}
+})();
+</script></body></html>

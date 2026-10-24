@@ -9,7 +9,7 @@ export const MODULE_HELP={
  items:['道具行囊','这里统一查看装备、法器、丹药、药草、宝箱、机缘和永久遗物。按分类或名称查找，选中物品后在右侧查看效果与操作。','装备数量包含已穿戴副本，双武器、双饰品需要足够副本。战斗丹药可加入下场备战，每种最多3份；突破丹在突破时消耗。药草在洞府按时间炼制。','自动吃药消耗25因果永久解锁，默认关闭。开启后，存活且气血低于阈值时消耗回春丹。装备箱只出黄／玄基础装备，药草箱开出2–5份药草。'],
  fate:['轮回天命','击败第四图最终 Boss 后可自愿轮回。操作前查看结算预览：本世境界、叠层、装备、材料、丹药、熟练度和排程清空；见闻、道统、定向进度、因果和遗物保留。','首次轮回起开放两席传承，从历史发现的普通功法、灵宠、洞府中选两张不同卡，下世各获得基础副本。道统节点可改善起步与经营。','天命箱40因果。太古奇珍每箱独立十万分之一、鸿蒙异宝百万分之一，均不保底，不替代常规奖励。'],
  atlas:['世界图鉴','当前前4张地图可玩，其余20张为世界规划，尚未开放。地图 Boss 和境界资格共同控制前进。'],
- settings:['存档设置','游戏自动保存在当前浏览器。本地存档可导出 JSON；重开会先备份。Schema 8 升级为9前保留原始备份。','美术与游戏均可本地运行；清除浏览器数据可能删除本地存档，请定期导出。']
+ settings:['存档设置','游戏自动保存在当前浏览器或安卓应用。本地存档可导出／导入 JSON；导入先校验并备份原档，实时战斗中须等结束。网页与应用不会自动同步，换设备请手动转移。重开及 Schema 8 升级为9前保留原始备份。','美术与游戏均可本地运行；清除浏览器数据或卸载应用可能删除本地存档，请定期导出。修行手册内可关闭或重看初见提示。']
 };
 export function mountHelp(currentView){
  const dialog=document.getElementById('moduleHelp'),sections=document.getElementById('moduleHelpSections');
@@ -34,4 +34,8 @@ export function mountHelp(currentView){
  document.getElementById('openMapDrawer').addEventListener('click',()=>map.showModal());
  document.getElementById('closeExplorationMap').addEventListener('click',()=>map.close());
  map.addEventListener('click',e=>{if(e.target===map){const r=map.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)map.close()}});
+ const combat=document.getElementById('combatOptions');
+ document.getElementById('openCombatOptions').addEventListener('click',()=>combat.showModal());
+ document.getElementById('closeCombatOptions').addEventListener('click',()=>combat.close());
+ combat.addEventListener('click',e=>{if(e.target===combat){const r=combat.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)combat.close()}});
 }

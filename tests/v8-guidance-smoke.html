@@ -1,0 +1,55 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cultivation handbook acceptance</title><style>body{margin:0;background:#102723;color:#e5d5a2;font:12px sans-serif}output{display:block;padding:4px}iframe{border:0;width:100vw;height:calc(100dvh - 26px)}</style></head><body><output id="result" data-result="PENDING">RUNNING GUIDANCE ACCEPTANCE</output><iframe id="app" title="Guidance preview"></iframe><script type="module">
+import {createSave,SAVE_KEY,dispatch,loadCatalog} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t));
+const check=(ok,msg)=>{if(!ok)throw Error(msg)};
+const PREF='gacha-ascension-v8-guidance-v1',SKIP='gacha-ascension-v8-novice-skip-v1';
+if(location.port!=='4180'){out.dataset.result='SKIP';out.textContent='SKIP: isolated port 4180 required'}else (async()=>{
+ try{
+  let d,w;
+  const boot=async()=>{await new Promise(resolve=>{frame.addEventListener('load',resolve,{once:true});frame.src='../preview-v0.8.html?guidance='+Date.now()});d=frame.contentDocument;w=frame.contentWindow;for(let i=0;i<120&&!d.querySelector('#packList [data-draw]');i++)await wait(40);check(!!d.querySelector('#packList [data-draw]'),'game failed to initialize')};
+  const nav=view=>d.querySelector('.system-sidebar [data-view="'+view+'"]').click();
+  const open=()=>d.querySelector('[data-view-panel].is-active [data-guide-open]').click();
+  const read=()=>JSON.parse(localStorage.getItem(SAVE_KEY));
+  localStorage.setItem(SAVE_KEY,JSON.stringify(createSave(20261020)));localStorage.setItem(SKIP,'1');localStorage.removeItem(PREF);
+  await boot();check(d.getElementById('noviceGuide').hidden,'old tutorial skip preference was lost');
+  open();check(d.getElementById('cultivationGuide').open,'handbook cannot open after skipping tutorial');
+  check(d.querySelectorAll('[data-journey-task]').length===14,'checklist incomplete');
+  check(d.getElementById('journeyNext').textContent.includes('抽取'),'new player objective incorrect');
+  const before=read();
+  d.querySelector('[data-journey-go="brew"]').click();
+  check(d.querySelector('[data-view-panel="cave"]').classList.contains('is-active'),'brew task did not navigate to production');
+  check(!d.getElementById('cultivationGuide').open,'handbook should close after navigation');
+  check(read().run.world.queue.length===0&&read().run.world.activity.kind==='none','navigation unexpectedly started a job');
+  check(read().run.stones===before.run.stones&&read().seed===before.seed,'guide spent currency or changed RNG');
+  check(!d.querySelector('[data-first-tip="cave"]').hidden,'first cave hint missing');
+  d.querySelector('[data-dismiss-tip="cave"]').click();check(d.querySelector('[data-first-tip="cave"]').hidden,'hint cannot dismiss');
+  nav('items');check(!d.querySelector('[data-first-tip="items"]').hidden,'bank introduction missing');
+  open();d.getElementById('muteFirstTips').click();d.getElementById('closeCultivationGuide').click();
+  check(d.querySelector('[data-first-tip="items"]').hidden,'global mute did not hide tips');
+  await boot();nav('cave');check(d.querySelector('[data-first-tip="cave"]').hidden,'dismissed hint returned on refresh');
+  nav('pet');check(d.querySelector('[data-first-tip="pet"]').hidden,'mute did not survive refresh');
+  open();d.getElementById('reviewFirstTips').click();d.getElementById('closeCultivationGuide').click();
+  check(!d.querySelector('[data-first-tip="pet"]').hidden,'review hints did not restore introduction');
+  let handled=false;w.GachaAndroid={backHandled:value=>handled=value};open();w.dispatchEvent(new w.Event('gacha:back'));
+  check(handled&&!d.getElementById('cultivationGuide').open,'Android back did not close guide first');
+  // Reload only after removing the previous iframe; one live game per save origin.
+  frame.src='about:blank';await new Promise(resolve=>frame.addEventListener('load',resolve,{once:true}));
+  const c=loadCatalog(await(await fetch('../data/realms-maps.v0.8.proposal.json')).json(),await(await fetch('../data/v8-slice.json')).json());
+  let s=createSave(412);s.run.cards.H001=1;s.run.cards.T001=1;s.run.cards.P001=1;s.run.draws.battle=1;s.meta.directed.draws=20;
+  s=dispatch(s,c,{type:'CLAIM_WORLD',seq:s.seq+1,now:Date.now()}).state;localStorage.setItem(SAVE_KEY,JSON.stringify(s));
+  localStorage.setItem(PREF,JSON.stringify({muted:false,seen:{cave:true,gacha:true}}));
+  await boot();nav('cave');check(!d.querySelector('[data-first-tip="cave"]').hidden,'new field unlock should be introduced on previously seen page');
+  check(d.querySelector('[data-dismiss-tip="field-unlocked"]'),'field introduction uses no persistent feature key');
+  open();d.querySelector('[data-journey-go="directed"]').click();
+  check(d.getElementById('directedChoice').open,'directed task did not reveal selector');
+  check(read().meta.directed.claimed===0,'guide claimed directed reward without user choice');
+  nav('explore');open();d.querySelector('[data-journey-go="inherit"]').click();
+  check(!d.querySelector('[data-fate-panel="inheritance"]').hidden,'inheritance task opened wrong fate tab');
+  // Leave a visible handset-friendly handbook as the acceptance screenshot.
+  open();check(d.getElementById('cultivationGuide').getBoundingClientRect().right<=w.innerWidth+1,'handbook horizontal overflow');
+  check(d.documentElement.scrollWidth<=w.innerWidth+2,'guidance causes page overflow');
+  out.dataset.result='PASS';out.textContent='PASS: optional handbook, read-only navigation, persisted tips, new unlocks, directed/inheritance routes and Android back';
+  // Context is disposable; no restore while its live iframe may still write.
+ }catch(error){out.dataset.result='FAIL';out.textContent='FAIL: '+error.message}
+})();
+</script></body></html>

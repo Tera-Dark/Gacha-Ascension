@@ -31,7 +31,7 @@ async function start(){
   verify(w.getComputedStyle(nav).display!=="none","Mobile dock hidden on narrow screen");
   verify(nav.querySelectorAll("button").length===5,"Mobile dock should have 5 buttons");
   verify(nav.querySelector("button").getBoundingClientRect().height>=44,"Primary touch target too small");
-  d.querySelector('.view-header [data-module-help]').click();
+  d.querySelector('.explore-local-help').click();
   d.querySelector('#explore>summary').click();await sleep(160);
   verify(d.getElementById("explore").open,"Combat detail cannot expand");
   verify(d.querySelectorAll("#detail-explore .v8-data-row").length>=14,"Combat stat breakdown was not populated");

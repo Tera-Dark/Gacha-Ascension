@@ -38,7 +38,7 @@ function receipt(s,b){
 export function settleWorld(s,c,now,hooks){
  if(!Number.isSafeInteger(now)||now<0)throw Error('非法的活动时间戳');
  const r=s.run,w=r.world,cfg=c.management;
- const report={kind:'world',attempts:0,wins:0,stones:0,qi:0,insight:0,gathered:{},grown:{},crafted:{},spent:{},gearBoxes:0,herbBoxes:0,potionsUsed:0,lastBattle:null,active:!!r.idle?.active,elapsedMs:0,capped:false,reasons:[]};
+ const report={kind:'world',attempts:0,wins:0,stones:0,qi:0,insight:0,gathered:{},grown:{},crafted:{},spent:{},usedItems:{},gearBoxes:0,herbBoxes:0,potionsUsed:0,lastBattle:null,active:!!r.idle?.active,elapsedMs:0,capped:false,reasons:[]};
  if(w.at===null){w.at=now;return report}
  if(now<w.at)throw Error('活动时间不能倒退');
  const raw=now-w.at,span=Math.min(raw,cfg.offlineCapMs);
@@ -87,7 +87,9 @@ export function settleWorld(s,c,now,hooks){
   }
   if(encounter&&r.idle.carryMs>=encounter.durationMs){
    r.idle.carryMs-=encounter.durationMs;
+   const before=Object.fromEntries(['MED001','MED002','MED003'].map(id=>[id,(r.consumables[id]||0)+(r.prepared[id]||0)]));
    const b=hooks.battle(encounter.combat);delete r.idle.encounter;
+   for(const [id,n] of Object.entries(before)){const used=n-(r.consumables[id]||0)-(r.prepared[id]||0);if(used>0)add(report.usedItems,id,used)}
    report.attempts++;report.wins+=Number(b.won);report.stones+=b.stones;report.qi+=b.qi;report.lastBattle=b;receipt(s,b);
    report.potionsUsed+=(b.potionUses?.auto||0)+(b.potionUses?.prepared||0);
    for(const box of b.boxes||[])if(box.id==='gear')report.gearBoxes++;else if(box.id==='herb')report.herbBoxes++;

@@ -1,0 +1,25 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mobile lifecycle and save transfer acceptance</title><style>body{margin:0;background:#102723;color:#e5d5a2;font:12px sans-serif}output{display:block;padding:5px}iframe{border:0;width:100vw;height:calc(100dvh - 30px)}</style></head><body><output id="result" data-result="PENDING">RUNNING</output><iframe id="app" title="Mobile host game"></iframe><script type="module">
+import {createSave,SAVE_KEY} from '../src/v8/engine.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
+if(location.port!=='4180'){out.dataset.result='SKIP';out.textContent='SKIP: isolated port 4180 required'}else{
+ let phase=0;localStorage.setItem(SAVE_KEY,JSON.stringify(createSave(41)));
+ frame.addEventListener('load',async()=>{try{
+  const d=frame.contentDocument,w=frame.contentWindow,read=()=>JSON.parse(localStorage.getItem(SAVE_KEY)),click=q=>d.querySelector(q).click();
+  for(let i=0;i<100&&!d.querySelector('#bankGrid');i++)await wait(40);
+  for(let i=0;i<100&&!d.querySelector('#packList [data-draw]');i++)await wait(40);
+  if(phase===1){check(read().seed===977,'import did not restore selected save');check(Object.keys(localStorage).some(k=>k.includes('-before-import')&&JSON.parse(localStorage.getItem(k)).seed===41),'previous save was not backed up');out.dataset.result='PASS';out.textContent='PASS: native back, export/import bridge, pause suppression, resume settlement and safe save transfer';return}
+  let exported=null,back=null,selected=false,allowed=true;
+  w.GachaAndroid={isPlayAllowed:()=>allowed,exportSave:raw=>{exported=raw},backHandled:handled=>{back=handled},selectSave:()=>{selected=true}};
+  click('.system-sidebar [data-view="cave"]');w.dispatchEvent(new Event('gacha:back'));check(back===true&&d.querySelector('[data-view-panel="explore"]').classList.contains('is-active'),'native back did not navigate');
+  click('.explore-local-help');w.dispatchEvent(new Event('gacha:back'));check(!d.getElementById('moduleHelp').open,'native back did not close help');
+  click('#openCombatOptions');w.dispatchEvent(new Event('gacha:back'));check(!d.getElementById('combatOptions').open,'native back did not close combat settings');
+  w.dispatchEvent(new Event('gacha:back'));check(back===false,'home back did not request native exit');
+  click('[data-main="gather"]');w.dispatchEvent(new CustomEvent('gacha:visibility',{detail:{hidden:true}}));const seq=read().seq;await wait(5300);check(read().seq===seq,'hidden host still claimed world rewards');
+  w.dispatchEvent(new CustomEvent('gacha:visibility',{detail:{hidden:false}}));for(let i=0;i<150&&read().seq===seq;i++)await wait(40);check(read().seq>seq&&read().run.world.activity.kind==='gather','resume did not settle the selected activity');
+  allowed=false;const restricted=localStorage.getItem(SAVE_KEY);click('[data-main="meditate"]');check(localStorage.getItem(SAVE_KEY)===restricted,'restricted SDK state accepted a game command');allowed=true;
+  click('.system-sidebar [data-view="settings"]');click('#exportSave');check(JSON.parse(exported).seed===41,'native export did not receive active save');click('#importSave');check(selected,'native import did not open picker');
+  w.confirm=()=>true;phase=1;w.dispatchEvent(new CustomEvent('gacha:import',{detail:JSON.stringify(createSave(977))}));
+ }catch(error){out.dataset.result='FAIL';out.textContent='FAIL: '+error.message}});
+ frame.src='../preview-v0.8.html';
+}
+</script></body></html>

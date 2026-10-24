@@ -4,6 +4,7 @@
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {loadCatalog,createSave,dispatch,breakthroughRequirements,combatAssessment,packCost} from '../src/v8/engine.mjs';
+import {unlockedPack} from '../src/v8/modules.mjs';
 const j=p=>JSON.parse(readFileSync(new URL('../data/'+p,import.meta.url),'utf8'));
 const catalog=loadCatalog(j('realms-maps.v0.8.proposal.json'),j('v8-slice.json'));
 const routes={sword:['T001','P001'],guard:['T002','P002'],spirit:['T003','P003']};
@@ -13,7 +14,7 @@ export function playLives(seed,route='sword',lives=3){
  const cmd=(type,extra={})=>{commands++;const o=dispatch(s,c,{type,seq:s.seq+1,now,...extra});s=o.state;return o.result};
  const fight=kind=>{const o=cmd('PREPARE_BATTLE',{enemyType:kind});now+=o.combat.timeMs;return cmd('FINISH_BATTLE')};
  const stop=()=>{if(s.run.idle?.active)cmd('STOP_IDLE');if(s.run.world.activity.kind!=='none')cmd('START_ACTIVITY',{activity:'none'})};
- const pull=(pack,count=10)=>{if(s.run.stones<packCost(s,c,pack)*count)return false;cmd('DRAW',{packId:pack,count});draws+=count;return true};
+ const pull=(pack,count=10)=>{if(!unlockedPack(s,c,pack)||s.run.stones<packCost(s,c,pack)*count)return false;cmd('DRAW',{packId:pack,count});draws+=count;return true};
  for(let life=0;life<lives;life++){
   const begun=now,chosen=life===2?(route==='sword'?'spirit':'sword'):route,[tech,pet]=routes[chosen];
   if(life===0){
@@ -21,9 +22,15 @@ export function playLives(seed,route='sword',lives=3){
    cmd('START_ACTIVITY',{activity:'gather',herb:'H001'});now+=180000;cmd('CLAIM_WORLD');
    cmd('QUEUE_BREW',{herb:'H001',mode:'count',amount:1});now+=60000;cmd('CLAIM_WORLD');
    stop();
+   // The first core pack opens through an actual guardian, never a granted flag.
+   while(!s.run.guardianWins){
+    if(now-begun>30*60000)throw Error('opening guardian exceeded 30 minutes');
+    if(combatAssessment(s,c,'guardian',8).winRate>=.875){if(fight('guardian').won)break}
+    if(!pull('battle',1))fight('mob');
+   }
    const opening=['technique','pet','cave','battle','cultivation'];
    for(let i=0;i<19;i++){
-    const pack=opening[i%opening.length];
+    const available=opening.filter(id=>unlockedPack(s,c,id)),pack=available[i%available.length];
     while(!pull(pack,1)){fight('mob');if(now-begun>30*60000)throw Error('opening exceeded 30 minutes')}
    }
    cmd('CLAIM_DIRECTED',{id:tech});cmd('EQUIP_TECH',{id:tech});
@@ -40,7 +47,7 @@ export function playLives(seed,route='sword',lives=3){
    }
    while(Math.floor(s.meta.directed.draws/c.management.directedEvery)>s.meta.directed.claimed){
     const id=!(s.run.cards[tech]>0)?tech:!(s.run.cards[pet]>0)?pet:!(s.run.cards.H001>0)?'H001':(s.run.cards.H002||0)<6?'H002':(s.run.cards[tech]||0)<6?tech:(s.run.cards[pet]||0)<6?pet:null;
-    if(!id)break;cmd('CLAIM_DIRECTED',{id});
+    if(!id||!unlockedPack(s,c,c.cards[id].pack))break;cmd('CLAIM_DIRECTED',{id});
    }
    if(s.run.cards[tech]>0)cmd('EQUIP_TECH',{id:tech});if(s.run.cards[pet]>0)cmd('EQUIP_PET',{id:pet});
    for(const id of ['meditate','warehouse','inherit','supplies','insight','queue']){

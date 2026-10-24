@@ -10,7 +10,7 @@ test("each shipping pack is registered and schema-valid",()=>{
  assert.ok(validateContentContract(slice));
  for(const p of catalog.packs){
   assert.ok(MODULES.some(x=>x.id===p.id&&x.status==="live"));
-  assert.equal(unlockedPack(createSave(77),catalog,p.id),p.id!=="equipment"&&p.id!=="artifact");
+  assert.equal(unlockedPack(createSave(77),catalog,p.id),p.id==="battle");
  }
 });
 test("future module features are declared but never labeled implemented",()=>{

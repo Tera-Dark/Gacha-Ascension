@@ -68,7 +68,7 @@ test("battle in progress survives serializing, loading and resuming with no extr
  writeGame(ready.state,c,storage);
  assert.equal(readGame(c,storage).state.seq,ready.state.seq);
  assert.equal(readGame(c,storage).state.run.pendingBattle,undefined);
- assert.equal(SCHEMA,9);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
+ assert.equal(SCHEMA,10);assert.equal(SAVE_KEY,"gacha-ascension-v8-slice-v1");
 });
 test("three-wave map Boss uses the complete timeline and only changes map on final settlement",()=>{
  const s=createSave(2026);s.run.checkpoint=c.checkpointsPerMap-1;

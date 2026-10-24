@@ -4,6 +4,8 @@
  */
 import {combatSnapshot,breakthroughRequirements,packCost,pendingRealmGate} from "./engine.mjs";
 import {simulateEncounter} from "./combat-depth.mjs";
+import {unlockedPack} from './modules.mjs';
+import {nextStoryPack} from './story.mjs';
 function score(s,c,kind,seeds){
  const snap=combatSnapshot(s,c,kind);
  let wins=0,remaining=0,ms=0,winMs=0;
@@ -63,6 +65,12 @@ export function nextStep(s,c,forecast=null){
   if(!req.hasQi)return {title:"突破前补修为",description:"已抵达"+gate.map+"，可闭关修炼，或刷小怪积累"+(req.qi-r.qi)+"修为，便可突破至"+gate.realm+"并挑战守卫。",view:"explore",action:"前往自动刷怪"};
   return {title:"境界突破在即",description:"已到达下一图的境界门槛，去修炼页面检查突破要求。",view:"cultivate",action:"前往突破"};
  }
+ const storyPack=nextStoryPack(s,c);
+ if(storyPack&&storyPack!=='battle'){
+  const price=packCost(s,c,storyPack);
+  if(r.stones<price)return {title:'为新命痕积攒灵石',description:c.packById[storyPack].name+'已随主线开放，单抽还差'+(price-r.stones)+'灵石。探索积蓄后再寻缘。',view:'explore',action:'前往自动刷怪'};
+  return pick(storyPack,'新章机缘 · '+c.packById[storyPack].name,'主线已开放新的命痕。先体验一次，看看它怎样改变构筑或经营，再继续向前。','前往新章寻缘');
+ }
  if(r.guardianWins>0&&!r.mastery.brew&&!(r.consumables.MED001>0))return {title:"开第一炉丹",description:"采集三份回春草，在洞府加入一颗回春丹的炼制排程。采药是主活动，丹炉独立生产；可替代单纯重复刷怪。",view:"cave",action:"安排采药与炼丹"};
  if(req.canBreak&&r.realmIndex<4)return {title:"突破条件已齐",description:"境界条件已满足。先突破可获得新的基础属性，再继续探索。",view:"cultivate",action:"前往突破"};
  if(r.bossCleared){
@@ -87,9 +95,13 @@ export function nextStep(s,c,forecast=null){
     r.stones>=packCost(s,c,"cave")+Math.max(20,Math.round(packCost(s,c,"battle")*.25)))
   return pick("cave","经营自己的洞府","进入第三图后，洞府能长期增益灵石、修为、攻速或灵宠。建议体验一抽，比较刷怪收益；这是可选的经营投资。","看看洞府营造");
  if(forecast?.winRate>=.83)return {title:"守关时机已到",description:"24场模拟胜率约 "+Math.round(forecast.winRate*100)+"%。可挑战"+(r.checkpoint===c.checkpointsPerMap-1?"地图Boss":"守卫")+"；死亡可能遗失穿戴装备。",view:"explore",action:"前往挑战"};
- if(!r.technique)return pick("technique","先取得功法","尚未装配主修功法。功法秘卷可以提高输出、护盾或灵宠协同能力；抽到后请进入功法页面装配。","抽功法秘卷");
- if(!r.pet)return pick("pet","灵宠协同作战","已有功法，但尚无出战灵宠。御兽灵契提供协战与护盾，搭配特定功法可产生共鸣。","抽御兽灵契");
- if(!Object.keys(r.equipment||{}).length&&s.meta.bestCheckpoint>=c.features.unlockAtGlobalCheckpoint.equipment)
+ const owns=effect=>Object.values(c.cards).some(card=>card.effect===effect&&r.cards[card.id]>0);
+ if(!r.technique&&owns('technique'))return {title:'装配已有功法',description:'已发现功法，进入功法页面选择主修即可生效，无需再次抽取。',view:'technique',action:'前往主修'};
+ if(!r.technique&&unlockedPack(s,c,'technique'))return pick("technique","先取得功法","尚未装配主修功法。功法秘卷可以提高输出、护盾或灵宠协同能力；抽到后请进入功法页面装配。","抽功法秘卷");
+ if(!r.pet&&owns('pet'))return {title:'派出已有灵宠',description:'已有灵宠尚未出战，在灵宠页面选择即可加入下一场战斗。',view:'pet',action:'前往出战'};
+ if(!r.pet&&unlockedPack(s,c,'pet'))return pick("pet","灵宠协同作战","已有功法，但尚无出战灵宠。御兽灵契提供协战与护盾，搭配特定功法可产生共鸣。","抽御兽灵契");
+ if(!Object.values(r.equipment||{}).some(Boolean)&&(owns('equipment')||r.boxes?.gear>0))return {title:'整理行囊里的装备',description:'已有装备或基础装备箱，在行囊中开箱并穿戴，补齐空槽。',view:'items',action:'打开行囊'};
+ if(!Object.values(r.equipment||{}).some(Boolean)&&s.meta.bestCheckpoint>=c.features.unlockAtGlobalCheckpoint.equipment)
   return pick("equipment","补齐基础装备","器物秘匣能补充十槽攻防；小怪也有概率掉落基础装备箱。","查看器物秘匣");
  return {title:"调整构筑后再战",description:"当前守关模拟胜率约 "+Math.round((forecast?.winRate||0)*100)+"%。先尝试已拥有功法和灵宠的战前推演；若数值不足，再补战力卡或投资聚财、洞府。",view:"explore",action:"查看战前推演"};
 }

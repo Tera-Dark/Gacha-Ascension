@@ -1,0 +1,31 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Return and writer safety</title><style>body{margin:0;background:#102723;color:#e5d5a2}iframe{width:100%;height:75vh;border:0}output{display:block}</style><output id="result" data-result="PENDING">RUNNING</output><iframe id="app" title="Writer game"></iframe><script type="module">
+import {createSave,loadCatalog,dispatch,SAVE_KEY} from '../src/v8/engine.mjs';
+import {restoreInWorker} from '../src/v8/restore.mjs';
+const out=document.getElementById('result'),frame=document.getElementById('app'),wait=t=>new Promise(r=>setTimeout(r,t)),check=(ok,msg)=>{if(!ok)throw Error(msg)};
+const until=async fn=>{for(let i=0;i<500;i++){if(fn())return;await wait(20)}throw Error('Timed out awaiting recovery/session')};
+if(location.port!=='4180'){out.dataset.result='SKIP'}else try{
+ const c=loadCatalog(...await Promise.all(['realms-maps.v0.8.proposal.json','v8-slice.json'].map(p=>fetch('../data/'+p).then(r=>r.json()))));
+ let s=createSave(19),now=Date.now();s=dispatch(s,c,{type:'START_ACTIVITY',seq:1,now:now-8*3600000,activity:'gather',herb:'H001'}).state;
+ s=dispatch(s,c,{type:'QUEUE_BREW',seq:2,now:now-8*3600000,herb:'H001',mode:'target',amount:20}).state;
+ const raw=JSON.stringify(s);localStorage.setItem(SAVE_KEY,raw);
+ const abort=new AbortController(),cancel=restoreInWorker(s,c,now,{signal:abort.signal});abort.abort();
+ await cancel.then(()=>{throw Error('Cancelled worker resolved')},()=>{});check(localStorage.getItem(SAVE_KEY)===raw,'cancel wrote rewards');
+ let pulses=0,clock=setInterval(()=>pulses++,1);const calculated=await restoreInWorker(s,c,now);clearInterval(clock);
+ check(pulses>0,'worker blocked UI');check(calculated.state.meta.returns.length===1,'worker did not return ledger');check(localStorage.getItem(SAVE_KEY)===raw,'worker wrote before commit');
+ frame.src='../preview-v0.8.html';await until(()=>frame.contentDocument?.querySelector('#packList [data-draw]'));
+ const read=()=>JSON.parse(localStorage.getItem(SAVE_KEY)),first=read();check(first.run.consumables.MED001===20,'8h queue production mismatch');check(first.meta.returns.length===1,'return not persisted');
+ const d=frame.contentDocument;d.getElementById('reviewReturn').click();check(d.getElementById('returnRecords').textContent.includes('消耗：回春草 ×60'),'ledger consumption missing');d.getElementById('returnLedger').close();
+ const owned=read().run.consumables.MED001;d.getElementById('ackReturn').click();check(read().meta.returns[0].acknowledged,'ack not persisted');check(read().run.consumables.MED001===owned,'reading awarded twice');
+ const second=document.createElement('iframe');second.title='Read-only game';document.body.append(second);second.src='../preview-v0.8.html';
+ await until(()=>second.contentDocument?.querySelector('#packList [data-draw]'));
+ check(second.contentDocument.getElementById('sessionMessage').textContent.includes('只读'),'second tab not read-only');
+ second.contentDocument.querySelector('[data-main="meditate"]').click();check(read().run.world.activity.kind==='gather','reader changed activity');
+ frame.remove();await wait(100);second.contentWindow.location.reload();await until(()=>second.contentDocument?.getElementById('saveStatus')?.textContent.includes('自动保存'));
+ second.contentDocument.querySelector('[data-main="meditate"]').click();check(read().run.world.activity.kind==='meditate','takeover failed');
+ check(read().meta.returns.length===1,'refresh duplicated return');check(read().run.consumables.MED001===owned,'refresh duplicated production');
+ // An old, unlocked client changes bytes; the new owner must refuse its next mutation.
+ const external=JSON.stringify({...read(),seed:998});localStorage.setItem(SAVE_KEY,external);
+ second.contentDocument.querySelector('[data-main="gather"]').click();check(localStorage.getItem(SAVE_KEY)===external,'conflicting writer overwritten');check(!second.contentDocument.getElementById('sessionNotice').hidden,'conflict not visible');
+ out.dataset.result='PASS';out.textContent='PASS: responsive/cancellable worker, 8h ledger, no repeated rewards, read-only tab, takeover and legacy-writer conflict';
+}catch(error){out.dataset.result='FAIL';out.textContent='FAIL: '+error.message}
+</script></html>

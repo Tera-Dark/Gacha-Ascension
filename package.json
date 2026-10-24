@@ -1,10 +1,11 @@
 {
   "name": "gacha-ascension",
   "private": true,
-  "version": "0.10.0-preview",
+  "version": "0.10.7-preview",
   "type": "module",
   "description": "Current four-map idle/incremental/gacha preview with isolated historical M0 and codex",
   "scripts": {
+    "build:android": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "test": "node --test tests/*.test.mjs",
     "test:m0": "node --test tests/m0.test.mjs",
     "check:content": "node scripts/sync-codex-v0.5.mjs --check && node scripts/validate-codex-v0.5.mjs",
@@ -16,7 +17,9 @@
     "simulate:v8": "node scripts/simulate-v8-combat.mjs",
     "simulate:v8:full": "node scripts/simulate-v8-combat.mjs --full",
     "simulate:v8:progression": "node scripts/simulate-v8-progression.mjs",
-    "simulate:v8:progression:full": "node scripts/simulate-v8-progression.mjs --full"
+    "simulate:v8:progression:full": "node scripts/simulate-v8-progression.mjs --full",
+    "build:android:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1 -Release",
+    "capture:v8:materials": "node scripts/capture-v8-materials.mjs"
   },
   "engines": {
     "node": ">=20"

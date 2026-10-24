@@ -60,9 +60,11 @@ test("first battle pack draw boosts hero automatically, cultivation always gains
  let r=execute(s,"DRAW",{packId:"battle",count:1});
  assert.equal(r.result.items[0].id,"B001");
  assert.ok(heroStats(r.state,c).attack>base.attack);
+ r.state.meta.bestCheckpoint=6;
  r=execute(r.state,"DRAW",{packId:"cultivation",count:1});
  assert.ok(r.state.run.insight>=1);
- assert.throws(()=>execute(s,"DRAW",{packId:"elixir",count:10}),/灵石不足/);
+ const unlocked=structuredClone(s);unlocked.meta.bestCheckpoint=10;
+ assert.throws(()=>execute(unlocked,"DRAW",{packId:"elixir",count:10}),/灵石不足/);
 });
 test("small breakthroughs require previous map Boss as well as Qi and insight",()=>{
  let s=createSave(1);
@@ -87,6 +89,7 @@ test("major breakthrough after fourth map requires qi, insight and a gacha-sourc
 test("elixir key pill guaranteed by eighth elixir draw",()=>{
  for(const seed of [1,2,3,11,42,200,32123]){
   let s=grant(createSave(seed),2000),items=[];
+  s.meta.bestCheckpoint=10;
   for(let i=0;i<8;i++){const r=execute(s,"DRAW",{packId:"elixir",count:1});s=r.state;items.push(r.result.items[0].id)}
   assert.ok(items.includes("D004"),"pill missing seed "+seed);
  }

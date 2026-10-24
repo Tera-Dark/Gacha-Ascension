@@ -28,3 +28,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Android local SDK, signing and generated packages
+android/local.properties
+android/.gradle/
+*.apk
+*.aab
+*.jks
+*.keystore

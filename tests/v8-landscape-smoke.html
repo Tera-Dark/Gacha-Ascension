@@ -26,6 +26,16 @@ frame.addEventListener("load",async()=>{
   check(!d.getElementById("noviceGuide").hidden,"first-life guide was not offered");
   d.getElementById("noviceSkip").click();await sleep(60);
   check(d.getElementById("noviceGuide").hidden,"novice guide skip did not work");
+  check(d.getElementById('combatTheatre').getBoundingClientRect().bottom<=panes[1].getBoundingClientRect().bottom+2,'phone battle hidden below preparation text');
+  check(d.querySelectorAll('.overview-strip:not([hidden])').length===0,'duplicate resource dashboard still visible');
+  check([...d.querySelectorAll('.v8-battle-actions>button')].filter(b=>w.getComputedStyle(b).display!=='none').length===3,'battle should show two actions and settings');
+  const actions=[...d.querySelectorAll('.v8-battle-actions>button')].filter(b=>w.getComputedStyle(b).display!=='none').map(b=>b.getBoundingClientRect());
+  check(actions.every(r=>Math.abs(r.top-actions[0].top)<2),'primary combat buttons wrapped into multiple rows');
+  check(actions[1].width>=100&&actions.every(r=>r.bottom<=panes[1].getBoundingClientRect().bottom+2),'phone combat actions are squeezed or offscreen: '+JSON.stringify({width:actions[1].width,bottoms:actions.map(r=>r.bottom),pane:panes[1].getBoundingClientRect().bottom}));
+  check(!d.getElementById('loadoutMore').open&&!d.getElementById('battleJournal').open,'secondary combat content should begin folded');
+  d.getElementById('openCombatOptions').click();check(d.getElementById('combatOptions').open,'combat settings cannot open');
+  check(d.getElementById('combatOptions').contains(d.getElementById('killMob'))&&d.getElementById('combatOptions').contains(d.getElementById('farmFocus')),'manual combat or farm target lost');
+  d.getElementById('closeCombatOptions').click();
   check(d.querySelector(".wb-gear-slot").getBoundingClientRect().height>=44,"equipment touch target smaller than 44px");
   d.querySelector('[data-gear-slot="weapon1"]').click();await sleep(35);
   check(!d.getElementById("equipmentDrawer").hidden,"equipment modal not displayed");

@@ -1,0 +1,20 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>Independent sprite loading acceptance</title><link rel="stylesheet" href="../assets/css/preview.css"><style>body{margin:0;background:#163330;color:#dfd4a4;font:13px system-ui}.actors{display:flex;gap:24px;padding:24px}.actors>div{position:relative;width:192px;height:192px;background-color:#254d3d}#pixelPet{position:static;width:192px;height:192px}output{display:block;padding:16px}</style></head><body class="pixel-theme"><output id="result" data-result="PENDING">RUNNING</output><div class="actors"><div id="heroArt" class="px-actor-art px-hero-art"></div><div id="enemyArt" class="px-actor-art px-enemy-art"></div><div id="pixelPet" class="px-pet-art"></div></div><div id="artSourceStatus"></div><script type="module">
+import {loadPixelAssets,renderPixelFrame,renderPixelScene} from '../src/v8/pixel-scene.mjs';
+const output=document.getElementById('result'),check=(ok,text)=>{if(!ok)throw Error(text)};
+try{
+ for(const id of ['heroArt','enemyArt','pixelPet']){const css=getComputedStyle(document.getElementById(id));check(!css.backgroundImage.includes('concept-reference'),'concept UI is still used as a sprite');check(css.clipPath==='none','actor uses a polygon UI crop')}
+ // A failed decode() was previously enough to drop every valid loaded image.
+ HTMLImageElement.prototype.decode=()=>Promise.reject(Error('decode unavailable in this WebView'));
+ await loadPixelAssets();
+ document.querySelector('.actors').id='combatTheatre';
+ renderPixelScene({run:{mapIndex:0,pet:'P001'}});renderPixelFrame();
+ for(const id of ['heroArt','enemyArt','pixelPet']){
+  const element=document.getElementById(id),canvas=element.querySelector('canvas');
+  check(!!canvas,'loaded sprite canvas missing: '+id);check(getComputedStyle(element).backgroundImage==='none','fallback not cleared: '+id);
+  check(canvas.getContext('2d').getImageData(0,0,192,192).data.some((value,i)=>i%4===3&&value>0),'transparent empty sprite');
+  element.classList.remove('px-canvas-ready','px-has-asset');canvas.remove();renderPixelFrame();
+  check(element.querySelector('canvas')===canvas&&element.classList.contains('px-canvas-ready'),'retained surface did not recover');
+ }
+ output.dataset.result='PASS';output.textContent='PASS: independent transparent art, unreliable decode fallback, opaque retained canvases and detached-surface recovery';
+}catch(error){output.dataset.result='FAIL';output.textContent='FAIL: '+error.message}
+</script></body></html>

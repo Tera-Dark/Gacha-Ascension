@@ -1,0 +1,66 @@
+apply plugin: 'com.android.application'
+def setting = { String name -> providers.gradleProperty(name).orElse(providers.environmentVariable(name)).getOrElse('') }
+def literal = { String value -> '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"' }
+
+android {
+    namespace 'com.teradark.gachaascension'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.teradark.gachaascension'
+        minSdk 26
+        targetSdk 35
+        versionCode 17
+        versionName '0.10.7-preview'
+        buildConfigField 'String', 'TAP_CLIENT_ID', literal(setting('TAP_CLIENT_ID'))
+        buildConfigField 'String', 'TAP_CLIENT_TOKEN', literal(setting('TAP_CLIENT_TOKEN'))
+        buildConfigField 'String', 'PRIVACY_URL', literal(setting('GACHA_PRIVACY_URL'))
+        buildConfigField 'String', 'TERMS_URL', literal(setting('GACHA_TERMS_URL'))
+        buildConfigField 'String', 'FEEDBACK_URL', literal(setting('GACHA_FEEDBACK_URL'))
+    }
+    signingConfigs {
+        publicRelease {
+            if (setting('GACHA_KEYSTORE')) storeFile file(setting('GACHA_KEYSTORE'))
+            storePassword setting('GACHA_STORE_PASSWORD')
+            keyAlias setting('GACHA_KEY_ALIAS')
+            keyPassword setting('GACHA_KEY_PASSWORD')
+        }
+    }
+    buildTypes { release { signingConfig signingConfigs.publicRelease } }
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets { main.assets.srcDir layout.buildDirectory.dir('generated/gameAssets') }
+}
+
+// Package the canonical game, never a second copy of its rules or player save.
+tasks.register('syncGameAssets', Sync) {
+    from(rootProject.projectDir.parentFile) {
+        include 'preview-v0.8.html', 'index.html'
+        include 'src/v8/**', 'assets/css/preview.css', 'assets/css/workbench.css'
+        include 'assets/pixel/**/*.png', 'assets/pixel/manifest.json'
+        include 'data/v8-slice.json', 'data/realms-maps.v0.8.proposal.json'
+        exclude 'assets/pixel/concept-reference.png'
+    }
+    into layout.buildDirectory.dir('generated/gameAssets/game')
+}
+tasks.named('preBuild').configure { dependsOn 'syncGameAssets' }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    releaseImplementation 'com.taptap.sdk:tap-core:4.11.0'
+    releaseImplementation 'com.taptap.sdk:tap-login:4.11.0'
+    releaseImplementation 'com.taptap.sdk:tap-compliance:4.11.0'
+}
+
+// Compilation can be checked without credentials; packaging a public build cannot.
+tasks.register('verifyPublicRelease') {
+    doLast {
+        ['TAP_CLIENT_ID','TAP_CLIENT_TOKEN','GACHA_PRIVACY_URL','GACHA_TERMS_URL','GACHA_FEEDBACK_URL',
+         'GACHA_KEYSTORE','GACHA_STORE_PASSWORD','GACHA_KEY_ALIAS','GACHA_KEY_PASSWORD'].each {
+            if (!setting(it)) throw new GradleException('Public release configuration missing: ' + it)
+        }
+        ['GACHA_PRIVACY_URL','GACHA_TERMS_URL','GACHA_FEEDBACK_URL'].each {
+            if (!setting(it).startsWith('https://')) throw new GradleException(it + ' must use HTTPS')
+        }
+    }
+}
+tasks.matching { it.name == 'packageRelease' || it.name == 'signReleaseBundle' }.configureEach { dependsOn 'verifyPublicRelease' }
