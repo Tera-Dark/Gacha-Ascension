@@ -88,7 +88,10 @@ function roll(s){let x=s.seed>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;s.seed=(x>>>0)||0x9
 function relicCount(s,key){return s.meta.relics[key]||0}
 function metaPct(s,c,stat){return permanentEffect(s,c,stat)}
 function cardCount(s,id){return s.run.cards[id]||0}
-function sumEffect(s,c,key){return Object.values(c.cards).reduce((a,card)=>a+(card.effect===key?cardCount(s,card.id)*card.value:0),0)}
+/** Percentage cards stack like every other card in the game: capped at 6 copies
+ * (cappedCopies). Uncapped stacking let 100 battle draws push attack to 13x base,
+ * which erased early combat difficulty; the old preview cards fed the same wall. */
+function sumEffect(s,c,key){return Object.values(c.cards).reduce((a,card)=>a+(card.effect===key?cappedCopies(s,card.id)*card.value:0),0)}
 function cave(s,c,style,legacy=false){return Object.values(c.cards).reduce((n,x)=>n+(x.effect==="cave"&&x.style===style?(legacy?cardCount(s,x.id):cappedCopies(s,x.id))*x.value:0),0)}
 const hasUltra=(s,id)=>!!s.meta.ultras[id];
 /** Apex/鸿蒙 multipliers live in data/v8-slice.json; these lookups keep one source.

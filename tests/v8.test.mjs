@@ -118,12 +118,14 @@ test("technique and pet must be drawn before equip, then genuinely modify combat
 });
 test("cave yields truly increase monster stone and qi rewards",()=>{
  const s=createSave(44);
+ const plain=execute(structuredClone(s),"BATTLE",{enemyType:"mob"}).result;
  const baseline=yields(s,c);
  s.run.cards.H001=2;s.run.cards.H002=2;
  assert.ok(yields(s,c).stonePct>baseline.stonePct);
  assert.ok(yields(s,c).qiPct>baseline.qiPct);
  const r=execute(s,"BATTLE",{enemyType:"mob"});
- assert.ok(r.result.stones>19);assert.ok(r.result.qi>12);
+ // Compare against the same fight without cave cards: the base yield is data-driven.
+ assert.ok(r.result.stones>plain.stones);assert.ok(r.result.qi>plain.qi);
 });
 test("post-boss same-stage mobs remain farmable to finance final breakthrough pills",()=>{
  const s=advanceTo(createSave(1),3,7);s.run.bossCleared=true;
