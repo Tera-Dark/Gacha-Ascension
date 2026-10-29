@@ -1100,3 +1100,15 @@
 @media(max-width:600px){.return-notice{width:calc(100vw - 24px);box-sizing:border-box}.return-notice span{flex:1;font-size:12px}}
 .px-world-canvas{width:100%;height:100%;object-fit:cover;image-rendering:pixelated}.build-route{border-top:1px solid #35554e;padding:10px 0}.build-route h4{color:#e4ce8f;margin:4px 0}.build-route p{font-size:13px;line-height:1.6;margin:5px 0}[data-enemy-rank="boss"] .px-enemy-art{filter:drop-shadow(0 0 5px #daac55)}
 .save-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:640px;gap:10px;margin-top:16px}.save-actions .action-btn{width:100%;min-width:0;min-height:44px;margin:0;font-size:14px}.save-actions textarea{grid-column:1/-1;width:100%;min-height:170px;box-sizing:border-box;background:#0c2025;color:#c6d6c2;border:1px solid #536f61;padding:10px}.save-actions .danger-btn{order:5}
+/* 修行指引条：常驻"下一步"、本世进度与手册入口 */
+.novice-guide-meta{display:flex;align-items:center;gap:10px}
+.novice-guide-meta small{flex:0 0 auto}
+.novice-guide-track{flex:1;min-width:60px;height:5px;border-radius:99px;background:#12241c;box-shadow:inset 0 0 0 1px #4d6350;overflow:hidden}
+.novice-guide-track[hidden]{display:none!important}
+.novice-guide-track i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#8fb46a,#e8cd8a);transition:width .4s ease}
+.novice-guide-actions #noviceGuideMore{background:#33483a;border-color:#8d9c7e;color:#e8dcbb;font-weight:600}
+.novice-guide-actions #noviceGuideMore[hidden],.novice-guide-actions #noviceSkip[hidden]{display:none!important}
+.pixel-theme .novice-guide-meta{gap:8px}
+.pixel-theme .novice-guide-track{height:4px;border-radius:0;box-shadow:none;background:#0d1c16;border:1px solid #4e6a52}
+.pixel-theme .novice-guide-track i{border-radius:0;background:#c9b071}
+@media(prefers-reduced-motion:reduce){.novice-guide-track i{transition:none}}

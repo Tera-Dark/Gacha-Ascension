@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSave,loadCatalog,dispatch} from '../src/v8/engine.mjs';
-import {cultivationJourney,featureIntroductions} from '../src/v8/onboarding.mjs';
+import {cultivationJourney,featureIntroductions,guidanceBanner} from '../src/v8/onboarding.mjs';
 import {nextStep} from '../src/v8/advisor.mjs';
 const json=p=>JSON.parse(readFileSync(new URL('../data/'+p,import.meta.url),'utf8'));
 const c=loadCatalog(json('realms-maps.v0.8.proposal.json'),json('v8-slice.json'));
@@ -46,6 +46,23 @@ test('feature introductions appear at real unlocks instead of advertising locked
  s.run.realmIndex=4;s.run.bossCleared=true;
  assert.ok(featureIntroductions(s,c).some(t=>t.id==='rebirth-ready'));
  assert.ok(featureIntroductions(s,c).some(t=>t.id==='artifact-unlocked'));
+});
+
+test('the guidance bar keeps telling players the next step after the three novice steps',()=>{
+ const fresh=createSave(777);
+ const first=guidanceBanner(fresh,c);
+ assert.equal(first.mode,'novice');assert.equal(first.index,1);
+ assert.equal(first.total,cultivationJourney(fresh,c).total);
+ // An older save that already passed the novice milestones still gets a goal,
+ // which is exactly what a returning player misses when the card disappears.
+ const veteran=createSave(778);veteran.run.draws.battle=4;veteran.run.mobKills=9;veteran.run.guardianWins=2;veteran.run.mapIndex=1;
+ const next=guidanceBanner(veteran,c);
+ assert.equal(next.mode,'journey');assert.equal(next.taskId,cultivationJourney(veteran,c).next.id);
+ assert.ok(next.title&&next.description&&next.view);
+ // Never a reward channel, never a mutation.
+ const before=structuredClone(veteran);
+ for(let i=0;i<5;i++)guidanceBanner(veteran,c);
+ assert.deepEqual(veteran,before);
 });
 
 test('owned core cards direct players to equip them and old saves do not invent practice',()=>{

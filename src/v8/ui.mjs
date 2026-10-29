@@ -18,8 +18,8 @@ import {ITEMS,AUTO_POTION_COST} from "./treasure.mjs";
 import {activeSynergy} from "./synergy.mjs";
 import {recommendLoadout,nextStep} from "./advisor.mjs";
 import {combatTimeline,combatCues,attackPresentation} from "./combat-timeline.mjs";
-import {noviceStep} from "./onboarding.mjs";
-import {mountGuidance,renderGuidance} from './guidance-ui.mjs';
+import {noviceStep,guidanceBanner} from "./onboarding.mjs";
+import {mountGuidance,renderGuidance,openHandbook,setGuidanceToast} from './guidance-ui.mjs';
 import {mountStory,renderStory} from './story-ui.mjs';
 import {storyUnlockHint,cardRevelation,noteworthyDraw} from './story.mjs';
 import {loadPixelAssets,renderPixelScene,renderPixelFrame,pixelBattleEvent} from "./pixel-scene.mjs";
@@ -570,15 +570,41 @@ function renderBuildAdvice(){
   apply.textContent="一键装配推荐构筑";
  }else set("buildAdvice",summary+" 当前配置在样本中已是较优选择。"+(caution||""));
 }
+let guidanceBannerCache=null,guidanceCollapsed=false;
 function renderNovice(){
  let skipped=false;try{skipped=localStorage.getItem(NOVICE_SKIP_KEY)==="1"}catch{}
- const stage=skipped?null:noviceStep(s);
- $("noviceGuide").hidden=!stage;
- document.body.classList.toggle("novice-mode",!!stage);
- if(!stage)return;
- set("noviceStep","入门修行 · 第"+stage.index+"/3步");
- set("noviceTitle",['','阿烬 · 借你一剑','阿烬 · 试试这道命痕','阿烬 · 山门后的传承'][stage.index]);set("noviceDescription",['','“用灵石照亮残卷，借前人的剑走这一世。”','“斩来的灵石，能照亮下一页。”','“赢过守卫，残卷便能听见新的传承。”'][stage.index]);
- set("noviceAction",stage.action+" →");
+ const banner=guidanceBanner(s,c);
+ // Skipping silences the three novice steps only. An experienced save still gets the
+ // next-goal bar, otherwise the handbook stays the only place that knows the goal.
+ const show=banner.mode!=="done"&&!(banner.mode==="novice"&&skipped)&&!(guidanceCollapsed&&banner.mode==="journey");
+ $("noviceGuide").hidden=!show;
+ document.body.classList.toggle("novice-mode",show&&banner.mode==="novice");
+ if(!show){guidanceBannerCache=null;return}
+ guidanceBannerCache=banner;
+ const more=$("noviceGuideMore"),track=$("noviceGuideTrack"),skip=$("noviceSkip");
+ if(banner.mode==="novice"){
+  set("noviceStep","入门修行 · 第"+banner.index+"/3步");
+  set("noviceTitle",['','阿烬 · 借你一剑','阿烬 · 试试这道命痕','阿烬 · 山门后的传承'][banner.index]);
+  set("noviceDescription",['','“用灵石照亮残卷，借前人的剑走这一世。”','“斩来的灵石，能照亮下一页。”','“赢过守卫，残卷便能听见新的传承。”'][banner.index]);
+  set("noviceAction",banner.action+" →");
+  more.hidden=true;track.hidden=true;skip.hidden=false;skip.textContent="跳过";
+ }else{
+  set("noviceStep","修行指引 · "+banner.chapter+" · 本世 "+banner.completed+"/"+banner.total);
+  set("noviceTitle",banner.title);
+  set("noviceDescription",banner.description);
+  set("noviceAction",banner.action+" →");
+  more.hidden=false;track.hidden=false;skip.hidden=false;skip.textContent="收起";
+  $("noviceGuideBar").style.width=Math.round(banner.completed/banner.total*100)+"%";
+ }
+}
+/** Jump to whatever the guidance bar is pointing at and reveal the real control. */
+function followGuidance(banner){
+ changeView(banner.view);
+ if(banner.tab)document.querySelector('[data-fate-tab="'+banner.tab+'"]')?.click();
+ const target=banner.packId?document.querySelector('[data-pack-id="'+banner.packId+'"] button[data-count="1"]'):banner.target?$(banner.target):null;
+ if(target){for(let node=target;node;node=node.parentElement)if(node.tagName==="DETAILS")node.open=true;target.scrollIntoView({block:"center"});target.focus({preventScroll:true});return}
+ const names={explore:"探索",gacha:"机缘",cultivate:"修炼",technique:"功法",cave:"洞府",pet:"灵宠",items:"行囊",fate:"天命",atlas:"图鉴",settings:"设置"};
+ if(banner.view!=="explore")toast("已打开"+(names[banner.view]||"对应")+"页，按指引操作即可。");
 }
 function renderExplore(){
  const p=progress(s,c),r=s.run,h=heroStats(s,c),inc=incomePreview();
@@ -932,21 +958,31 @@ async function init(){
   document.addEventListener("touchstart",event=>{const t=event.touches[0];swipe=t.clientX<24?{x:t.clientX,y:t.clientY}:null},{passive:true});
   document.addEventListener("touchend",event=>{if(!swipe)return;const t=event.changedTouches[0],dx=t.clientX-swipe.x,dy=Math.abs(t.clientY-swipe.y);if(dx>65&&dy<45)openLandscapeNav();swipe=null},{passive:true});
   $("noviceAction").addEventListener("click",()=>{
-   const stage=noviceStep(s);if(!stage)return;
-   changeView(stage.view);
-   if(stage.packId){
-    const first=document.querySelector('[data-pack-id="'+stage.packId+'"] button[data-count="1"]');
+   const banner=guidanceBannerCache||guidanceBanner(s,c);
+   if(!banner)return;
+   if(banner.mode!=="novice"){followGuidance(banner);return}
+   changeView(banner.view);
+   if(banner.packId){
+    const first=document.querySelector('[data-pack-id="'+banner.packId+'"] button[data-count="1"]');
     first?.scrollIntoView({behavior:"auto",block:"center"});first?.focus({preventScroll:true});
-   }else if(stage.index===2){
+   }else if(banner.index===2){
     if(!auto&&!battleBusy)startAuto();
     $("autoFarm")?.scrollIntoView({behavior:"auto",block:"center"});
-   }else if(stage.target){
-    const button=$(stage.target);
+   }else if(banner.target){
+    const button=$(banner.target);
     button?.scrollIntoView({behavior:"auto",block:"center"});
     button?.focus({preventScroll:true});
    }
   });
+  $("noviceGuideMore").addEventListener("click",()=>openHandbook());
   $("noviceSkip").addEventListener("click",()=>{
+   // Novice steps are skipped for good; the always-on goal bar only folds away
+   // for this visit, so a returning player cannot permanently lose their guide.
+   if(guidanceBannerCache?.mode==="journey"){
+    guidanceCollapsed=true;render();
+    toast("已收起修行指引，刷新或下次进入会再次出现；也可点「修行手册」查看全部目标。");
+    return;
+   }
    try{localStorage.setItem(NOVICE_SKIP_KEY,"1")}catch{}
    render();
    toast("已跳过入门指引，随时可按修行目标继续游戏。");
@@ -1143,6 +1179,7 @@ initPixelUI();
 mountManagement();
 mountHelp(()=>view);
 mountGuidance(changeView);
+setGuidanceToast(toast);
 mountStory(goToStoryObjective,()=>nextStep(s,c,lastCombatAnalysis));
 mountBank({command:doCommand,navigate:changeView,notify:toast});
 requestAnimationFrame(presentationFrame);

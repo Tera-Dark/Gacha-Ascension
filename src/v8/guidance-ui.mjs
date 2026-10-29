@@ -4,6 +4,27 @@ const PREF_KEY='gacha-ascension-v8-guidance-v1';
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 let prefs={muted:false,seen:{}},state,catalog,current='explore',opener=null,navigate=null;
+let onTaskDone=null,seeded=false,lastDone=new Set();
+/** Completion feedback: a journey task turning done is the only reward it has.
+ * Seed on first paint so reloading never replays old milestones. */
+export function setGuidanceToast(fn){onTaskDone=fn}
+function announce(journey){
+ const done=new Set(journey.tasks.filter(t=>t.done).map(t=>t.id));
+ if(!seeded){seeded=true;lastDone=done;return}
+ const fresh=journey.tasks.filter(t=>t.done&&!lastDone.has(t.id));
+ const chapter=['入门','经营','构筑','传承'].find(ch=>{
+  const all=journey.tasks.filter(t=>t.chapter===ch);
+  return all.length&&all.every(t=>t.done)&&!all.every(t=>lastDone.has(t.id));
+ });
+ lastDone=done;
+ if(!onTaskDone)return;
+ if(chapter)onTaskDone('✦ '+chapter+'章全数达成 · 本世修行 '+journey.completed+'/'+journey.total);
+ else if(fresh.length)onTaskDone('◆ 达成 · '+fresh[fresh.length-1].title+'（本世 '+journey.completed+'/'+journey.total+'）');
+}
+export function openHandbook(){
+ if(!state)return;opener=null;paintJournal();
+ const dialog=$('cultivationGuide');if(dialog&&!dialog.open)dialog.showModal();
+}
 try{const raw=JSON.parse(localStorage.getItem(PREF_KEY));if(raw&&typeof raw==='object')prefs={muted:raw.muted===true,seen:raw.seen&&typeof raw.seen==='object'?raw.seen:{}}}catch{}
 function savePrefs(){try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch{}}
 function paintJournal(){
@@ -28,7 +49,12 @@ function paintTips(){
  });
  $('muteFirstTips').checked=prefs.muted;
 }
-export function renderGuidance(s,c,view){state=s;catalog=c;current=view;paintTips();if($('cultivationGuide').open)paintJournal()}
+export function renderGuidance(s,c,view){
+ state=s;catalog=c;current=view;paintTips();
+ const journey=cultivationJourney(state,catalog);
+ announce(journey);
+ if($('cultivationGuide').open)paintJournal();
+}
 export function mountGuidance(goToView){
  navigate=goToView;
  document.querySelectorAll('.px-system-banner .module-title,.wb-enemy>.wb-heading .module-title').forEach(title=>{

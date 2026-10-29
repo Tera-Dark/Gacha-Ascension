@@ -42,6 +42,24 @@ export function cultivationJourney(s,c){
  return {tasks,next,completed:tasks.filter(t=>t.done).length,total:tasks.length,life:m.reincarnations+1};
 }
 
+/** One always-on guidance bar for the battle screen.
+ * The three-step novice card only covers the first life's first minutes; after that
+ * (or on an older save that already passed them) an invisible checklist left players
+ * with no idea what to do next. This merges both into a single next-step banner, so
+ * the handbook is no longer the only place that knows the goal. Pure read-only. */
+export function guidanceBanner(s,c){
+ const journey=cultivationJourney(s,c);
+ const stage=noviceStep(s);
+ if(stage)return {mode:'novice',...stage,completed:journey.completed,total:journey.total};
+ if(journey.next){
+  const t=journey.next;
+  return {mode:'journey',taskId:t.id,chapter:t.chapter,title:t.title,description:t.description,
+   action:'去做',view:t.view,target:t.target,packId:t.packId,tab:t.tab,
+   completed:journey.completed,total:journey.total};
+ }
+ return {mode:'done',title:'本世修行圆满',description:'本世要点已掌握，可自由安排修行；四图通关后可去轮回天命查看传承。',action:'查看天命',view:'fate',completed:journey.completed,total:journey.total};
+}
+
 export const FIRST_VISIT_TIPS={
  cultivate:'先看缺少的突破条件；闭关补修为，修为造化补悟道。',
  gacha:'用灵石照亮命痕残卷，主线会逐页开放机缘；每20抽还可额外定向选择核心卡。',
